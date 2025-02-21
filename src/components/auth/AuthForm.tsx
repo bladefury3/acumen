@@ -79,7 +79,7 @@ export const AuthForm = ({ mode, onSuccess, onError }: AuthFormProps) => {
             {...register('email')}
             className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
           />
-          {errors.email && (
+          {errors.email?.message && (
             <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
           )}
         </div>
@@ -97,8 +97,8 @@ export const AuthForm = ({ mode, onSuccess, onError }: AuthFormProps) => {
               {...register('username')}
               className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
             />
-            {errors.username && (
-              <p className="mt-1 text-sm text-red-600">{errors.username?.message}</p>
+            {errors.username?.message && (
+              <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
             )}
           </div>
         </div>
@@ -115,7 +115,7 @@ export const AuthForm = ({ mode, onSuccess, onError }: AuthFormProps) => {
             {...register('password')}
             className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
           />
-          {errors.password && (
+          {errors.password?.message && (
             <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
           )}
         </div>
