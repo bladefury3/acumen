@@ -45,13 +45,19 @@ const steps = [
   },
 ];
 
+interface PreferencesState {
+  grade: string[];
+  subjects: string[];
+  goals: string[];
+}
+
 const Onboarding = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
-  const [preferences, setPreferences] = useState({
-    grade: [] as string[],
-    subjects: [] as string[],
-    goals: [] as string[],
+  const [preferences, setPreferences] = useState<PreferencesState>({
+    grade: [],
+    subjects: [],
+    goals: [],
   });
   const [isLoading, setIsLoading] = useState(false);
 

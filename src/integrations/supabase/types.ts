@@ -11,17 +11,26 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          goals: string[] | null
+          grade: string[] | null
           id: string
+          subjects: string[] | null
           updated_at: string
           username: string
         }
         Insert: {
+          goals?: string[] | null
+          grade?: string[] | null
           id: string
+          subjects?: string[] | null
           updated_at?: string
           username: string
         }
         Update: {
+          goals?: string[] | null
+          grade?: string[] | null
           id?: string
+          subjects?: string[] | null
           updated_at?: string
           username?: string
         }
