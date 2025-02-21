@@ -31,8 +31,8 @@ interface MultiSelectProps {
 }
 
 export function MultiSelect({
-  options,
-  selected,
+  options = [],
+  selected = [],
   onChange,
   placeholder = "Select options...",
   emptyMessage = "No options found.",
@@ -42,6 +42,10 @@ export function MultiSelect({
   const handleUnselect = (item: string) => {
     onChange(selected.filter((i) => i !== item));
   };
+
+  // Ensure we're working with arrays even if undefined is passed
+  const safeOptions = Array.isArray(options) ? options : [];
+  const safeSelected = Array.isArray(selected) ? selected : [];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -53,8 +57,8 @@ export function MultiSelect({
           className="w-full justify-between hover:bg-background/90"
         >
           <div className="flex gap-1 flex-wrap">
-            {selected.length === 0 && placeholder}
-            {selected.map((item) => (
+            {safeSelected.length === 0 && placeholder}
+            {safeSelected.map((item) => (
               <Badge
                 variant="secondary"
                 key={item}
@@ -64,7 +68,7 @@ export function MultiSelect({
                   handleUnselect(item);
                 }}
               >
-                {options.find((option) => option.value === item)?.label}
+                {safeOptions.find((option) => option.value === item)?.label}
                 <X className="ml-1 h-3 w-3" />
               </Badge>
             ))}
@@ -72,7 +76,7 @@ export function MultiSelect({
           <X
             className={cn(
               "ml-2 h-4 w-4 shrink-0 opacity-50",
-              selected.length === 0 && "hidden"
+              safeSelected.length === 0 && "hidden"
             )}
             onClick={(e) => {
               e.stopPropagation();
@@ -86,21 +90,21 @@ export function MultiSelect({
           <CommandInput placeholder="Search..." />
           <CommandEmpty>{emptyMessage}</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-auto">
-            {options.map((option) => (
+            {safeOptions.map((option) => (
               <CommandItem
                 key={option.value}
                 onSelect={() => {
                   onChange(
-                    selected.includes(option.value)
-                      ? selected.filter((item) => item !== option.value)
-                      : [...selected, option.value]
+                    safeSelected.includes(option.value)
+                      ? safeSelected.filter((item) => item !== option.value)
+                      : [...safeSelected, option.value]
                   );
                 }}
               >
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4",
-                    selected.includes(option.value)
+                    safeSelected.includes(option.value)
                       ? "opacity-100"
                       : "opacity-0"
                   )}
