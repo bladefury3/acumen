@@ -9,6 +9,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function makeGroqRequest(promptData: any, model: string) {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${groqApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: promptData.messages,
+    }),
+  });
+
+  return response;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -48,22 +64,23 @@ serve(async (req) => {
       7. Closure
     `.trim();
 
-    console.log('Making request to Groq API');
+    const promptData = {
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: promptText }
+      ]
+    };
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${groqApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "llama2-70b-4096",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: promptText }
-        ],
-      }),
-    });
+    console.log('Making request to Groq API with primary model');
+
+    // Try primary model first
+    let response = await makeGroqRequest(promptData, "llama-3.3-70b-versatile");
+
+    // If primary model fails, try backup model
+    if (!response.ok) {
+      console.log('Primary model failed, trying backup model');
+      response = await makeGroqRequest(promptData, "deepseek-r1-distill-llama-70b");
+    }
 
     if (!response.ok) {
       const errorData = await response.json();
