@@ -14,15 +14,44 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/dashboard');
+        // Check if user has completed onboarding
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('grade, subjects, goals')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!profile?.grade?.length && !profile?.subjects?.length && !profile?.goals?.length) {
+          navigate('/onboarding');
+        } else {
+          navigate('/dashboard');
+        }
       }
     };
     checkUser();
   }, [navigate]);
 
-  const handleSuccess = () => {
-    toast.success(isLogin ? 'Welcome back!' : 'Account created successfully!');
-    navigate('/dashboard');
+  const handleSuccess = async () => {
+    if (!isLogin) {
+      toast.success('Account created successfully!');
+      navigate('/onboarding');
+    } else {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('grade, subjects, goals')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!profile?.grade?.length && !profile?.subjects?.length && !profile?.goals?.length) {
+          navigate('/onboarding');
+        } else {
+          toast.success('Welcome back!');
+          navigate('/dashboard');
+        }
+      }
+    }
   };
 
   const handleError = (error: string) => {
