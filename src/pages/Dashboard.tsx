@@ -17,7 +17,7 @@ interface DashboardProps {
   onCreateLessonPlan: () => void;
 }
 
-const Dashboard = ({ lessonPlans, onCreateLessonPlan }: DashboardProps) => {
+const Dashboard = ({ lessonPlans }: DashboardProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,7 +29,6 @@ const Dashboard = ({ lessonPlans, onCreateLessonPlan }: DashboardProps) => {
     };
     checkAuth();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         navigate('/auth');
@@ -38,6 +37,10 @@ const Dashboard = ({ lessonPlans, onCreateLessonPlan }: DashboardProps) => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const handleCreateLessonPlan = () => {
+    navigate('/lesson-plan');
+  };
 
   const sidebarItems = [
     { label: "My Lessons", href: "/dashboard", icon: FileText },
@@ -49,7 +52,7 @@ const Dashboard = ({ lessonPlans, onCreateLessonPlan }: DashboardProps) => {
       sidebarItems={sidebarItems} 
       sidebarAction={
         <Button 
-          onClick={onCreateLessonPlan} 
+          onClick={handleCreateLessonPlan} 
           className="w-full bg-blue-100 text-blue-600 hover:bg-blue-200"
         >
           <Plus className="mr-2 h-4 w-4" />
@@ -62,7 +65,7 @@ const Dashboard = ({ lessonPlans, onCreateLessonPlan }: DashboardProps) => {
           title="Create New Lesson Plan"
           description="Design an engaging lesson plan that aligns with educational standards and sparks creativity."
           action={
-            <Button onClick={onCreateLessonPlan}>
+            <Button onClick={handleCreateLessonPlan}>
               <Plus className="mr-2 h-4 w-4" />
               Create Lesson Plan
             </Button>
