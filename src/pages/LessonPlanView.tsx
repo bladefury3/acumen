@@ -30,15 +30,87 @@ interface LessonPlanData {
   ai_response: string;
 }
 
+interface ParsedSection {
+  title: string;
+  content: string[];
+}
+
 const LessonPlanView = () => {
   const { id } = useParams();
   const [lessonPlan, setLessonPlan] = useState<LessonPlanData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [parsedSections, setParsedSections] = useState<ParsedSection[]>([]);
+  const [generatingSections, setGeneratingSections] = useState<Set<string>>(new Set());
 
-  const sidebarItems = [
-    { label: "My Lessons", href: "/dashboard", icon: FileText },
-    { label: "Settings", href: "/dashboard/settings", icon: Settings },
-  ];
+  const parseAIResponse = (aiResponse: string): ParsedSection[] => {
+    const sections: ParsedSection[] = [];
+    const lines = aiResponse.split('\n');
+    let currentSection: ParsedSection | null = null;
+
+    lines.forEach(line => {
+      if (line.startsWith('### ')) {
+        if (currentSection) {
+          sections.push(currentSection);
+        }
+        currentSection = {
+          title: line.replace('### ', '').trim(),
+          content: []
+        };
+      }
+      else if (line.trim().startsWith('- ') && currentSection) {
+        currentSection.content.push(line.trim().replace('- ', ''));
+      }
+    });
+
+    if (currentSection) {
+      sections.push(currentSection);
+    }
+
+    return sections;
+  };
+
+  const handleGenerateMore = async (sectionTitle: string) => {
+    if (!id || generatingSections.has(sectionTitle)) return;
+
+    setGeneratingSections(prev => new Set([...prev, sectionTitle]));
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-lesson-plan', {
+        body: {
+          prompt: `Generate 3 more ${sectionTitle.toLowerCase()} for this lesson plan that are different from the existing ones.`,
+          existingContent: parsedSections.find(s => s.title === sectionTitle)?.content || []
+        }
+      });
+
+      if (error) throw error;
+
+      const newContent = data.response.split('\n')
+        .filter((line: string) => line.trim().startsWith('- '))
+        .map((line: string) => line.trim().replace('- ', ''));
+
+      setParsedSections(prev => prev.map(section => {
+        if (section.title === sectionTitle) {
+          return {
+            ...section,
+            content: [...section.content, ...newContent],
+            generated: true
+          };
+        }
+        return section;
+      }));
+
+      toast.success(`Generated new ${sectionTitle.toLowerCase()}`);
+    } catch (error) {
+      console.error('Error generating content:', error);
+      toast.error(`Failed to generate new ${sectionTitle.toLowerCase()}`);
+    } finally {
+      setGeneratingSections(prev => {
+        const next = new Set(prev);
+        next.delete(sectionTitle);
+        return next;
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchLessonPlan = async () => {
@@ -51,6 +123,11 @@ const LessonPlanView = () => {
 
         if (error) throw error;
         setLessonPlan(data);
+        
+        if (data.ai_response) {
+          const sections = parseAIResponse(data.ai_response);
+          setParsedSections(sections);
+        }
       } catch (error) {
         console.error('Error fetching lesson plan:', error);
         toast.error("Failed to load lesson plan");
@@ -62,14 +139,10 @@ const LessonPlanView = () => {
     if (id) fetchLessonPlan();
   }, [id]);
 
-  const handleGenerateMore = async (section: string) => {
-    toast.info(`Generating more content for ${section}...`);
-    // Implementation for generating more content for a specific section
-  };
-
-  const handleShareLesson = () => {
-    toast.info("Share functionality coming soon!");
-  };
+  const sidebarItems = [
+    { label: "My Lessons", href: "/dashboard", icon: FileText },
+    { label: "Settings", href: "/dashboard/settings", icon: Settings },
+  ];
 
   if (isLoading) {
     return (
@@ -94,23 +167,9 @@ const LessonPlanView = () => {
     );
   }
 
-  const formatContentAsBullets = (content: string) => {
-    return content.split(',').map(item => item.trim());
-  };
-
-  const sections = [
-    { title: "Learning Objectives", content: lessonPlan.objectives.split('.').filter(Boolean) },
-    { title: "Materials and Resources", content: formatContentAsBullets(lessonPlan.learning_tools.join(", ")) },
-    { title: "Activities", content: formatContentAsBullets(lessonPlan.activities.join(", ")) },
-    { title: "Assessment Strategies", content: formatContentAsBullets(lessonPlan.assessments.join(", ")) },
-    { title: "Learning Needs", content: formatContentAsBullets(lessonPlan.learning_needs.join(", ")) },
-  ];
-
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
-      {/* Breadcrumb */}
       <div className="space-y-8">
-        {/* Breadcrumb */}
         <div className="flex items-center text-sm text-muted-foreground">
           <Link to="/dashboard" className="hover:text-foreground">
             Dashboard
@@ -119,47 +178,23 @@ const LessonPlanView = () => {
           <span className="text-foreground">Lesson Plan</span>
         </div>
 
-        {/* Header */}
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-primary">
-              {`${lessonPlan.subject}: ${lessonPlan.objectives.split('.')[0]}`}
+              {lessonPlan?.subject}: {lessonPlan?.objectives.split('.')[0]}
             </h1>
             <p className="text-muted-foreground mt-2">
-              Grade {lessonPlan.grade} • {lessonPlan.duration} minutes
+              Grade {lessonPlan?.grade} • {lessonPlan?.duration} minutes
             </p>
           </div>
-          <Button onClick={handleShareLesson} variant="outline">
+          <Button onClick={() => toast.info("Share functionality coming soon!")} variant="outline">
             <Share className="mr-2 h-4 w-4" />
             Share Lesson
           </Button>
         </div>
 
-        {/* Lesson Details Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Lesson Overview</CardTitle>
-            <CardDescription>Basic information about this lesson</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <h3 className="font-medium">Subject</h3>
-              <p className="text-muted-foreground">{lessonPlan.subject}</p>
-            </div>
-            <div>
-              <h3 className="font-medium">Grade Level</h3>
-              <p className="text-muted-foreground">{lessonPlan.grade}</p>
-            </div>
-            <div>
-              <h3 className="font-medium">Duration</h3>
-              <p className="text-muted-foreground">{lessonPlan.duration} minutes</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Content Sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {sections.map((section, index) => (
+          {parsedSections.map((section, index) => (
             <Card key={index}>
               <CardHeader>
                 <CardTitle>{section.title}</CardTitle>
@@ -172,12 +207,16 @@ const LessonPlanView = () => {
                     ))}
                   </ul>
                 </div>
-                <Link 
-                  to={`/lesson-plan/${id}/edit/${section.title.toLowerCase().replace(/\s+/g, '-')}`}
-                  className={cn(buttonVariants({ variant: "secondary", className: "w-full" }))}
-                >
-                  Generate More for {section.title}
-                </Link>
+                {!section.generated && (
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => handleGenerateMore(section.title)}
+                    disabled={generatingSections.has(section.title)}
+                  >
+                    {generatingSections.has(section.title) ? 'Generating...' : 'Generate'}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
