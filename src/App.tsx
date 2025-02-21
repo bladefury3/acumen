@@ -25,7 +25,15 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/lesson-plan" element={<LessonPlan />} />
-          <Route path="/dashboard" element={<Dashboard lessonPlans={[]} />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <Dashboard 
+                lessonPlans={[]}
+                onCreateLessonPlan={() => console.log('Create lesson plan')}
+              />
+            } 
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
