@@ -1,8 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { Groq } from "npm:@groq/groq";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const groqApiKey = Deno.env.get('GROQ_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,13 +17,17 @@ serve(async (req) => {
   }
 
   try {
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key is not configured');
+    if (!groqApiKey) {
+      throw new Error('Groq API key is not configured');
     }
+
+    const groq = new Groq({
+      apiKey: groqApiKey,
+    });
 
     const { objectives, grade, subject, funElements, duration, curriculum, learningTools, learningNeeds, activities, assessments } = await req.json();
 
-    // Prepare the prompt for OpenAI
+    // Prepare the prompt for Groq
     const systemPrompt = "Act as an expert instructional designer to create a lesson plan from the following information";
     const promptText = `
       Create a detailed lesson plan with the following parameters:
@@ -48,33 +53,23 @@ serve(async (req) => {
       7. Closure
     `.trim();
 
-    console.log('Making request to OpenAI with prompt:', promptText);
+    console.log('Making request to Groq with prompt:', promptText);
 
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: promptText }
-        ],
-      }),
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: promptText }
+      ],
+      model: "llama2-70b-4096",
     });
 
-    if (!openAIResponse.ok) {
-      const errorData = await openAIResponse.json();
-      console.error('OpenAI API Error:', errorData);
-      throw new Error(errorData.error?.message || 'Failed to generate lesson plan');
+    const generatedLessonPlan = completion.choices[0]?.message?.content;
+
+    if (!generatedLessonPlan) {
+      throw new Error('No lesson plan was generated');
     }
 
-    const data = await openAIResponse.json();
-    console.log('OpenAI Response:', data);
-
-    const generatedLessonPlan = data.choices[0].message.content;
+    console.log('Groq Response received');
 
     return new Response(JSON.stringify({ response: generatedLessonPlan }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
