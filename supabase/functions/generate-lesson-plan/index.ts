@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { Groq } from "npm:@groq/groq";
 
 const groqApiKey = Deno.env.get('GROQ_API_KEY');
 
@@ -20,10 +19,6 @@ serve(async (req) => {
     if (!groqApiKey) {
       throw new Error('Groq API key is not configured');
     }
-
-    const groq = new Groq({
-      apiKey: groqApiKey,
-    });
 
     const { objectives, grade, subject, funElements, duration, curriculum, learningTools, learningNeeds, activities, assessments } = await req.json();
 
@@ -53,23 +48,37 @@ serve(async (req) => {
       7. Closure
     `.trim();
 
-    console.log('Making request to Groq with prompt:', promptText);
+    console.log('Making request to Groq API');
 
-    const completion = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: promptText }
-      ],
-      model: "llama2-70b-4096",
+    const response = await fetch('https://api.groq.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "llama2-70b-4096",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: promptText }
+        ],
+      }),
     });
 
-    const generatedLessonPlan = completion.choices[0]?.message?.content;
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Groq API Error:', errorData);
+      throw new Error(errorData.error?.message || 'Failed to generate lesson plan');
+    }
+
+    const data = await response.json();
+    console.log('Groq Response received');
+
+    const generatedLessonPlan = data.choices[0]?.message?.content;
 
     if (!generatedLessonPlan) {
       throw new Error('No lesson plan was generated');
     }
-
-    console.log('Groq Response received');
 
     return new Response(JSON.stringify({ response: generatedLessonPlan }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
