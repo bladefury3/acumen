@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const MAKE_WEBHOOK_URL = 'https://hook.us2.make.com/groq3rplo938ylgs0ka27kz0jakgfh6c';
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,9 +15,11 @@ serve(async (req) => {
   try {
     const { objectives, grade, subject, funElements, duration, curriculum, learningTools, learningNeeds, activities, assessments } = await req.json();
 
-    // Prepare the text for the webhook
+    // Prepare the prompt for OpenAI
+    const systemPrompt = "Act as an expert instructional designer to create a lesson plan from the following information";
     const promptText = `
       Create a detailed lesson plan with the following parameters:
+      
       Objectives: ${objectives}
       Grade Level: ${grade}
       Subject: ${subject}
@@ -29,20 +30,42 @@ serve(async (req) => {
       Learning Needs: ${learningNeeds.join(', ')}
       Activities: ${activities.join(', ')}
       Assessment Methods: ${assessments.join(', ')}
+      
+      Please structure the lesson plan with clear sections for:
+      1. Learning Objectives
+      2. Materials and Resources
+      3. Introduction/Hook
+      4. Main Activities
+      5. Assessment Strategies
+      6. Differentiation Strategies
+      7. Closure
     `;
 
-    // Call the Make.com webhook
-    const webhookResponse = await fetch(MAKE_WEBHOOK_URL, {
+    // Call OpenAI API
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text: promptText }),
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: promptText }
+        ],
+      }),
     });
 
-    const responseText = await webhookResponse.text();
+    if (!openAIResponse.ok) {
+      const error = await openAIResponse.json();
+      throw new Error(error.error?.message || 'Failed to generate lesson plan');
+    }
 
-    return new Response(JSON.stringify({ response: responseText }), {
+    const data = await openAIResponse.json();
+    const generatedLessonPlan = data.choices[0].message.content;
+
+    return new Response(JSON.stringify({ response: generatedLessonPlan }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

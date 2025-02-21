@@ -14,6 +14,13 @@ import { Link } from "react-router-dom";
 import BasicInformation from "@/components/lesson-plan/BasicInformation";
 import AdditionalSettings from "@/components/lesson-plan/AdditionalSettings";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface LessonPlanForm {
   objectives: string;
@@ -63,17 +70,17 @@ const LessonPlan = () => {
         return;
       }
 
-      // Call the webhook via edge function
-      const { data: webhookData, error: webhookError } = await supabase.functions.invoke(
+      // Call OpenAI via edge function
+      const { data: aiData, error: aiError } = await supabase.functions.invoke(
         'generate-lesson-plan',
         {
           body: formData,
         }
       );
 
-      if (webhookError) throw webhookError;
+      if (aiError) throw aiError;
 
-      const aiResponse = webhookData.response;
+      const aiResponse = aiData.response;
       setAiResponse(aiResponse);
 
       // Save to database
@@ -96,10 +103,10 @@ const LessonPlan = () => {
 
       if (dbError) throw dbError;
 
-      toast.success("Lesson plan saved successfully!");
+      toast.success("Lesson plan generated and saved successfully!");
     } catch (error) {
       console.error('Error:', error);
-      toast.error("Failed to save lesson plan. Please try again.");
+      toast.error("Failed to generate lesson plan. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -154,13 +161,6 @@ const LessonPlan = () => {
             </AccordionItem>
           </Accordion>
 
-          {aiResponse && (
-            <div className="mt-6 p-4 border rounded-lg bg-muted">
-              <h3 className="text-lg font-semibold mb-2">Generated Lesson Plan</h3>
-              <div className="whitespace-pre-wrap">{aiResponse}</div>
-            </div>
-          )}
-
           <div className="flex justify-end space-x-4">
             <Button variant="outline" type="button" disabled={isLoading}>
               Save Draft
@@ -170,6 +170,22 @@ const LessonPlan = () => {
             </Button>
           </div>
         </form>
+
+        {aiResponse && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>Generated Lesson Plan</CardTitle>
+              <CardDescription>
+                AI-generated lesson plan based on your inputs
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none whitespace-pre-wrap">
+                {aiResponse}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );
