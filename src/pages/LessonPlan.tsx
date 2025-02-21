@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -14,13 +15,6 @@ import { Link } from "react-router-dom";
 import BasicInformation from "@/components/lesson-plan/BasicInformation";
 import AdditionalSettings from "@/components/lesson-plan/AdditionalSettings";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 interface LessonPlanForm {
   objectives: string;
@@ -36,6 +30,7 @@ interface LessonPlanForm {
 }
 
 const LessonPlan = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<LessonPlanForm>({
     objectives: "",
     grade: "",
@@ -49,7 +44,6 @@ const LessonPlan = () => {
     assessments: [],
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [aiResponse, setAiResponse] = useState<string | null>(null);
 
   const handleFieldChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({
@@ -81,10 +75,9 @@ const LessonPlan = () => {
       if (aiError) throw aiError;
 
       const aiResponse = aiData.response;
-      setAiResponse(aiResponse);
 
       // Save to database
-      const { error: dbError } = await supabase
+      const { data: savedPlan, error: dbError } = await supabase
         .from('lesson_plans')
         .insert({
           user_id: user.id,
@@ -99,11 +92,16 @@ const LessonPlan = () => {
           activities: formData.activities,
           assessments: formData.assessments,
           ai_response: aiResponse,
-        });
+        })
+        .select()
+        .single();
 
       if (dbError) throw dbError;
 
-      toast.success("Lesson plan generated and saved successfully!");
+      toast.success("Lesson plan generated successfully!");
+      
+      // Redirect to the view page
+      navigate(`/lesson-plan/${savedPlan.id}`);
     } catch (error) {
       console.error('Error:', error);
       toast.error("Failed to generate lesson plan. Please try again.");
@@ -170,22 +168,6 @@ const LessonPlan = () => {
             </Button>
           </div>
         </form>
-
-        {aiResponse && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>Generated Lesson Plan</CardTitle>
-              <CardDescription>
-                AI-generated lesson plan based on your inputs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="prose prose-sm max-w-none whitespace-pre-wrap">
-                {aiResponse}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </DashboardLayout>
   );
