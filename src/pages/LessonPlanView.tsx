@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ interface LessonPlanData {
 interface ParsedSection {
   title: string;
   content: string[];
+  generated?: boolean; // Add the generated property as optional
 }
 
 const LessonPlanView = () => {
@@ -54,7 +56,8 @@ const LessonPlanView = () => {
         }
         currentSection = {
           title: line.replace('### ', '').trim(),
-          content: []
+          content: [],
+          generated: false // Initialize generated as false for new sections
         };
       }
       else if (line.trim().startsWith('- ') && currentSection) {
