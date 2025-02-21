@@ -39,7 +39,7 @@ const Dashboard = ({ lessonPlans }: DashboardProps) => {
   }, [navigate]);
 
   const handleCreateLessonPlan = () => {
-    navigate('/lesson-plan');
+    navigate('/lesson-plan/create');
   };
 
   const sidebarItems = [
