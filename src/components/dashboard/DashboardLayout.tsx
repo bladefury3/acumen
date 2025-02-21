@@ -19,10 +19,13 @@ const DashboardLayout = ({ children, sidebarItems, sidebarAction }: DashboardLay
   const location = useLocation();
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <aside className="w-64 bg-white border-r">
+    <div className="flex h-screen bg-white">
+      <aside className="w-64 border-r border-gray-200">
         <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-800">Dashboard</h2>
+          <Link to="/" className="flex items-center space-x-2">
+            <img src="/lovable-uploads/eefa55b4-bd39-4945-9eba-3b9fbf729d79.png" alt="Logo" className="h-8 w-8" />
+            <span className="text-xl font-semibold text-gray-900">acumen</span>
+          </Link>
           <nav className="mt-6 space-y-1">
             {sidebarItems.map((item) => (
               <Link
@@ -47,8 +50,8 @@ const DashboardLayout = ({ children, sidebarItems, sidebarAction }: DashboardLay
           )}
         </div>
       </aside>
-      <main className="flex-1 overflow-auto p-6">
-        {children}
+      <main className="flex-1 overflow-auto">
+        <div className="px-8 py-6">{children}</div>
       </main>
     </div>
   );
