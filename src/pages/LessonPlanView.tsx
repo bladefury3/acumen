@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,8 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { FileText, Settings, Share, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
 interface LessonPlanData {
   id: string;
@@ -93,17 +94,21 @@ const LessonPlanView = () => {
     );
   }
 
-  // Parse AI response to get sections (you might need to adjust this based on your AI response format)
+  const formatContentAsBullets = (content: string) => {
+    return content.split(',').map(item => item.trim());
+  };
+
   const sections = [
-    { title: "Learning Objectives", content: lessonPlan.objectives },
-    { title: "Materials and Resources", content: lessonPlan.learning_tools.join(", ") },
-    { title: "Activities", content: lessonPlan.activities.join(", ") },
-    { title: "Assessment Strategies", content: lessonPlan.assessments.join(", ") },
-    { title: "Learning Needs", content: lessonPlan.learning_needs.join(", ") },
+    { title: "Learning Objectives", content: lessonPlan.objectives.split('.').filter(Boolean) },
+    { title: "Materials and Resources", content: formatContentAsBullets(lessonPlan.learning_tools.join(", ")) },
+    { title: "Activities", content: formatContentAsBullets(lessonPlan.activities.join(", ")) },
+    { title: "Assessment Strategies", content: formatContentAsBullets(lessonPlan.assessments.join(", ")) },
+    { title: "Learning Needs", content: formatContentAsBullets(lessonPlan.learning_needs.join(", ")) },
   ];
 
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
+      {/* Breadcrumb */}
       <div className="space-y-8">
         {/* Breadcrumb */}
         <div className="flex items-center text-sm text-muted-foreground">
@@ -161,15 +166,18 @@ const LessonPlanView = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="prose prose-sm max-w-none">
-                  <p>{section.content}</p>
+                  <ul className="list-disc pl-4 space-y-2">
+                    {section.content.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
                 </div>
-                <Button
-                  onClick={() => handleGenerateMore(section.title)}
-                  variant="secondary"
-                  className="w-full"
+                <Link 
+                  to={`/lesson-plan/${id}/edit/${section.title.toLowerCase().replace(/\s+/g, '-')}`}
+                  className={cn(buttonVariants({ variant: "secondary", className: "w-full" }))}
                 >
                   Generate More for {section.title}
-                </Button>
+                </Link>
               </CardContent>
             </Card>
           ))}

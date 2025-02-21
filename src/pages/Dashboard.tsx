@@ -1,15 +1,18 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { FileText, Settings, Plus } from "lucide-react";
+import { FileText, Settings, Plus, Clock, Book, Target } from "lucide-react";
 import EmptyState from "@/components/dashboard/EmptyState";
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
 interface LessonPlan {
-  title: string;
-  description: string;
+  id: string;
+  subject: string;
+  duration: string;
+  objectives: string;
 }
 
 interface DashboardProps {
@@ -17,25 +20,40 @@ interface DashboardProps {
   onCreateLessonPlan: () => void;
 }
 
-const Dashboard = ({ lessonPlans }: DashboardProps) => {
+const gradients = [
+  "linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%)",
+  "linear-gradient(to right, #c1c161 0%, #c1c161 0%, #d4d4b1 100%)",
+  "linear-gradient(to right, #ffc3a0 0%, #ffafbd 100%)",
+  "linear-gradient(to top, #e6b980 0%, #eacda3 100%)",
+  "linear-gradient(90deg, hsla(186, 33%, 94%, 1) 0%, hsla(216, 41%, 79%, 1) 100%)",
+];
+
+const Dashboard = ({ lessonPlans: propLessonPlans }: DashboardProps) => {
   const navigate = useNavigate();
+  const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const fetchLessonPlans = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate('/auth');
+        return;
       }
+
+      const { data, error } = await supabase
+        .from('lesson_plans')
+        .select('id, subject, duration, objectives')
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        console.error('Error fetching lesson plans:', error);
+        return;
+      }
+
+      setLessonPlans(data || []);
     };
-    checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        navigate('/auth');
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    fetchLessonPlans();
   }, [navigate]);
 
   const handleCreateLessonPlan = () => {
@@ -72,12 +90,42 @@ const Dashboard = ({ lessonPlans }: DashboardProps) => {
           }
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {lessonPlans.map((plan, index) => (
-            <div key={index} className="p-4 border rounded-lg shadow-sm">
-              <h3 className="font-medium">{plan.title}</h3>
-              <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
-            </div>
+            <Link 
+              to={`/lesson-plan/${plan.id}`}
+              key={plan.id}
+              className="block transition-transform hover:scale-105"
+            >
+              <Card 
+                className="h-full cursor-pointer overflow-hidden"
+                style={{ 
+                  background: gradients[index % gradients.length],
+                  border: 'none'
+                }}
+              >
+                <CardHeader>
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    <Book className="h-5 w-5" />
+                    {plan.subject}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4" />
+                      {plan.duration} minutes
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Target className="h-4 w-4 mt-1" />
+                      <p className="text-sm line-clamp-3">
+                        {plan.objectives.split('.')[0]}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
