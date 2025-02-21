@@ -9,6 +9,68 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      lesson_plans: {
+        Row: {
+          activities: string[] | null
+          ai_response: string | null
+          assessments: string[] | null
+          created_at: string
+          curriculum: string
+          duration: string
+          fun_elements: string | null
+          grade: string
+          id: string
+          learning_needs: string[] | null
+          learning_tools: string[] | null
+          objectives: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activities?: string[] | null
+          ai_response?: string | null
+          assessments?: string[] | null
+          created_at?: string
+          curriculum: string
+          duration: string
+          fun_elements?: string | null
+          grade: string
+          id?: string
+          learning_needs?: string[] | null
+          learning_tools?: string[] | null
+          objectives: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activities?: string[] | null
+          ai_response?: string | null
+          assessments?: string[] | null
+          created_at?: string
+          curriculum?: string
+          duration?: string
+          fun_elements?: string | null
+          grade?: string
+          id?: string
+          learning_needs?: string[] | null
+          learning_tools?: string[] | null
+          objectives?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_plans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           goals: string[] | null

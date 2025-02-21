@@ -20,43 +20,35 @@ export const curriculumOptions = [
 ];
 
 export const learningToolsOptions = [
-  { value: "digital", label: "Digital Tools" },
-  { value: "manipulatives", label: "Manipulatives" },
-  { value: "visuals", label: "Visual Aids" },
-  { value: "worksheets", label: "Worksheets" },
-  { value: "videos", label: "Educational Videos" },
-  { value: "games", label: "Educational Games" },
-  { value: "books", label: "Books" },
+  { value: "video_tutorials", label: "Video Tutorials" },
+  { value: "interactive_simulations", label: "Interactive Simulations" },
+  { value: "gamified_quizzes", label: "Gamified Quizzes" },
+  { value: "collaborative_workspaces", label: "Collaborative Workspaces" },
+  { value: "ai_assistants", label: "AI-Powered Assistants" },
 ];
 
 export const learningNeedsOptions = [
-  { value: "visual", label: "Visual Learners" },
-  { value: "auditory", label: "Auditory Learners" },
-  { value: "kinesthetic", label: "Kinesthetic Learners" },
-  { value: "reading", label: "Reading/Writing Preference" },
-  { value: "esl", label: "English Language Learners" },
-  { value: "gifted", label: "Gifted and Talented" },
-  { value: "special_ed", label: "Special Education" },
+  { value: "basic_concepts", label: "Basic Concepts" },
+  { value: "advanced_topics", label: "Advanced Topics" },
+  { value: "practical_applications", label: "Practical Applications" },
+  { value: "real_world_examples", label: "Real-World Examples" },
+  { value: "customized_paths", label: "Customized Learning Paths" },
 ];
 
 export const activitiesOptions = [
-  { value: "group", label: "Group Work" },
-  { value: "individual", label: "Individual Work" },
-  { value: "discussion", label: "Class Discussion" },
-  { value: "hands_on", label: "Hands-on Activities" },
-  { value: "presentation", label: "Student Presentations" },
-  { value: "project", label: "Project-based Learning" },
-  { value: "experiment", label: "Experiments" },
+  { value: "group_discussions", label: "Group Discussions" },
+  { value: "hands_on_projects", label: "Hands-On Projects" },
+  { value: "peer_reviews", label: "Peer Reviews" },
+  { value: "self_assessment", label: "Self-Assessment Exercises" },
+  { value: "case_studies", label: "Case Study Analyses" },
 ];
 
 export const assessmentOptions = [
-  { value: "formative", label: "Formative Assessment" },
-  { value: "summative", label: "Summative Assessment" },
-  { value: "peer", label: "Peer Assessment" },
-  { value: "self", label: "Self Assessment" },
-  { value: "portfolio", label: "Portfolio" },
-  { value: "rubric", label: "Rubric-based" },
-  { value: "observation", label: "Teacher Observation" },
+  { value: "multiple_choice", label: "Multiple Choice Questions" },
+  { value: "short_answer", label: "Short Answer Responses" },
+  { value: "project_submission", label: "Project Submissions" },
+  { value: "peer_evaluation", label: "Peer Evaluations" },
+  { value: "oral_presentation", label: "Oral Presentations" },
 ];
 
 const AdditionalSettings = ({
