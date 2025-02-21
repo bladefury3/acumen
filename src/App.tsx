@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import Onboarding from "./pages/Onboarding";
+import LessonPlan from "./pages/LessonPlan";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/lesson-plan" element={<LessonPlan />} />
           <Route 
             path="/dashboard" 
             element={
