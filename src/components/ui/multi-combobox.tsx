@@ -26,33 +26,39 @@ interface MultiComboboxProps {
 }
 
 export function MultiCombobox({
-  options,
-  selected,
+  options = [], // Provide default empty array
+  selected = [], // Provide default empty array
   onChange,
   placeholder = "Select options...",
   emptyMessage = "No results found.",
 }: MultiComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
-  const selectedItems = options.filter((option) =>
-    selected.includes(option.value)
+  const selectedItems = React.useMemo(() => 
+    options.filter((option) => selected.includes(option.value)),
+    [options, selected]
   );
 
-  const handleSelect = (value: string) => {
+  const handleSelect = React.useCallback((value: string) => {
     const isSelected = selected.includes(value);
     if (isSelected) {
       onChange(selected.filter((v) => v !== value));
     } else {
       onChange([...selected, value]);
     }
-  };
+  }, [onChange, selected]);
 
-  const handleRemove = (value: string) => {
+  const handleRemove = React.useCallback((value: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     onChange(selected.filter((v) => v !== value));
-  };
+  }, [onChange, selected]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover 
+      open={open} 
+      onOpenChange={setOpen}
+      modal={false} // This helps prevent closing on click inside
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -72,10 +78,7 @@ export function MultiCombobox({
                 <button
                   type="button"
                   className="ml-1 ring-offset-background rounded-full outline-none hover:bg-secondary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemove(item.value);
-                  }}
+                  onClick={(e) => handleRemove(item.value, e)}
                 >
                   <X className="h-3 w-3" />
                   <span className="sr-only">Remove</span>
@@ -86,8 +89,12 @@ export function MultiCombobox({
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 absolute right-3" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full min-w-[var(--radix-popover-trigger-width)] p-0 bg-background">
-        <Command>
+      <PopoverContent 
+        className="w-full min-w-[var(--radix-popover-trigger-width)] p-0 bg-background"
+        align="start"
+        sideOffset={5}
+      >
+        <Command shouldFilter={false}> {/* Prevent default filtering */}
           <CommandInput placeholder={`Search...`} />
           <CommandEmpty>{emptyMessage}</CommandEmpty>
           <CommandGroup className="max-h-[300px] overflow-auto">
@@ -96,6 +103,7 @@ export function MultiCombobox({
                 key={option.value}
                 value={option.value}
                 onSelect={() => handleSelect(option.value)}
+                className="cursor-pointer"
               >
                 <Check
                   className={cn(
