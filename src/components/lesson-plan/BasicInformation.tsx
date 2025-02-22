@@ -1,9 +1,11 @@
 
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Combobox } from "@/components/ui/combobox";
+import { useFormOptions } from "@/hooks/use-form-options";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface BasicInformationProps {
   objectives: string;
@@ -14,28 +16,6 @@ interface BasicInformationProps {
   onFieldChange: (field: string, value: string) => void;
 }
 
-export const gradeOptions = [
-  { value: "k", label: "Kindergarten" },
-  { value: "1", label: "1st Grade" },
-  { value: "2", label: "2nd Grade" },
-  { value: "3", label: "3rd Grade" },
-  { value: "4", label: "4th Grade" },
-  { value: "5", label: "5th Grade" },
-  { value: "6", label: "6th Grade" },
-  { value: "7", label: "7th Grade" },
-  { value: "8", label: "8th Grade" },
-];
-
-export const subjectOptions = [
-  { value: "math", label: "Mathematics" },
-  { value: "science", label: "Science" },
-  { value: "english", label: "English" },
-  { value: "history", label: "History" },
-  { value: "art", label: "Art" },
-  { value: "music", label: "Music" },
-  { value: "pe", label: "Physical Education" },
-];
-
 const BasicInformation = ({
   objectives,
   grade,
@@ -44,6 +24,20 @@ const BasicInformation = ({
   duration,
   onFieldChange,
 }: BasicInformationProps) => {
+  const { gradeLevels, subjects, isLoading } = useFormOptions();
+
+  if (isLoading) {
+    return <div className="space-y-6">
+      <Skeleton className="h-[100px] w-full" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Skeleton className="h-[40px] w-full" />
+        <Skeleton className="h-[40px] w-full" />
+        <Skeleton className="h-[40px] w-full" />
+      </div>
+      <Skeleton className="h-[40px] w-full" />
+    </div>;
+  }
+
   return (
     <div className="grid gap-6">
       <div className="space-y-2">
@@ -65,44 +59,24 @@ const BasicInformation = ({
           <Label htmlFor="grade">
             Grade Level<span className="text-red-500 ml-1">*</span>
           </Label>
-          <Select
+          <Combobox
+            options={gradeLevels}
             value={grade}
-            onValueChange={(value) => onFieldChange("grade", value)}
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select grade level" />
-            </SelectTrigger>
-            <SelectContent>
-              {gradeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={(value) => onFieldChange("grade", value)}
+            placeholder="Select grade level"
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="subject">
             Subject<span className="text-red-500 ml-1">*</span>
           </Label>
-          <Select
+          <Combobox
+            options={subjects}
             value={subject}
-            onValueChange={(value) => onFieldChange("subject", value)}
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select subject" />
-            </SelectTrigger>
-            <SelectContent>
-              {subjectOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={(value) => onFieldChange("subject", value)}
+            placeholder="Select subject"
+          />
         </div>
 
         <div className="space-y-2">
