@@ -26,38 +26,48 @@ interface MultiComboboxProps {
 }
 
 export function MultiCombobox({
-  options = [], // Provide default empty array
-  selected = [], // Provide default empty array
+  options = [], // Default to empty array
+  selected = [], // Default to empty array
   onChange,
   placeholder = "Select options...",
   emptyMessage = "No results found.",
 }: MultiComboboxProps) {
   const [open, setOpen] = React.useState(false);
+  const [commandValue, setCommandValue] = React.useState("");
+
+  // Ensure options and selected are always arrays
+  const safeOptions = React.useMemo(() => {
+    return Array.isArray(options) ? options : [];
+  }, [options]);
+
+  const safeSelected = React.useMemo(() => {
+    return Array.isArray(selected) ? selected : [];
+  }, [selected]);
 
   const selectedItems = React.useMemo(() => 
-    options.filter((option) => selected.includes(option.value)),
-    [options, selected]
+    safeOptions.filter((option) => safeSelected.includes(option.value)),
+    [safeOptions, safeSelected]
   );
 
   const handleSelect = React.useCallback((value: string) => {
-    const isSelected = selected.includes(value);
+    const isSelected = safeSelected.includes(value);
     if (isSelected) {
-      onChange(selected.filter((v) => v !== value));
+      onChange(safeSelected.filter((v) => v !== value));
     } else {
-      onChange([...selected, value]);
+      onChange([...safeSelected, value]);
     }
-  }, [onChange, selected]);
+  }, [onChange, safeSelected]);
 
   const handleRemove = React.useCallback((value: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    onChange(selected.filter((v) => v !== value));
-  }, [onChange, selected]);
+    onChange(safeSelected.filter((v) => v !== value));
+  }, [onChange, safeSelected]);
 
   return (
     <Popover 
       open={open} 
       onOpenChange={setOpen}
-      modal={false} // This helps prevent closing on click inside
+      modal={true}
     >
       <PopoverTrigger asChild>
         <Button
@@ -94,11 +104,11 @@ export function MultiCombobox({
         align="start"
         sideOffset={5}
       >
-        <Command shouldFilter={false}> {/* Prevent default filtering */}
+        <Command value={commandValue} onValueChange={setCommandValue}>
           <CommandInput placeholder={`Search...`} />
           <CommandEmpty>{emptyMessage}</CommandEmpty>
-          <CommandGroup className="max-h-[300px] overflow-auto">
-            {options.map((option) => (
+          <CommandGroup>
+            {safeOptions.map((option) => (
               <CommandItem
                 key={option.value}
                 value={option.value}
@@ -108,7 +118,7 @@ export function MultiCombobox({
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4",
-                    selected.includes(option.value) ? "opacity-100" : "opacity-0"
+                    safeSelected.includes(option.value) ? "opacity-100" : "opacity-0"
                   )}
                 />
                 {option.label}
