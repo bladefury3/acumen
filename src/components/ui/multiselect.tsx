@@ -31,7 +31,7 @@ interface MultiSelectProps {
 }
 
 export function MultiSelect({
-  options,
+  options = [],
   selected = [],
   onChange,
   placeholder = "Select options...",
@@ -39,8 +39,12 @@ export function MultiSelect({
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
 
+  // Ensure we're working with arrays even if undefined is passed
+  const safeOptions = Array.isArray(options) ? options : [];
+  const safeSelected = Array.isArray(selected) ? selected : [];
+
   const handleUnselect = (value: string) => {
-    onChange(selected.filter((item) => item !== value));
+    onChange(safeSelected.filter((item) => item !== value));
   };
 
   return (
@@ -53,8 +57,8 @@ export function MultiSelect({
           className="w-full justify-between"
         >
           <div className="flex gap-1 flex-wrap">
-            {selected.length === 0 && <span className="text-muted-foreground">{placeholder}</span>}
-            {selected.map((value) => (
+            {safeSelected.length === 0 && <span className="text-muted-foreground">{placeholder}</span>}
+            {safeSelected.map((value) => (
               <Badge
                 variant="secondary"
                 key={value}
@@ -64,7 +68,7 @@ export function MultiSelect({
                   handleUnselect(value);
                 }}
               >
-                {options.find((option) => option.value === value)?.label}
+                {safeOptions.find((option) => option.value === value)?.label}
                 <button
                   className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
@@ -90,27 +94,28 @@ export function MultiSelect({
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
+      <PopoverContent align="start" className="w-[--radix-popover-trigger-width] p-0">
         <Command>
           <CommandInput placeholder="Search..." className="h-9" />
           <CommandEmpty>{emptyMessage}</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-auto">
-            {options.map((option) => (
+            {safeOptions.map((option) => (
               <CommandItem
                 key={option.value}
                 onSelect={() => {
                   onChange(
-                    selected.includes(option.value)
-                      ? selected.filter((item) => item !== option.value)
-                      : [...selected, option.value]
+                    safeSelected.includes(option.value)
+                      ? safeSelected.filter((item) => item !== option.value)
+                      : [...safeSelected, option.value]
                   );
-                  setOpen(true); // Keep the popover open after selection
+                  setOpen(true);
                 }}
+                className="cursor-pointer"
               >
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4",
-                    selected.includes(option.value)
+                    safeSelected.includes(option.value)
                       ? "opacity-100"
                       : "opacity-0"
                   )}
