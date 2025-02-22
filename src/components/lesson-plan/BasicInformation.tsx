@@ -38,6 +38,8 @@ const BasicInformation = ({
   // Debugging logs to check the values
   console.log("Grade Levels:", safeGradeLevels);
   console.log("Subjects:", safeSubjects);
+  console.log("Raw Grade Levels Data:", JSON.stringify(gradeLevels, null, 2));
+  console.log("Raw Subjects Data:", JSON.stringify(subjects, null, 2));
 
   if (isLoading) {
     return (
