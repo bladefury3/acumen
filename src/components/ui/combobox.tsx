@@ -25,18 +25,32 @@ interface ComboboxProps {
 }
 
 export function Combobox({
-  options = [],  // <--- Default value to ensure options is always an array
-  value = "",   // <--- Default value to ensure value is always a string
+  options = [],  // Default to empty array
+  value = "",   // Default to empty string
   onChange,
   placeholder = "Select option...",
   emptyMessage = "No results found.",
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
-  // Validate options before rendering
-  const validatedOptions = Array.isArray(options)
-    ? validateOptions(options)
-    : [];
+  // Deep validation and memoization for options
+  const validatedOptions = React.useMemo(() => {
+    if (!Array.isArray(options)) return [];
+    return options
+      .filter(
+        (item) =>
+          item &&
+          typeof item === "object" &&
+          "value" in item &&
+          "label" in item &&
+          typeof item.value === "string" &&
+          typeof item.label === "string"
+      )
+      .map((item) => ({
+        value: String(item.value),
+        label: String(item.label),
+      }));
+  }, [options]);
 
   console.log("Validated Options:", validatedOptions);
   console.log("Combobox Value:", value);

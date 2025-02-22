@@ -32,11 +32,15 @@ const BasicInformation = ({
   } = useFormOptions();
 
   // More rigorous safety checks
-  const safeGradeLevels = validateOptions(gradeLevels);
-  const safeSubjects = validateOptions(subjects);
-  console.log("Combobox Options (Grade Levels):", JSON.stringify(safeGradeLevels, null, 2));
-  console.log("Selected Grade:", grade);
+  const safeGradeLevels = React.useMemo(
+    () => validateOptions(gradeLevels) ?? [],
+    [gradeLevels]
+  );
   
+  const safeSubjects = React.useMemo(
+    () => validateOptions(subjects) ?? [],
+    [subjects]
+  );
 
   if (isLoading) {
     return (
@@ -139,5 +143,9 @@ const BasicInformation = ({
     </div>
   );
 };
+console.log("Raw Grade Levels:", JSON.stringify(gradeLevels, null, 2));
+console.log("Raw Subjects:", JSON.stringify(subjects, null, 2));
+console.log("Safe Grade Levels:", JSON.stringify(safeGradeLevels, null, 2));
+console.log("Safe Subjects:", JSON.stringify(safeSubjects, null, 2));
 
 export default BasicInformation;
