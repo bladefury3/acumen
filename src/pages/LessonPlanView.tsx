@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,10 +30,17 @@ interface LessonPlanData {
   ai_response: string;
 }
 
+interface Activity {
+  title: string;
+  duration: string;
+  steps: string[];
+}
+
 interface ParsedSection {
   title: string;
   content: string[];
-  generated?: boolean; // Add the generated property as optional
+  activities?: Activity[];
+  generated?: boolean;
 }
 
 const LessonPlanView = () => {
@@ -44,6 +50,24 @@ const LessonPlanView = () => {
   const [parsedSections, setParsedSections] = useState<ParsedSection[]>([]);
   const [generatingSections, setGeneratingSections] = useState<Set<string>>(new Set());
 
+  const parseActivities = (content: string[]): Activity[] => {
+    return content.map(activity => {
+      const titleMatch = activity.match(/^\d+\.\s*\*\*(.*?)\*\*\s*\((\d+)\s*minutes\):/);
+      if (!titleMatch) return { title: activity, duration: "", steps: [] };
+
+      const [_, title, duration] = titleMatch;
+      
+      const description = activity.split(':')[1].trim();
+      const steps = description.split('.').map(step => step.trim()).filter(Boolean);
+
+      return {
+        title: title.trim(),
+        duration: `${duration} minutes`,
+        steps
+      };
+    });
+  };
+
   const parseAIResponse = (aiResponse: string): ParsedSection[] => {
     const sections: ParsedSection[] = [];
     const lines = aiResponse.split('\n');
@@ -52,20 +76,29 @@ const LessonPlanView = () => {
     lines.forEach(line => {
       if (line.startsWith('### ')) {
         if (currentSection) {
+          if (currentSection.title.toLowerCase().includes('activities')) {
+            currentSection.activities = parseActivities(currentSection.content);
+          }
           sections.push(currentSection);
         }
         currentSection = {
           title: line.replace('### ', '').trim(),
           content: [],
-          generated: false // Initialize generated as false for new sections
+          generated: false
         };
       }
       else if (line.trim().startsWith('- ') && currentSection) {
         currentSection.content.push(line.trim().replace('- ', ''));
       }
+      else if (/^\d+\.\s/.test(line.trim()) && currentSection) {
+        currentSection.content.push(line.trim());
+      }
     });
 
     if (currentSection) {
+      if (currentSection.title.toLowerCase().includes('activities')) {
+        currentSection.activities = parseActivities(currentSection.content);
+      }
       sections.push(currentSection);
     }
 
@@ -198,18 +231,42 @@ const LessonPlanView = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {parsedSections.map((section, index) => (
-            <Card key={index}>
+            <Card key={index} className={section.activities ? "col-span-2" : ""}>
               <CardHeader>
                 <CardTitle>{section.title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="prose prose-sm max-w-none">
-                  <ul className="list-disc pl-4 space-y-2">
-                    {section.content.map((item, idx) => (
-                      <li key={idx}>{item}</li>
+                {section.activities ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {section.activities.map((activity, idx) => (
+                      <Card key={idx} className="bg-accent/50">
+                        <CardHeader>
+                          <CardTitle className="text-lg">
+                            Activity {idx + 1}: {activity.title}
+                          </CardTitle>
+                          <CardDescription>{activity.duration}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="prose prose-sm max-w-none">
+                            <ul className="list-disc pl-4 space-y-2">
+                              {activity.steps.map((step, stepIdx) => (
+                                <li key={stepIdx}>{step}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
-                  </ul>
-                </div>
+                  </div>
+                ) : (
+                  <div className="prose prose-sm max-w-none">
+                    <ul className="list-disc pl-4 space-y-2">
+                      {section.content.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {!section.generated && (
                   <Button
                     variant="secondary"
