@@ -41,7 +41,7 @@ serve(async (req) => {
     // Prepare the prompt for Groq
     const systemPrompt = "Act as an expert instructional designer to create a lesson plan from the following information";
     const promptText = `
-      Create a detailed lesson plan with the following parameters:
+      Act as a instructional design expert. Create a detailed lesson plan with the following parameters:
       
       Objectives: ${objectives}
       Grade Level: ${grade}
