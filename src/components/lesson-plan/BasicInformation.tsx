@@ -1,4 +1,3 @@
-
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -24,18 +23,24 @@ const BasicInformation = ({
   duration,
   onFieldChange,
 }: BasicInformationProps) => {
-  const { gradeLevels, subjects, isLoading } = useFormOptions();
+  const { gradeLevels = [], subjects = [], isLoading } = useFormOptions();
+
+  // Ensure gradeLevels and subjects are always arrays
+  const safeGradeLevels = Array.isArray(gradeLevels) ? gradeLevels : [];
+  const safeSubjects = Array.isArray(subjects) ? subjects : [];
 
   if (isLoading) {
-    return <div className="space-y-6">
-      <Skeleton className="h-[100px] w-full" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Skeleton className="h-[40px] w-full" />
-        <Skeleton className="h-[40px] w-full" />
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-[100px] w-full" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Skeleton className="h-[40px] w-full" />
+          <Skeleton className="h-[40px] w-full" />
+          <Skeleton className="h-[40px] w-full" />
+        </div>
         <Skeleton className="h-[40px] w-full" />
       </div>
-      <Skeleton className="h-[40px] w-full" />
-    </div>;
+    );
   }
 
   return (
@@ -60,7 +65,7 @@ const BasicInformation = ({
             Grade Level<span className="text-red-500 ml-1">*</span>
           </Label>
           <Combobox
-            options={gradeLevels}
+            options={safeGradeLevels}
             value={grade}
             onChange={(value) => onFieldChange("grade", value)}
             placeholder="Select grade level"
@@ -72,7 +77,7 @@ const BasicInformation = ({
             Subject<span className="text-red-500 ml-1">*</span>
           </Label>
           <Combobox
-            options={subjects}
+            options={safeSubjects}
             value={subject}
             onChange={(value) => onFieldChange("subject", value)}
             placeholder="Select subject"
