@@ -9,6 +9,132 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activities: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      assessment_methods: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      curriculum_standards: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      grade_levels: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      learning_needs: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      learning_tools: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          value?: string
+        }
+        Relationships: []
+      }
       lesson_plans: {
         Row: {
           activities: string[] | null
@@ -95,6 +221,27 @@ export type Database = {
           subjects?: string[] | null
           updated_at?: string
           username?: string
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          value?: string
         }
         Relationships: []
       }
