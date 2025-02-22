@@ -23,11 +23,11 @@ const AdditionalSettings = ({
   onFieldChange,
 }: AdditionalSettingsProps) => {
   const { 
-    curriculumStandards,
-    learningTools: learningToolsOptions,
-    learningNeeds: learningNeedsOptions,
-    activities: activitiesOptions,
-    assessmentMethods,
+    curriculumStandards = [],
+    learningTools: learningToolsOptions = [],
+    learningNeeds: learningNeedsOptions = [],
+    activities: activitiesOptions = [],
+    assessmentMethods = [],
     isLoading 
   } = useFormOptions();
 

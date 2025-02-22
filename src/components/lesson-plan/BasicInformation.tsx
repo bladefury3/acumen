@@ -24,7 +24,7 @@ const BasicInformation = ({
   duration,
   onFieldChange,
 }: BasicInformationProps) => {
-  const { gradeLevels, subjects, isLoading } = useFormOptions();
+  const { gradeLevels = [], subjects = [], isLoading } = useFormOptions();
 
   if (isLoading) {
     return <div className="space-y-6">
