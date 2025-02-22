@@ -23,8 +23,8 @@ export interface Option {
 }
 
 interface MultiSelectProps {
-  options: Option[];
-  selected: string[];
+  options?: Option[];
+  selected?: string[];
   onChange: (values: string[]) => void;
   placeholder?: string;
   emptyMessage?: string;
@@ -43,9 +43,16 @@ export function MultiSelect({
   const safeOptions = Array.isArray(options) ? options : [];
   const safeSelected = Array.isArray(selected) ? selected : [];
 
-  const handleUnselect = (value: string) => {
-    onChange(safeSelected.filter((item) => item !== value));
-  };
+  // Ensure onChange is always a function
+  const handleChange = React.useCallback((values: string[]) => {
+    if (typeof onChange === 'function') {
+      onChange(values);
+    }
+  }, [onChange]);
+
+  const handleUnselect = React.useCallback((value: string) => {
+    handleChange(safeSelected.filter((item) => item !== value));
+  }, [safeSelected, handleChange]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -55,9 +62,12 @@ export function MultiSelect({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
+          type="button"
         >
           <div className="flex gap-1 flex-wrap">
-            {safeSelected.length === 0 && <span className="text-muted-foreground">{placeholder}</span>}
+            {safeSelected.length === 0 && (
+              <span className="text-muted-foreground">{placeholder}</span>
+            )}
             {safeSelected.map((value) => (
               <Badge
                 variant="secondary"
@@ -68,8 +78,9 @@ export function MultiSelect({
                   handleUnselect(value);
                 }}
               >
-                {safeOptions.find((option) => option.value === value)?.label}
+                {safeOptions.find((option) => option.value === value)?.label || value}
                 <button
+                  type="button"
                   className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -94,7 +105,7 @@ export function MultiSelect({
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[--radix-popover-trigger-width] p-0">
+      <PopoverContent align="start" className="p-0">
         <Command>
           <CommandInput placeholder="Search..." className="h-9" />
           <CommandEmpty>{emptyMessage}</CommandEmpty>
@@ -102,8 +113,9 @@ export function MultiSelect({
             {safeOptions.map((option) => (
               <CommandItem
                 key={option.value}
+                value={option.value}
                 onSelect={() => {
-                  onChange(
+                  handleChange(
                     safeSelected.includes(option.value)
                       ? safeSelected.filter((item) => item !== option.value)
                       : [...safeSelected, option.value]
