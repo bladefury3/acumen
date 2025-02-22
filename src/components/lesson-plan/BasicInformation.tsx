@@ -75,9 +75,9 @@ const BasicInformation = ({
           </Label>
           {safeGradeLevels.length > 0 ? (
             <Combobox
-              options={safeGradeLevels.length > 0 ? safeGradeLevels : [{ value: "none", label: "No options available" }]}
-              value={grade || "none"}
-              onChange={(value) => onFieldChange("grade", value !== "none" ? value : "")}
+              options={Array.isArray(safeGradeLevels) ? safeGradeLevels : []}
+              value={grade || ""}
+              onChange={(value) => onFieldChange("grade", value)}
               placeholder="Select grade level"
             />
           ) : (
@@ -94,8 +94,8 @@ const BasicInformation = ({
           </Label>
           {safeSubjects.length > 0 ? (
             <Combobox
-              options={safeSubjects}
-              value={subject}
+              options={Array.isArray(safeSubjects) ? safeSubjects : []}
+              value={subject || ""}
               onChange={(value) => onFieldChange("subject", value)}
               placeholder="Select subject"
             />

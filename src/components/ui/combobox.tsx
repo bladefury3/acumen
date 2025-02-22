@@ -25,8 +25,8 @@ interface ComboboxProps {
 }
 
 export function Combobox({
-  options,
-  value,
+  options = [],  // <--- Default value to ensure options is always an array
+  value = "",   // <--- Default value to ensure value is always a string
   onChange,
   placeholder = "Select option...",
   emptyMessage = "No results found.",
@@ -34,7 +34,12 @@ export function Combobox({
   const [open, setOpen] = React.useState(false);
 
   // Validate options before rendering
-  const validatedOptions = validateOptions(options);
+  const validatedOptions = Array.isArray(options)
+    ? validateOptions(options)
+    : [];
+
+  console.log("Validated Options:", validatedOptions);
+  console.log("Combobox Value:", value);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
