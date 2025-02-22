@@ -47,22 +47,28 @@ const BasicInformation = ({
   return (
     <div className="grid gap-6">
       <div className="space-y-2">
-        <Label htmlFor="objectives">Lesson Objectives</Label>
+        <Label htmlFor="objectives">
+          Lesson Objectives<span className="text-red-500 ml-1">*</span>
+        </Label>
         <Textarea
           id="objectives"
           placeholder="What will students learn?"
           className="min-h-[100px]"
           value={objectives}
           onChange={(e) => onFieldChange("objectives", e.target.value)}
+          required
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="grade">Grade Level</Label>
+          <Label htmlFor="grade">
+            Grade Level<span className="text-red-500 ml-1">*</span>
+          </Label>
           <Select
             value={grade}
             onValueChange={(value) => onFieldChange("grade", value)}
+            required
           >
             <SelectTrigger>
               <SelectValue placeholder="Select grade level" />
@@ -78,10 +84,13 @@ const BasicInformation = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="subject">Subject</Label>
+          <Label htmlFor="subject">
+            Subject<span className="text-red-500 ml-1">*</span>
+          </Label>
           <Select
             value={subject}
             onValueChange={(value) => onFieldChange("subject", value)}
+            required
           >
             <SelectTrigger>
               <SelectValue placeholder="Select subject" />
@@ -108,11 +117,14 @@ const BasicInformation = ({
       </div>
 
       <div className="space-y-2">
-        <Label>Lesson Duration</Label>
+        <Label>
+          Lesson Duration<span className="text-red-500 ml-1">*</span>
+        </Label>
         <RadioGroup
           value={duration}
           onValueChange={(value) => onFieldChange("duration", value)}
           className="flex gap-4 flex-wrap"
+          required
         >
           {["30", "45", "60", "90"].map((duration) => (
             <div key={duration} className="flex items-center space-x-2">
