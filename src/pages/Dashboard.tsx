@@ -2,11 +2,23 @@
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { FileText, Settings, Plus, Clock, Book, Target } from "lucide-react";
+import { FileText, Plus, Clock, Book, Target, Trash2 } from "lucide-react";
 import EmptyState from "@/components/dashboard/EmptyState";
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface LessonPlan {
   id: string;
@@ -28,9 +40,30 @@ const gradients = [
   "linear-gradient(90deg, hsla(186, 33%, 94%, 1) 0%, hsla(216, 41%, 79%, 1) 100%)",
 ];
 
+const capitalizeSubject = (subject: string) => {
+  return subject.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+};
+
 const Dashboard = ({ lessonPlans: propLessonPlans }: DashboardProps) => {
   const navigate = useNavigate();
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
+
+  const handleDeleteLessonPlan = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('lesson_plans')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setLessonPlans(prev => prev.filter(plan => plan.id !== id));
+      toast.success("Lesson plan deleted successfully");
+    } catch (error) {
+      console.error('Error deleting lesson plan:', error);
+      toast.error("Failed to delete lesson plan");
+    }
+  };
 
   useEffect(() => {
     const fetchLessonPlans = async () => {
@@ -62,7 +95,6 @@ const Dashboard = ({ lessonPlans: propLessonPlans }: DashboardProps) => {
 
   const sidebarItems = [
     { label: "My Lessons", href: "/dashboard", icon: FileText },
-    { label: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
   return (
@@ -92,22 +124,22 @@ const Dashboard = ({ lessonPlans: propLessonPlans }: DashboardProps) => {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {lessonPlans.map((plan, index) => (
-            <Link 
-              to={`/lesson-plan/${plan.id}`}
+            <Card 
               key={plan.id}
-              className="block transition-transform hover:scale-105"
+              className="relative group"
+              style={{ 
+                background: gradients[index % gradients.length],
+                border: 'none'
+              }}
             >
-              <Card 
-                className="h-full cursor-pointer overflow-hidden"
-                style={{ 
-                  background: gradients[index % gradients.length],
-                  border: 'none'
-                }}
+              <Link 
+                to={`/lesson-plan/${plan.id}`}
+                className="block transition-transform hover:scale-105"
               >
                 <CardHeader>
                   <div className="flex items-center gap-2 text-lg font-semibold">
                     <Book className="h-5 w-5" />
-                    {plan.subject}
+                    {capitalizeSubject(plan.subject)}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -124,8 +156,36 @@ const Dashboard = ({ lessonPlans: propLessonPlans }: DashboardProps) => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            </Link>
+              </Link>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Deleting this lesson plan will permanently remove all associated information. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-red-500 hover:bg-red-600"
+                      onClick={() => handleDeleteLessonPlan(plan.id)}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </Card>
           ))}
         </div>
       )}
