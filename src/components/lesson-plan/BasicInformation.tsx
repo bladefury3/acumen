@@ -23,11 +23,19 @@ const BasicInformation = ({
   duration,
   onFieldChange,
 }: BasicInformationProps) => {
-  const { gradeLevels = [], subjects = [], isLoading } = useFormOptions();
+  const {
+    gradeLevels = [],
+    subjects = [],
+    isLoading,
+  } = useFormOptions();
 
-  // Ensure gradeLevels and subjects are always arrays
+  // More rigorous safety checks
   const safeGradeLevels = Array.isArray(gradeLevels) ? gradeLevels : [];
   const safeSubjects = Array.isArray(subjects) ? subjects : [];
+
+  // Debugging logs to check the values
+  console.log("Grade Levels:", safeGradeLevels);
+  console.log("Subjects:", safeSubjects);
 
   if (isLoading) {
     return (
@@ -64,24 +72,38 @@ const BasicInformation = ({
           <Label htmlFor="grade">
             Grade Level<span className="text-red-500 ml-1">*</span>
           </Label>
-          <Combobox
-            options={safeGradeLevels}
-            value={grade}
-            onChange={(value) => onFieldChange("grade", value)}
-            placeholder="Select grade level"
-          />
+          {safeGradeLevels.length > 0 ? (
+            <Combobox
+              options={safeGradeLevels}
+              value={grade}
+              onChange={(value) => onFieldChange("grade", value)}
+              placeholder="Select grade level"
+            />
+          ) : (
+            <Input
+              disabled
+              placeholder="No grade levels available"
+            />
+          )}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="subject">
             Subject<span className="text-red-500 ml-1">*</span>
           </Label>
-          <Combobox
-            options={safeSubjects}
-            value={subject}
-            onChange={(value) => onFieldChange("subject", value)}
-            placeholder="Select subject"
-          />
+          {safeSubjects.length > 0 ? (
+            <Combobox
+              options={safeSubjects}
+              value={subject}
+              onChange={(value) => onFieldChange("subject", value)}
+              placeholder="Select subject"
+            />
+          ) : (
+            <Input
+              disabled
+              placeholder="No subjects available"
+            />
+          )}
         </div>
 
         <div className="space-y-2">
