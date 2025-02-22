@@ -35,11 +35,7 @@ const BasicInformation = ({
   const safeGradeLevels = validateOptions(gradeLevels);
   const safeSubjects = validateOptions(subjects);
 
-  // Debugging logs to check the values
-  console.log("Grade Levels:", safeGradeLevels);
-  console.log("Subjects:", safeSubjects);
-  console.log("Raw Grade Levels Data:", JSON.stringify(gradeLevels, null, 2));
-  console.log("Raw Subjects Data:", JSON.stringify(subjects, null, 2));
+  
 
   if (isLoading) {
     return (
@@ -78,9 +74,9 @@ const BasicInformation = ({
           </Label>
           {safeGradeLevels.length > 0 ? (
             <Combobox
-              options={safeGradeLevels.length > 0 ? safeGradeLevels : [{ value: "", label: "No options available" }]}
-              value={grade}
-              onChange={(value) => onFieldChange("grade", value)}
+              options={safeGradeLevels.length > 0 ? safeGradeLevels : [{ value: "none", label: "No options available" }]}
+              value={grade || "none"}
+              onChange={(value) => onFieldChange("grade", value !== "none" ? value : "")}
               placeholder="Select grade level"
             />
           ) : (
@@ -90,6 +86,8 @@ const BasicInformation = ({
             />
           )}
         </div>
+        console.log("Combobox Options (Grade Levels):", JSON.stringify(safeGradeLevels, null, 2));
+        console.log("Selected Grade:", grade);
 
         <div className="space-y-2">
           <Label htmlFor="subject">
