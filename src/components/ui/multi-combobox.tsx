@@ -26,49 +26,33 @@ interface MultiComboboxProps {
 }
 
 export function MultiCombobox({
-  options = [], // Default to empty array
-  selected = [], // Default to empty array
+  options,
+  selected,
   onChange,
   placeholder = "Select options...",
   emptyMessage = "No results found.",
 }: MultiComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const [commandValue, setCommandValue] = React.useState("");
 
-  // Ensure options and selected are always arrays
-  const safeOptions = React.useMemo(() => {
-    return Array.isArray(options) ? options : [];
-  }, [options]);
-
-  const safeSelected = React.useMemo(() => {
-    return Array.isArray(selected) ? selected : [];
-  }, [selected]);
-
-  const selectedItems = React.useMemo(() => 
-    safeOptions.filter((option) => safeSelected.includes(option.value)),
-    [safeOptions, safeSelected]
+  const selectedItems = options.filter((option) =>
+    selected.includes(option.value)
   );
 
-  const handleSelect = React.useCallback((value: string) => {
-    const isSelected = safeSelected.includes(value);
+  const handleSelect = (value: string) => {
+    const isSelected = selected.includes(value);
     if (isSelected) {
-      onChange(safeSelected.filter((v) => v !== value));
+      onChange(selected.filter((v) => v !== value));
     } else {
-      onChange([...safeSelected, value]);
+      onChange([...selected, value]);
     }
-  }, [onChange, safeSelected]);
+  };
 
-  const handleRemove = React.useCallback((value: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    onChange(safeSelected.filter((v) => v !== value));
-  }, [onChange, safeSelected]);
+  const handleRemove = (value: string) => {
+    onChange(selected.filter((v) => v !== value));
+  };
 
   return (
-    <Popover 
-      open={open} 
-      onOpenChange={setOpen}
-      modal={true}
-    >
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -88,7 +72,10 @@ export function MultiCombobox({
                 <button
                   type="button"
                   className="ml-1 ring-offset-background rounded-full outline-none hover:bg-secondary"
-                  onClick={(e) => handleRemove(item.value, e)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemove(item.value);
+                  }}
                 >
                   <X className="h-3 w-3" />
                   <span className="sr-only">Remove</span>
@@ -99,26 +86,21 @@ export function MultiCombobox({
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 absolute right-3" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="w-full min-w-[var(--radix-popover-trigger-width)] p-0 bg-background"
-        align="start"
-        sideOffset={5}
-      >
-        <Command value={commandValue} onValueChange={setCommandValue}>
+      <PopoverContent className="w-full min-w-[var(--radix-popover-trigger-width)] p-0 bg-background">
+        <Command>
           <CommandInput placeholder={`Search...`} />
           <CommandEmpty>{emptyMessage}</CommandEmpty>
-          <CommandGroup>
-            {safeOptions.map((option) => (
+          <CommandGroup className="max-h-[300px] overflow-auto">
+            {options.map((option) => (
               <CommandItem
                 key={option.value}
                 value={option.value}
                 onSelect={() => handleSelect(option.value)}
-                className="cursor-pointer"
               >
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4",
-                    safeSelected.includes(option.value) ? "opacity-100" : "opacity-0"
+                    selected.includes(option.value) ? "opacity-100" : "opacity-0"
                   )}
                 />
                 {option.label}
