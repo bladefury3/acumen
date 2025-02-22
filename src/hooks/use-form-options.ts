@@ -7,90 +7,46 @@ export interface Option {
   label: string;
 }
 
+// Helper function to fetch options from a table
+const fetchOptions = async (tableName: string) => {
+  const { data, error } = await supabase
+    .from(tableName)
+    .select("value, label")
+    .order("label");
+  if (error) throw error;
+  return data as Option[];
+};
+
 export const useFormOptions = () => {
-  const { data: gradeLevels, isLoading: isLoadingGrades } = useQuery({
-    queryKey: ["gradeLevels"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("grade_levels")
-        .select("value, label")
-        .order("value");
-      if (error) throw error;
-      return data as Option[];
-    },
-  });
+  // Array of table names and query keys for easy maintenance
+  const tables = [
+    { key: "gradeLevels", table: "grade_levels" },
+    { key: "subjects", table: "subjects" },
+    { key: "curriculumStandards", table: "curriculum_standards" },
+    { key: "learningTools", table: "learning_tools" },
+    { key: "learningNeeds", table: "learning_needs" },
+    { key: "activities", table: "activities" },
+    { key: "assessmentMethods", table: "assessment_methods" },
+  ];
 
-  const { data: subjects, isLoading: isLoadingSubjects } = useQuery({
-    queryKey: ["subjects"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("subjects")
-        .select("value, label")
-        .order("label");
-      if (error) throw error;
-      return data as Option[];
-    },
-  });
+  // Use map to dynamically create queries
+  const queries = tables.map(({ key, table }) =>
+    useQuery({
+      queryKey: [key],
+      queryFn: () => fetchOptions(table),
+    })
+  );
 
-  const { data: curriculumStandards, isLoading: isLoadingCurriculum } = useQuery({
-    queryKey: ["curriculumStandards"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("curriculum_standards")
-        .select("value, label")
-        .order("label");
-      if (error) throw error;
-      return data as Option[];
-    },
-  });
-
-  const { data: learningTools, isLoading: isLoadingTools } = useQuery({
-    queryKey: ["learningTools"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("learning_tools")
-        .select("value, label")
-        .order("label");
-      if (error) throw error;
-      return data as Option[];
-    },
-  });
-
-  const { data: learningNeeds, isLoading: isLoadingNeeds } = useQuery({
-    queryKey: ["learningNeeds"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("learning_needs")
-        .select("value, label")
-        .order("label");
-      if (error) throw error;
-      return data as Option[];
-    },
-  });
-
-  const { data: activities, isLoading: isLoadingActivities } = useQuery({
-    queryKey: ["activities"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("activities")
-        .select("value, label")
-        .order("label");
-      if (error) throw error;
-      return data as Option[];
-    },
-  });
-
-  const { data: assessmentMethods, isLoading: isLoadingAssessments } = useQuery({
-    queryKey: ["assessmentMethods"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("assessment_methods")
-        .select("value, label")
-        .order("label");
-      if (error) throw error;
-      return data as Option[];
-    },
-  });
+  // Destructure and organize data and loading states
+  const [
+    { data: gradeLevels, isLoading: isLoadingGrades },
+    { data: subjects, isLoading: isLoadingSubjects },
+    { data: curriculumStandards, isLoading: isLoadingCurriculum },
+    { data: learningTools, isLoading: isLoadingTools },
+    { data: learningNeeds, isLoading: isLoadingNeeds },
+    { data: activities, isLoading: isLoadingActivities },
+    { data: assessmentMethods, isLoading: isLoadingAssessments },
+  ] = queries;
 
   const isLoading =
     isLoadingGrades ||
