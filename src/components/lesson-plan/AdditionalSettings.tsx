@@ -1,7 +1,6 @@
-
 import { Label } from "@/components/ui/label";
-import { MultiSelect } from "@/components/ui/multiselect";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import PreferenceCheckboxGroup from "@/components/onboarding/PreferenceCheckboxGroup";
 
 interface AdditionalSettingsProps {
   curriculum: string;
@@ -110,63 +109,58 @@ const AdditionalSettings = ({
   onFieldChange,
 }: AdditionalSettingsProps) => {
   return (
-    <div className="space-y-6 pt-4">
-      <div className="space-y-2">
-        <Label>Curriculum Standards</Label>
-        <Select
+    <div className="space-y-8 pt-4">
+      <div className="space-y-4">
+        <Label className="text-base">Curriculum Standards</Label>
+        <RadioGroup
           value={curriculum}
           onValueChange={(value) => onFieldChange("curriculum", value)}
+          className="gap-3"
         >
-          <SelectTrigger>
-            <SelectValue placeholder="Select curriculum standard" />
-          </SelectTrigger>
-          <SelectContent>
-            {curriculumOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
+          {curriculumOptions.map((option) => (
+            <div key={option.value} className="flex items-center space-x-2">
+              <RadioGroupItem value={option.value} id={option.value} />
+              <Label htmlFor={option.value} className="font-normal">
                 {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
       </div>
 
-      <div className="space-y-2">
-        <Label>Learning Tools</Label>
-        <MultiSelect
+      <div className="space-y-4">
+        <Label className="text-base">Learning Tools</Label>
+        <PreferenceCheckboxGroup
           options={learningToolsOptions}
-          selected={learningTools}
+          selectedValues={learningTools}
           onChange={(values) => onFieldChange("learningTools", values)}
-          placeholder="Select learning tools..."
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>Learning Needs</Label>
-        <MultiSelect
+      <div className="space-y-4">
+        <Label className="text-base">Learning Needs</Label>
+        <PreferenceCheckboxGroup
           options={learningNeedsOptions}
-          selected={learningNeeds}
+          selectedValues={learningNeeds}
           onChange={(values) => onFieldChange("learningNeeds", values)}
-          placeholder="Select learning needs..."
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>Lesson Activities</Label>
-        <MultiSelect
+      <div className="space-y-4">
+        <Label className="text-base">Lesson Activities</Label>
+        <PreferenceCheckboxGroup
           options={activitiesOptions}
-          selected={activities}
+          selectedValues={activities}
           onChange={(values) => onFieldChange("activities", values)}
-          placeholder="Select lesson activities..."
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>Assessment Methods</Label>
-        <MultiSelect
+      <div className="space-y-4">
+        <Label className="text-base">Assessment Methods</Label>
+        <PreferenceCheckboxGroup
           options={assessmentOptions}
-          selected={assessments}
+          selectedValues={assessments}
           onChange={(values) => onFieldChange("assessments", values)}
-          placeholder="Select assessment methods..."
         />
       </div>
     </div>

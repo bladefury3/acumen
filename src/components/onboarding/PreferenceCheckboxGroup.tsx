@@ -1,6 +1,7 @@
 
 import * as React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 interface PreferenceOption {
   label: string;
@@ -15,7 +16,7 @@ interface PreferenceCheckboxGroupProps {
 
 const PreferenceCheckboxGroup = ({
   options,
-  selectedValues,
+  selectedValues = [],
   onChange,
 }: PreferenceCheckboxGroupProps) => {
   const handleCheckboxChange = (value: string, checked: boolean) => {
@@ -27,9 +28,9 @@ const PreferenceCheckboxGroup = ({
   };
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid sm:grid-cols-2 gap-4">
       {options.map((option) => (
-        <div key={option.value} className="flex items-center space-x-2">
+        <div key={option.value} className="flex items-start space-x-2">
           <Checkbox
             id={option.value}
             checked={selectedValues.includes(option.value)}
@@ -37,12 +38,12 @@ const PreferenceCheckboxGroup = ({
               handleCheckboxChange(option.value, checked as boolean)
             }
           />
-          <label
+          <Label
             htmlFor={option.value}
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm font-normal leading-tight"
           >
             {option.label}
-          </label>
+          </Label>
         </div>
       ))}
     </div>
