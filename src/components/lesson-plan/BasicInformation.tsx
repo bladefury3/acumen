@@ -5,6 +5,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Combobox } from "@/components/ui/combobox";
 import { useFormOptions } from "@/hooks/use-form-options";
 import { Skeleton } from "@/components/ui/skeleton";
+import { validateOptions } from "@/utils/dataValidation";
 
 interface BasicInformationProps {
   objectives: string;
@@ -14,6 +15,7 @@ interface BasicInformationProps {
   duration: string;
   onFieldChange: (field: string, value: string) => void;
 }
+
 
 const BasicInformation = ({
   objectives,
@@ -30,8 +32,8 @@ const BasicInformation = ({
   } = useFormOptions();
 
   // More rigorous safety checks
-  const safeGradeLevels = Array.isArray(gradeLevels) ? gradeLevels : [];
-  const safeSubjects = Array.isArray(subjects) ? subjects : [];
+  const safeGradeLevels = validateOptions(gradeLevels);
+  const safeSubjects = validateOptions(subjects);
 
   // Debugging logs to check the values
   console.log("Grade Levels:", safeGradeLevels);
@@ -74,7 +76,7 @@ const BasicInformation = ({
           </Label>
           {safeGradeLevels.length > 0 ? (
             <Combobox
-              options={safeGradeLevels}
+              options={safeGradeLevels.length > 0 ? safeGradeLevels : [{ value: "", label: "No options available" }]}
               value={grade}
               onChange={(value) => onFieldChange("grade", value)}
               placeholder="Select grade level"
