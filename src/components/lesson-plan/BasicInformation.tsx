@@ -1,3 +1,4 @@
+
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -5,7 +6,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Combobox } from "@/components/ui/combobox";
 import { useFormOptions } from "@/hooks/use-form-options";
 import { Skeleton } from "@/components/ui/skeleton";
-import { validateOptions } from "@/utils/dataValidation";
 
 interface BasicInformationProps {
   objectives: string;
@@ -16,7 +16,6 @@ interface BasicInformationProps {
   onFieldChange: (field: string, value: string) => void;
 }
 
-
 const BasicInformation = ({
   objectives,
   grade,
@@ -25,35 +24,18 @@ const BasicInformation = ({
   duration,
   onFieldChange,
 }: BasicInformationProps) => {
-  const {
-    gradeLevels = [],
-    subjects = [],
-    isLoading,
-  } = useFormOptions();
-
-  // More rigorous safety checks
-  const safeGradeLevels = React.useMemo(
-    () => validateOptions(gradeLevels) ?? [],
-    [gradeLevels]
-  );
-  
-  const safeSubjects = React.useMemo(
-    () => validateOptions(subjects) ?? [],
-    [subjects]
-  );
+  const { gradeLevels, subjects, isLoading } = useFormOptions();
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-[100px] w-full" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Skeleton className="h-[40px] w-full" />
-          <Skeleton className="h-[40px] w-full" />
-          <Skeleton className="h-[40px] w-full" />
-        </div>
+    return <div className="space-y-6">
+      <Skeleton className="h-[100px] w-full" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Skeleton className="h-[40px] w-full" />
+        <Skeleton className="h-[40px] w-full" />
         <Skeleton className="h-[40px] w-full" />
       </div>
-    );
+      <Skeleton className="h-[40px] w-full" />
+    </div>;
   }
 
   return (
@@ -77,38 +59,24 @@ const BasicInformation = ({
           <Label htmlFor="grade">
             Grade Level<span className="text-red-500 ml-1">*</span>
           </Label>
-          {safeGradeLevels.length > 0 ? (
-            <Combobox
-              options={Array.isArray(safeGradeLevels) ? safeGradeLevels : []}
-              value={grade || ""}
-              onChange={(value) => onFieldChange("grade", value)}
-              placeholder="Select grade level"
-            />
-          ) : (
-            <Input
-              disabled
-              placeholder="No grade levels available"
-            />
-          )}
+          <Combobox
+            options={gradeLevels}
+            value={grade}
+            onChange={(value) => onFieldChange("grade", value)}
+            placeholder="Select grade level"
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="subject">
             Subject<span className="text-red-500 ml-1">*</span>
           </Label>
-          {safeSubjects.length > 0 ? (
-            <Combobox
-              options={Array.isArray(safeSubjects) ? safeSubjects : []}
-              value={subject || ""}
-              onChange={(value) => onFieldChange("subject", value)}
-              placeholder="Select subject"
-            />
-          ) : (
-            <Input
-              disabled
-              placeholder="No subjects available"
-            />
-          )}
+          <Combobox
+            options={subjects}
+            value={subject}
+            onChange={(value) => onFieldChange("subject", value)}
+            placeholder="Select subject"
+          />
         </div>
 
         <div className="space-y-2">
@@ -143,9 +111,5 @@ const BasicInformation = ({
     </div>
   );
 };
-console.log("Raw Grade Levels:", JSON.stringify(gradeLevels, null, 2));
-console.log("Raw Subjects:", JSON.stringify(subjects, null, 2));
-console.log("Safe Grade Levels:", JSON.stringify(safeGradeLevels, null, 2));
-console.log("Safe Subjects:", JSON.stringify(safeSubjects, null, 2));
 
 export default BasicInformation;
