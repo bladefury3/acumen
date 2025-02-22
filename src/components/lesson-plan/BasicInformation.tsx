@@ -34,7 +34,8 @@ const BasicInformation = ({
   // More rigorous safety checks
   const safeGradeLevels = validateOptions(gradeLevels);
   const safeSubjects = validateOptions(subjects);
-
+  console.log("Combobox Options (Grade Levels):", JSON.stringify(safeGradeLevels, null, 2));
+  console.log("Selected Grade:", grade);
   
 
   if (isLoading) {
@@ -86,8 +87,6 @@ const BasicInformation = ({
             />
           )}
         </div>
-        console.log("Combobox Options (Grade Levels):", JSON.stringify(safeGradeLevels, null, 2));
-        console.log("Selected Grade:", grade);
 
         <div className="space-y-2">
           <Label htmlFor="subject">
