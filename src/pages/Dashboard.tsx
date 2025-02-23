@@ -27,11 +27,6 @@ interface LessonPlan {
   objectives: string;
 }
 
-interface DashboardProps {
-  lessonPlans: LessonPlan[];
-  onCreateLessonPlan: () => void;
-}
-
 const gradients = [
   "linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%)",
   "linear-gradient(to right, #c1c161 0%, #c1c161 0%, #d4d4b1 100%)",
@@ -44,7 +39,7 @@ const capitalizeSubject = (subject: string) => {
   return subject.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 };
 
-const Dashboard = ({ lessonPlans: propLessonPlans }: DashboardProps) => {
+const Dashboard = () => {
   const navigate = useNavigate();
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
 
