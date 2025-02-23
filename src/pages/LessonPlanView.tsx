@@ -45,12 +45,15 @@ const LessonPlanView = () => {
 
   const parseActivities = (content: string[]): Activity[] => {
     return content.map(activity => {
-      const titleMatch = activity.match(/Activity\s+\d+:\s+([^(]+)\s*\((\d+)\s*minutes\)/i);
-      if (!titleMatch) return { title: activity, duration: "", steps: [] };
+      // Strip any HTML tags from the activity content
+      const cleanActivity = activity.replace(/<[^>]*>/g, '');
+      
+      const titleMatch = cleanActivity.match(/Activity\s+\d+:\s+([^(]+)\s*\((\d+)\s*minutes\)/i);
+      if (!titleMatch) return { title: cleanActivity, duration: "", steps: [] };
 
       const [_, title, duration] = titleMatch;
       
-      const description = activity.split(':').slice(2).join(':').trim();
+      const description = cleanActivity.split(':').slice(2).join(':').trim();
       const steps = description.split(/\.\s+/)
         .map(step => step.trim())
         .filter(Boolean)
@@ -70,7 +73,10 @@ const LessonPlanView = () => {
     let currentSection: ParsedSection | null = null;
 
     lines.forEach(line => {
-      if (line.startsWith('### ')) {
+      // Strip HTML tags for section headers
+      const cleanLine = line.replace(/<[^>]*>/g, '');
+      
+      if (cleanLine.startsWith('### ')) {
         if (currentSection) {
           if (currentSection.title.toLowerCase().includes('activities')) {
             currentSection.activities = parseActivities(currentSection.content);
@@ -78,16 +84,16 @@ const LessonPlanView = () => {
           sections.push(currentSection);
         }
         currentSection = {
-          title: line.replace('### ', '').trim(),
+          title: cleanLine.replace('### ', '').trim(),
           content: [],
           generated: false
         };
       }
-      else if (line.trim().startsWith('- ') && currentSection) {
-        currentSection.content.push(line.trim().replace('- ', ''));
+      else if (cleanLine.trim().startsWith('- ') && currentSection) {
+        currentSection.content.push(cleanLine.trim().replace('- ', ''));
       }
-      else if (/^\d+\.\s/.test(line.trim()) && currentSection) {
-        currentSection.content.push(line.trim());
+      else if (/^\d+\.\s/.test(cleanLine.trim()) && currentSection) {
+        currentSection.content.push(cleanLine.trim());
       }
     });
 

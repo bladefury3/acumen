@@ -31,16 +31,23 @@ const ContentSection = ({
   onGenerateMore,
   isGenerating,
 }: ContentSectionProps) => {
-  const renderMarkdown = (content: string) => {
-    return content.split('\n').map((line, index) => (
-      <p key={index} className="mb-2">{line}</p>
+  const renderContent = (content: string) => {
+    // Remove any potential HTML tags from content for security
+    const sanitizedContent = content
+      .replace(/<[^>]*>/g, '')
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean);
+
+    return sanitizedContent.map((line, index) => (
+      <div key={index} className="mb-2">{line}</div>
     ));
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">{title}</CardTitle>
+        <CardTitle as="h2">{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {activities ? (
@@ -59,7 +66,7 @@ const ContentSection = ({
           <div className="prose prose-sm max-w-none">
             <ul className="list-disc pl-4 space-y-2">
               {content.map((item, idx) => (
-                <li key={idx}>{renderMarkdown(item)}</li>
+                <li key={idx}>{renderContent(item)}</li>
               ))}
             </ul>
           </div>
