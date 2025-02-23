@@ -63,7 +63,7 @@ serve(async (req) => {
       6. Differentiation Strategies
       7. Closure      
       
-      Don't include the numbering for all sections.
+      Don't include the numbering for all sections. make sure the output is in markdown
     `.trim();
 
     const promptData = {
