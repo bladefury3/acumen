@@ -49,8 +49,8 @@ const ActivityCard = ({ index, title, duration, steps }: ActivityProps) => {
         <div className="prose prose-sm max-w-none">
           <h3 className="text-sm font-medium mb-2">Instructions:</h3>
           <ul className="list-decimal pl-4 space-y-2">
-            {steps.map((step, stepIdx) => (
-              <li key={stepIdx}>{step}</li>
+            {steps.map((instruction, stepIdx) => (
+              <li key={stepIdx}>{instruction}</li>
             ))}
           </ul>
         </div>
