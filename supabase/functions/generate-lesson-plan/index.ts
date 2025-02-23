@@ -61,9 +61,7 @@ serve(async (req) => {
       4. Main Activities
       5. Assessment Strategies
       6. Differentiation Strategies
-      7. Closure      
-      
-      Don't include the numbering for all sections. make sure the output is in markdown
+      7. Closure
     `.trim();
 
     const promptData = {
