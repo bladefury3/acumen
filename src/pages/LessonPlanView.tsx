@@ -13,7 +13,6 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { FileText, Settings, Share, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 interface LessonPlanData {
   id: string;
@@ -52,15 +51,31 @@ const LessonPlanView = () => {
 
   const parseActivities = (content: string[]): Activity[] => {
     return content.map(activity => {
-      // Match "Activity X: Title (duration)" pattern
       const titleMatch = activity.match(/Activity\s+\d+:\s+([^(]+)\s*\((\d+)\s*minutes\)/i);
-      if (!titleMatch) return { title: activity, duration: "", steps: [] };
+      
+      if (!titleMatch) {
+        // If no match found, try to extract just the title and duration
+        const basicMatch = activity.match(/([^(]+)\s*\((\d+)\s*minutes\)/i);
+        if (basicMatch) {
+          const [_, title, duration] = basicMatch;
+          const restOfContent = activity.split(')').slice(1).join(')').trim();
+          const steps = restOfContent.split(/[.!?]\s+/)
+            .map(step => step.trim())
+            .filter(Boolean)
+            .map(step => step.endsWith('.') ? step : `${step}.`);
+          
+          return {
+            title: title.trim(),
+            duration: `${duration} minutes`,
+            steps
+          };
+        }
+        return { title: activity, duration: "", steps: [] };
+      }
 
       const [_, title, duration] = titleMatch;
-      
-      // Split the remaining content into steps
       const description = activity.split(':').slice(2).join(':').trim();
-      const steps = description.split(/\.\s+/)
+      const steps = description.split(/[.!?]\s+/)
         .map(step => step.trim())
         .filter(Boolean)
         .map(step => step.endsWith('.') ? step : `${step}.`);
@@ -75,37 +90,37 @@ const LessonPlanView = () => {
 
   const parseAIResponse = (aiResponse: string): ParsedSection[] => {
     const sections: ParsedSection[] = [];
-    const lines = aiResponse.split('\n');
     let currentSection: ParsedSection | null = null;
 
-    lines.forEach(line => {
-      if (line.startsWith('### ')) {
-        if (currentSection) {
-          if (currentSection.title.toLowerCase().includes('activities')) {
-            currentSection.activities = parseActivities(currentSection.content);
-          }
-          sections.push(currentSection);
-        }
-        currentSection = {
-          title: line.replace('### ', '').trim(),
-          content: [],
+    // Split by markdown headers (###) and process each section
+    const sectionTexts = aiResponse.split(/(?=###\s)/);
+
+    sectionTexts.forEach(sectionText => {
+      const lines = sectionText.split('\n').map(line => line.trim()).filter(Boolean);
+      
+      if (lines.length === 0) return;
+
+      const titleLine = lines[0];
+      const title = titleLine.replace('###', '').trim();
+      const content = lines.slice(1)
+        .filter(line => line.startsWith('-') || /^\d+\./.test(line))
+        .map(line => line.replace(/^-\s*/, '').replace(/^\d+\.\s*/, '').trim());
+
+      if (title.toLowerCase().includes('activities')) {
+        sections.push({
+          title,
+          content: content,
+          activities: parseActivities(content),
           generated: false
-        };
-      }
-      else if (line.trim().startsWith('- ') && currentSection) {
-        currentSection.content.push(line.trim().replace('- ', ''));
-      }
-      else if (/^\d+\.\s/.test(line.trim()) && currentSection) {
-        currentSection.content.push(line.trim());
+        });
+      } else {
+        sections.push({
+          title,
+          content: content,
+          generated: false
+        });
       }
     });
-
-    if (currentSection) {
-      if (currentSection.title.toLowerCase().includes('activities')) {
-        currentSection.activities = parseActivities(currentSection.content);
-      }
-      sections.push(currentSection);
-    }
 
     return sections;
   };
@@ -166,7 +181,9 @@ const LessonPlanView = () => {
         setLessonPlan(data);
         
         if (data.ai_response) {
+          console.log('AI Response:', data.ai_response); // Debug log
           const sections = parseAIResponse(data.ai_response);
+          console.log('Parsed Sections:', sections); // Debug log
           setParsedSections(sections);
         }
       } catch (error) {
@@ -208,12 +225,6 @@ const LessonPlanView = () => {
     );
   }
 
-  const renderMarkdown = (content: string) => {
-    return content.split('\n').map((line, index) => (
-      <p key={index} className="mb-2">{line}</p>
-    ));
-  };
-
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8">
@@ -244,7 +255,7 @@ const LessonPlanView = () => {
           {parsedSections.map((section, index) => (
             <Card key={index}>
               <CardHeader>
-                <CardTitle as="h2">{section.title}</CardTitle>
+                <CardTitle>{section.title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {section.activities ? (
@@ -252,7 +263,7 @@ const LessonPlanView = () => {
                     {section.activities.map((activity, idx) => (
                       <Card key={idx} className="bg-accent/50">
                         <CardHeader>
-                          <CardTitle as="h2">Activity {idx + 1}: {activity.title}</CardTitle>
+                          <CardTitle>{activity.title}</CardTitle>
                           <CardDescription>{activity.duration}</CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -272,7 +283,7 @@ const LessonPlanView = () => {
                   <div className="prose prose-sm max-w-none">
                     <ul className="list-disc pl-4 space-y-2">
                       {section.content.map((item, idx) => (
-                        <li key={idx}>{renderMarkdown(item)}</li>
+                        <li key={idx}>{item}</li>
                       ))}
                     </ul>
                   </div>
@@ -297,3 +308,4 @@ const LessonPlanView = () => {
 };
 
 export default LessonPlanView;
+
