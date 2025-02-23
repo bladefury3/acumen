@@ -47,7 +47,7 @@ const ContentSection = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle as="h2">{title}</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {activities ? (
