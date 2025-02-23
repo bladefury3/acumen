@@ -14,11 +14,35 @@ interface ActivityProps {
   steps: string[];
 }
 
+const parseActivityTitle = (rawTitle: string) => {
+  // Match the pattern "Activity X: Title (duration): Instructions"
+  const titleMatch = rawTitle.match(/Activity\s+\d+:\s+([^(]+)\s*\((\d+)\s*minutes\)/i);
+  
+  if (!titleMatch) {
+    return {
+      title: rawTitle,
+      duration: "",
+      instruction: ""
+    };
+  }
+
+  const [_, title, duration] = titleMatch;
+  const instruction = rawTitle.split(':').slice(2).join(':').trim();
+
+  return {
+    title: title.trim(),
+    duration: `${duration} minutes`,
+    instruction
+  };
+};
+
 const ActivityCard = ({ index, title, duration, steps }: ActivityProps) => {
+  const { title: parsedTitle } = parseActivityTitle(title);
+  
   return (
     <Card className="bg-accent/50">
       <CardHeader>
-        <CardTitle className="text-xl">Activity {index + 1}: {title}</CardTitle>
+        <CardTitle className="text-xl">Activity {index + 1}: {parsedTitle}</CardTitle>
         <CardDescription>{duration}</CardDescription>
       </CardHeader>
       <CardContent>
