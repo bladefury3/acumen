@@ -3,9 +3,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Combobox } from "@/components/ui/combobox";
 import { useFormOptions } from "@/hooks/use-form-options";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 interface BasicInformationProps {
   objectives: string;
@@ -55,29 +55,48 @@ const BasicInformation = ({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="space-y-2">
-          <Label htmlFor="grade">
-            Grade Level<span className="text-red-500 ml-1">*</span>
-          </Label>
-          <Combobox
-            options={gradeLevels}
-            value={grade}
-            onChange={(value) => onFieldChange("grade", value)}
-            placeholder="Select grade level"
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="grade">
+          Grade Level<span className="text-red-500 ml-1">*</span>
+        </Label>
+        <Select
+          value={grade}
+          onValueChange={(value) => onFieldChange("grade", value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select grade level" />
+          </SelectTrigger>
+          <SelectContent>
+            {gradeLevels.map((level) => (
+              <SelectItem key={level.value} value={level.value}>
+                {level.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="subject">
-            Subject<span className="text-red-500 ml-1">*</span>
-          </Label>
-          <Combobox
-            options={subjects}
-            value={subject}
-            onChange={(value) => onFieldChange("subject", value)}
-            placeholder="Select subject"
-          />
-        </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="subject">
+          Subject<span className="text-red-500 ml-1">*</span>
+        </Label>
+        <Select
+          value={subject}
+          onValueChange={(value) => onFieldChange("subject", value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select subject" />
+          </SelectTrigger>
+          <SelectContent>
+            {subjects.map((sub) => (
+              <SelectItem key={sub.value} value={sub.value}>
+                {sub.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
         <div className="space-y-2">
           <Label htmlFor="funElements">Fun Elements</Label>
