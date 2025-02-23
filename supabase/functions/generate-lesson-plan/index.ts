@@ -62,8 +62,8 @@ serve(async (req) => {
       5. Assessment Strategies
       6. Differentiation Strategies
       7. Closure      
-
-      Make sure the output is html & not markdown
+      
+      Don't include the numbering for all sections.
     `.trim();
 
     const promptData = {
