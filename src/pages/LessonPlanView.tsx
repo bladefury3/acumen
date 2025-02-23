@@ -1,19 +1,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { FileText, Settings, Share, ChevronRight } from "lucide-react";
+import { FileText, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import LessonHeader from "@/components/lesson-plan/LessonHeader";
+import ContentSection from "@/components/lesson-plan/ContentSection";
 
 interface LessonPlanData {
   id: string;
@@ -52,13 +45,11 @@ const LessonPlanView = () => {
 
   const parseActivities = (content: string[]): Activity[] => {
     return content.map(activity => {
-      // Match "Activity X: Title (duration)" pattern
       const titleMatch = activity.match(/Activity\s+\d+:\s+([^(]+)\s*\((\d+)\s*minutes\)/i);
       if (!titleMatch) return { title: activity, duration: "", steps: [] };
 
       const [_, title, duration] = titleMatch;
       
-      // Split the remaining content into steps
       const description = activity.split(':').slice(2).join(':').trim();
       const steps = description.split(/\.\s+/)
         .map(step => step.trim())
@@ -208,87 +199,27 @@ const LessonPlanView = () => {
     );
   }
 
-  const renderMarkdown = (content: string) => {
-    return content.split('\n').map((line, index) => (
-      <p key={index} className="mb-2">{line}</p>
-    ));
-  };
-
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link to="/dashboard" className="hover:text-foreground">
-            Dashboard
-          </Link>
-          <ChevronRight className="h-4 w-4 mx-2" />
-          <span className="text-foreground">Lesson Plan</span>
-        </div>
-
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-primary">
-              {lessonPlan?.subject}: {lessonPlan?.objectives.split('.')[0]}
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Grade {lessonPlan?.grade} • {lessonPlan?.duration} minutes
-            </p>
-          </div>
-          <Button onClick={() => toast.info("Share functionality coming soon!")} variant="outline">
-            <Share className="mr-2 h-4 w-4" />
-            Share Lesson
-          </Button>
-        </div>
+        <LessonHeader
+          subject={lessonPlan.subject}
+          objective={lessonPlan.objectives.split('.')[0]}
+          grade={lessonPlan.grade}
+          duration={lessonPlan.duration}
+        />
 
         <div className="grid grid-cols-1 gap-6">
           {parsedSections.map((section, index) => (
-            <Card key={index}>
-              <CardHeader>
-                <CardTitle as="h2">{section.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {section.activities ? (
-                  <div className="grid grid-cols-1 gap-6">
-                    {section.activities.map((activity, idx) => (
-                      <Card key={idx} className="bg-accent/50">
-                        <CardHeader>
-                          <CardTitle as="h2">Activity {idx + 1}: {activity.title}</CardTitle>
-                          <CardDescription>{activity.duration}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="prose prose-sm max-w-none">
-                            <h3 className="text-sm font-medium mb-2">Instructions:</h3>
-                            <ul className="list-decimal pl-4 space-y-2">
-                              {activity.steps.map((step, stepIdx) => (
-                                <li key={stepIdx}>{step}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="prose prose-sm max-w-none">
-                    <ul className="list-disc pl-4 space-y-2">
-                      {section.content.map((item, idx) => (
-                        <li key={idx}>{renderMarkdown(item)}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {!section.generated && (
-                  <Button
-                    variant="secondary"
-                    className="w-full"
-                    onClick={() => handleGenerateMore(section.title)}
-                    disabled={generatingSections.has(section.title)}
-                  >
-                    {generatingSections.has(section.title) ? 'Generating...' : 'Generate More'}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+            <ContentSection
+              key={index}
+              title={section.title}
+              content={section.content}
+              activities={section.activities}
+              generated={section.generated}
+              onGenerateMore={handleGenerateMore}
+              isGenerating={generatingSections.has(section.title)}
+            />
           ))}
         </div>
       </div>
