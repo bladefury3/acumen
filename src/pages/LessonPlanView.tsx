@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,6 @@ import { FileText, Settings, Share, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
 
 interface LessonPlanData {
   id: string;
@@ -52,13 +52,18 @@ const LessonPlanView = () => {
 
   const parseActivities = (content: string[]): Activity[] => {
     return content.map(activity => {
-      const titleMatch = activity.match(/^\d+\.\s*\*\*(.*?)\*\*\s*\((\d+)\s*minutes\):/);
+      // Match "Activity X: Title (duration)" pattern
+      const titleMatch = activity.match(/Activity\s+\d+:\s+([^(]+)\s*\((\d+)\s*minutes\)/i);
       if (!titleMatch) return { title: activity, duration: "", steps: [] };
 
       const [_, title, duration] = titleMatch;
       
-      const description = activity.split(':')[1].trim();
-      const steps = description.split('.').map(step => step.trim()).filter(Boolean);
+      // Split the remaining content into steps
+      const description = activity.split(':').slice(2).join(':').trim();
+      const steps = description.split(/\.\s+/)
+        .map(step => step.trim())
+        .filter(Boolean)
+        .map(step => step.endsWith('.') ? step : `${step}.`);
 
       return {
         title: title.trim(),
@@ -203,6 +208,12 @@ const LessonPlanView = () => {
     );
   }
 
+  const renderMarkdown = (content: string) => {
+    return content.split('\n').map((line, index) => (
+      <p key={index} className="mb-2">{line}</p>
+    ));
+  };
+
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8">
@@ -229,26 +240,25 @@ const LessonPlanView = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {parsedSections.map((section, index) => (
-            <Card key={index} className={section.activities ? "col-span-2" : ""}>
+            <Card key={index}>
               <CardHeader>
-                <CardTitle>{section.title}</CardTitle>
+                <CardTitle as="h2">{section.title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {section.activities ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-6">
                     {section.activities.map((activity, idx) => (
                       <Card key={idx} className="bg-accent/50">
                         <CardHeader>
-                          <CardTitle className="text-lg">
-                            Activity {idx + 1}: {activity.title}
-                          </CardTitle>
+                          <CardTitle as="h2">Activity {idx + 1}: {activity.title}</CardTitle>
                           <CardDescription>{activity.duration}</CardDescription>
                         </CardHeader>
                         <CardContent>
                           <div className="prose prose-sm max-w-none">
-                            <ul className="list-disc pl-4 space-y-2">
+                            <h3 className="text-sm font-medium mb-2">Instructions:</h3>
+                            <ul className="list-decimal pl-4 space-y-2">
                               {activity.steps.map((step, stepIdx) => (
                                 <li key={stepIdx}>{step}</li>
                               ))}
@@ -262,7 +272,7 @@ const LessonPlanView = () => {
                   <div className="prose prose-sm max-w-none">
                     <ul className="list-disc pl-4 space-y-2">
                       {section.content.map((item, idx) => (
-                        <li key={idx}>{item}</li>
+                        <li key={idx}>{renderMarkdown(item)}</li>
                       ))}
                     </ul>
                   </div>
@@ -274,7 +284,7 @@ const LessonPlanView = () => {
                     onClick={() => handleGenerateMore(section.title)}
                     disabled={generatingSections.has(section.title)}
                   >
-                    {generatingSections.has(section.title) ? 'Generating...' : 'Generate'}
+                    {generatingSections.has(section.title) ? 'Generating...' : 'Generate More'}
                   </Button>
                 )}
               </CardContent>
