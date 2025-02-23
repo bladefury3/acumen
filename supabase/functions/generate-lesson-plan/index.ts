@@ -61,7 +61,9 @@ serve(async (req) => {
       4. Main Activities
       5. Assessment Strategies
       6. Differentiation Strategies
-      7. Closure
+      7. Closure      
+
+      Make sure the output is html & not markdown
     `.trim();
 
     const promptData = {
