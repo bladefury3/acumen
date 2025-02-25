@@ -115,15 +115,33 @@ export const parseExistingLessonPlans = async () => {
 
     if (error) throw error;
 
-    for (const plan of lessonPlans) {
+    let successCount = 0;
+    let failureCount = 0;
+
+    console.log(`Found ${lessonPlans?.length || 0} lesson plans to process`);
+
+    for (const plan of lessonPlans || []) {
       if (plan.ai_response) {
-        await parseAndStoreAIResponse(plan.ai_response, plan.id);
+        try {
+          console.log(`Processing lesson plan ${plan.id}`);
+          await parseAndStoreAIResponse(plan.ai_response, plan.id);
+          successCount++;
+          console.log(`Successfully processed lesson plan ${plan.id}`);
+        } catch (error) {
+          console.error(`Error processing lesson plan ${plan.id}:`, error);
+          failureCount++;
+        }
       }
     }
 
-    toast.success('Successfully parsed all existing lesson plans');
+    if (successCount > 0) {
+      toast.success(`Successfully parsed ${successCount} lesson plans`);
+    }
+    if (failureCount > 0) {
+      toast.error(`Failed to parse ${failureCount} lesson plans`);
+    }
   } catch (error) {
     console.error('Error parsing existing lesson plans:', error);
-    toast.error('Failed to parse some existing lesson plans');
+    toast.error('Failed to parse lesson plans');
   }
 };
