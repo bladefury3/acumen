@@ -1,33 +1,75 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ParsedSection } from "@/types/lesson";
 import ActivityCard from "./ActivityCard";
+import { BookOpen, Target, Boxes, Brain, PenTool, CheckCircle, LayoutGrid } from "lucide-react";
+
 interface SectionCardProps {
   section: ParsedSection;
   onGenerateMore: (sectionTitle: string) => void;
   isGenerating: boolean;
 }
+
 const SectionCard = ({
   section,
   onGenerateMore,
   isGenerating
 }: SectionCardProps) => {
-  return <Card>
-      <CardHeader>
-        <CardTitle>{section.title}</CardTitle>
+  // Icon mapping for different section types
+  const getSectionIcon = (title: string) => {
+    const iconMap: Record<string, React.ReactNode> = {
+      "Learning Objectives": <Target className="h-5 w-5 text-primary" />,
+      "Materials & Resources": <Boxes className="h-5 w-5 text-primary" />,
+      "Introduction & Hook": <BookOpen className="h-5 w-5 text-primary" />,
+      "Activities": <LayoutGrid className="h-5 w-5 text-primary" />,
+      "Assessment Strategies": <PenTool className="h-5 w-5 text-primary" />,
+      "Differentiation Strategies": <Brain className="h-5 w-5 text-primary" />,
+      "Close": <CheckCircle className="h-5 w-5 text-primary" />
+    };
+    return iconMap[title] || <BookOpen className="h-5 w-5 text-primary" />;
+  };
+
+  // Check if this is one of the sections that should be side by side
+  const isHalfWidth = section.title === "Learning Objectives" || section.title === "Materials & Resources";
+
+  return (
+    <Card className={`${isHalfWidth ? 'col-span-1' : 'col-span-2'} h-full`}>
+      <CardHeader className="flex flex-row items-center gap-2 pb-2">
+        {getSectionIcon(section.title)}
+        <CardTitle className="text-lg font-semibold">{section.title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {section.activities ? <div className="grid grid-cols-1 gap-6">
-            {section.activities.map((activity, idx) => <ActivityCard key={idx} activity={activity} />)}
-          </div> : <div className="prose prose-sm max-w-none">
-            <ul className="list-disc pl-4 space-y-2">
-              {section.content.map((item, idx) => <li key={idx}>{item}</li>)}
+      <CardContent className="space-y-4 pt-2">
+        {section.activities ? (
+          <div className="grid grid-cols-1 gap-6">
+            {section.activities.map((activity, idx) => (
+              <ActivityCard key={idx} activity={activity} />
+            ))}
+          </div>
+        ) : (
+          <div className="prose prose-sm max-w-none">
+            <ul className="list-disc pl-4 space-y-2 marker:text-primary">
+              {section.content.map((item, idx) => (
+                <li key={idx} className="text-sm leading-relaxed text-muted-foreground">
+                  {item}
+                </li>
+              ))}
             </ul>
-          </div>}
-        {!section.generated && <Button variant="secondary" onClick={() => onGenerateMore(section.title)} disabled={isGenerating} className="w-full bg-gray-50">
+          </div>
+        )}
+        {!section.generated && (
+          <Button
+            variant="secondary"
+            onClick={() => onGenerateMore(section.title)}
+            disabled={isGenerating}
+            className="w-full bg-primary/5 hover:bg-primary/10 transition-colors"
+          >
             {isGenerating ? 'Generating...' : 'Generate More'}
-          </Button>}
+          </Button>
+        )}
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
+
 export default SectionCard;
