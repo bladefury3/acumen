@@ -30,6 +30,44 @@ export type Database = {
         }
         Relationships: []
       }
+      activities_detail: {
+        Row: {
+          activity_name: string
+          created_at: string
+          description: string
+          id: string
+          instructions: string
+          lesson_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          activity_name: string
+          created_at?: string
+          description: string
+          id?: string
+          instructions: string
+          lesson_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activity_name?: string
+          created_at?: string
+          description?: string
+          id?: string
+          instructions?: string
+          lesson_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_detail_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_methods: {
         Row: {
           created_at: string
@@ -193,6 +231,53 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lessons: {
+        Row: {
+          assessment_strategies: string
+          close: string
+          created_at: string
+          differentiation_strategies: string
+          id: string
+          introduction_hook: string
+          learning_objectives: string
+          materials_resources: string
+          response_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          assessment_strategies: string
+          close: string
+          created_at?: string
+          differentiation_strategies: string
+          id?: string
+          introduction_hook: string
+          learning_objectives: string
+          materials_resources: string
+          response_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assessment_strategies?: string
+          close?: string
+          created_at?: string
+          differentiation_strategies?: string
+          id?: string
+          introduction_hook?: string
+          learning_objectives?: string
+          materials_resources?: string
+          response_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_plans"
             referencedColumns: ["id"]
           },
         ]

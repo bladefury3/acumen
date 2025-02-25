@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -42,12 +41,86 @@ interface ParsedSection {
   generated?: boolean;
 }
 
+interface ParsedLesson {
+  learning_objectives: string;
+  materials_resources: string;
+  introduction_hook: string;
+  assessment_strategies: string;
+  differentiation_strategies: string;
+  close: string;
+  activities: {
+    activity_name: string;
+    description: string;
+    instructions: string;
+  }[];
+}
+
 const LessonPlanView = () => {
   const { id } = useParams();
   const [lessonPlan, setLessonPlan] = useState<LessonPlanData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [parsedSections, setParsedSections] = useState<ParsedSection[]>([]);
   const [generatingSections, setGeneratingSections] = useState<Set<string>>(new Set());
+
+  const parseAndStoreAIResponse = async (aiResponse: string, responseId: string) => {
+    try {
+      const sections = parseAIResponse(aiResponse);
+      console.log('Parsed sections:', sections);
+
+      // Extract required fields from sections
+      const parsedLesson: ParsedLesson = {
+        learning_objectives: sections.find(s => s.title.toLowerCase().includes('learning objectives'))?.content.join('\n') || '',
+        materials_resources: sections.find(s => s.title.toLowerCase().includes('materials'))?.content.join('\n') || '',
+        introduction_hook: sections.find(s => s.title.toLowerCase().includes('introduction'))?.content.join('\n') || '',
+        assessment_strategies: sections.find(s => s.title.toLowerCase().includes('assessment'))?.content.join('\n') || '',
+        differentiation_strategies: sections.find(s => s.title.toLowerCase().includes('differentiation'))?.content.join('\n') || '',
+        close: sections.find(s => s.title.toLowerCase().includes('close'))?.content.join('\n') || '',
+        activities: []
+      };
+
+      // Find activities section and parse activities
+      const activitiesSection = sections.find(s => s.title.toLowerCase().includes('activities'));
+      if (activitiesSection?.activities) {
+        parsedLesson.activities = activitiesSection.activities.map(activity => ({
+          activity_name: activity.title,
+          description: activity.duration,
+          instructions: activity.steps.join('\n')
+        }));
+      }
+
+      // Insert lesson record
+      const { data: lessonData, error: lessonError } = await supabase
+        .from('lessons')
+        .insert({
+          response_id: responseId,
+          ...parsedLesson
+        })
+        .select('id')
+        .single();
+
+      if (lessonError) throw lessonError;
+
+      // Insert activities
+      if (parsedLesson.activities.length > 0) {
+        const activitiesWithLessonId = parsedLesson.activities.map(activity => ({
+          lesson_id: lessonData.id,
+          ...activity
+        }));
+
+        const { error: activitiesError } = await supabase
+          .from('activities_detail')
+          .insert(activitiesWithLessonId);
+
+        if (activitiesError) throw activitiesError;
+      }
+
+      setParsedSections(sections);
+      toast.success('Lesson plan parsed and stored successfully');
+    } catch (error) {
+      console.error('Error parsing and storing AI response:', error);
+      toast.error('Failed to parse and store lesson plan');
+    }
+  };
 
   const parseActivities = (content: string[]): Activity[] => {
     return content.map(activity => {
@@ -181,10 +254,7 @@ const LessonPlanView = () => {
         setLessonPlan(data);
         
         if (data.ai_response) {
-          console.log('AI Response:', data.ai_response); // Debug log
-          const sections = parseAIResponse(data.ai_response);
-          console.log('Parsed Sections:', sections); // Debug log
-          setParsedSections(sections);
+          await parseAndStoreAIResponse(data.ai_response, data.id);
         }
       } catch (error) {
         console.error('Error fetching lesson plan:', error);
@@ -308,4 +378,3 @@ const LessonPlanView = () => {
 };
 
 export default LessonPlanView;
-
