@@ -67,7 +67,6 @@ const LessonPlanView = () => {
       const sections = parseAIResponse(aiResponse);
       console.log('Parsed sections:', sections);
 
-      // Extract required fields from sections
       const parsedLesson: ParsedLesson = {
         learning_objectives: sections.find(s => s.title.toLowerCase().includes('learning objectives'))?.content.join('\n') || '',
         materials_resources: sections.find(s => s.title.toLowerCase().includes('materials'))?.content.join('\n') || '',
@@ -78,33 +77,76 @@ const LessonPlanView = () => {
         activities: []
       };
 
-      // Find activities section and parse activities
+      if (!parsedLesson.learning_objectives || !parsedLesson.materials_resources || 
+          !parsedLesson.introduction_hook || !parsedLesson.assessment_strategies || 
+          !parsedLesson.differentiation_strategies || !parsedLesson.close) {
+        throw new Error('Missing required fields in lesson plan');
+      }
+
       const activitiesSection = sections.find(s => s.title.toLowerCase().includes('activities'));
       if (activitiesSection?.activities) {
         parsedLesson.activities = activitiesSection.activities.map(activity => ({
-          activity_name: activity.title,
-          description: activity.duration,
-          instructions: activity.steps.join('\n')
+          activity_name: activity.title || 'Untitled Activity',
+          description: activity.duration || 'No duration specified',
+          instructions: activity.steps?.join('\n') || 'No instructions provided'
         }));
       }
 
-      // Insert lesson record
-      const { data: lessonData, error: lessonError } = await supabase
+      const { data: existingLesson } = await supabase
         .from('lessons')
-        .insert({
-          response_id: responseId,
-          ...parsedLesson
-        })
         .select('id')
-        .single();
+        .eq('response_id', responseId)
+        .maybeSingle();
 
-      if (lessonError) throw lessonError;
+      let lessonId;
 
-      // Insert activities
+      if (existingLesson?.id) {
+        const { error: updateError } = await supabase
+          .from('lessons')
+          .update({
+            learning_objectives: parsedLesson.learning_objectives,
+            materials_resources: parsedLesson.materials_resources,
+            introduction_hook: parsedLesson.introduction_hook,
+            assessment_strategies: parsedLesson.assessment_strategies,
+            differentiation_strategies: parsedLesson.differentiation_strategies,
+            close: parsedLesson.close
+          })
+          .eq('id', existingLesson.id);
+
+        if (updateError) throw updateError;
+        lessonId = existingLesson.id;
+
+        const { error: deleteError } = await supabase
+          .from('activities_detail')
+          .delete()
+          .eq('lesson_id', lessonId);
+
+        if (deleteError) throw deleteError;
+      } else {
+        const { data: newLesson, error: lessonError } = await supabase
+          .from('lessons')
+          .insert({
+            response_id: responseId,
+            learning_objectives: parsedLesson.learning_objectives,
+            materials_resources: parsedLesson.materials_resources,
+            introduction_hook: parsedLesson.introduction_hook,
+            assessment_strategies: parsedLesson.assessment_strategies,
+            differentiation_strategies: parsedLesson.differentiation_strategies,
+            close: parsedLesson.close
+          })
+          .select('id')
+          .single();
+
+        if (lessonError) throw lessonError;
+        lessonId = newLesson.id;
+      }
+
       if (parsedLesson.activities.length > 0) {
         const activitiesWithLessonId = parsedLesson.activities.map(activity => ({
-          lesson_id: lessonData.id,
-          ...activity
+          lesson_id: lessonId,
+          activity_name: activity.activity_name,
+          description: activity.description,
+          instructions: activity.instructions
         }));
 
         const { error: activitiesError } = await supabase
@@ -122,12 +164,33 @@ const LessonPlanView = () => {
     }
   };
 
+  const parseExistingLessonPlans = async () => {
+    try {
+      const { data: lessonPlans, error } = await supabase
+        .from('lesson_plans')
+        .select('id, ai_response')
+        .is('ai_response', 'not.null');
+
+      if (error) throw error;
+
+      for (const plan of lessonPlans) {
+        if (plan.ai_response) {
+          await parseAndStoreAIResponse(plan.ai_response, plan.id);
+        }
+      }
+
+      toast.success('Successfully parsed all existing lesson plans');
+    } catch (error) {
+      console.error('Error parsing existing lesson plans:', error);
+      toast.error('Failed to parse some existing lesson plans');
+    }
+  };
+
   const parseActivities = (content: string[]): Activity[] => {
     return content.map(activity => {
       const titleMatch = activity.match(/Activity\s+\d+:\s+([^(]+)\s*\((\d+)\s*minutes\)/i);
       
       if (!titleMatch) {
-        // If no match found, try to extract just the title and duration
         const basicMatch = activity.match(/([^(]+)\s*\((\d+)\s*minutes\)/i);
         if (basicMatch) {
           const [_, title, duration] = basicMatch;
@@ -165,7 +228,6 @@ const LessonPlanView = () => {
     const sections: ParsedSection[] = [];
     let currentSection: ParsedSection | null = null;
 
-    // Split by markdown headers (###) and process each section
     const sectionTexts = aiResponse.split(/(?=###\s)/);
 
     sectionTexts.forEach(sectionText => {
@@ -264,7 +326,10 @@ const LessonPlanView = () => {
       }
     };
 
-    if (id) fetchLessonPlan();
+    if (id) {
+      fetchLessonPlan();
+      parseExistingLessonPlans();
+    }
   }, [id]);
 
   const sidebarItems = [
