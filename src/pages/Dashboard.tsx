@@ -1,12 +1,12 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { FileText, Plus, Settings, Trash2 } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { FileText, Plus, Clock, Book, Target, Trash2 } from "lucide-react";
 import EmptyState from "@/components/dashboard/EmptyState";
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigate, Link } from 'react-router-dom';
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,32 +18,37 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 
 interface LessonPlan {
   id: string;
   subject: string;
-  duration: string;
+  grade: string;
   objectives: string;
+  created_at: string;
 }
 
-const gradients = [
-  "linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%)",
-  "linear-gradient(to right, #c1c161 0%, #c1c161 0%, #d4d4b1 100%)",
-  "linear-gradient(to right, #ffc3a0 0%, #ffafbd 100%)",
-  "linear-gradient(to top, #e6b980 0%, #eacda3 100%)",
-  "linear-gradient(90deg, hsla(186, 33%, 94%, 1) 0%, hsla(216, 41%, 79%, 1) 100%)",
-];
-
-const capitalizeSubject = (subject: string) => {
-  return subject.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
-};
-
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleDeleteLessonPlan = async (id: string) => {
+  const fetchLessonPlans = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('lesson_plans')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setLessonPlans(data || []);
+    } catch (error) {
+      console.error('Error fetching lesson plans:', error);
+      toast.error("Failed to load lesson plans");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
         .from('lesson_plans')
@@ -61,129 +66,97 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    const fetchLessonPlans = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/auth');
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('lesson_plans')
-        .select('id, subject, duration, objectives')
-        .eq('user_id', session.user.id);
-
-      if (error) {
-        console.error('Error fetching lesson plans:', error);
-        return;
-      }
-
-      setLessonPlans(data || []);
-    };
-
     fetchLessonPlans();
-  }, [navigate]);
-
-  const handleCreateLessonPlan = () => {
-    navigate('/lesson-plan/create');
-  };
+  }, []);
 
   const sidebarItems = [
     { label: "My Lessons", href: "/dashboard", icon: FileText },
+    { label: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
-  return (
-    <DashboardLayout 
-      sidebarItems={sidebarItems} 
-      sidebarAction={
-        <Button 
-          onClick={handleCreateLessonPlan} 
-          className="w-full bg-blue-100 text-blue-600 hover:bg-blue-200"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          New Lesson Plan
-        </Button>
-      }
-    >
-      {lessonPlans.length === 0 ? (
-        <EmptyState 
-          title="Create New Lesson Plan"
-          description="Design an engaging lesson plan that aligns with educational standards and sparks creativity."
-          action={
-            <Button onClick={handleCreateLessonPlan}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Lesson Plan
-            </Button>
-          }
-        />
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {lessonPlans.map((plan, index) => (
-            <Card 
-              key={plan.id}
-              className="relative group"
-              style={{ 
-                background: gradients[index % gradients.length],
-                border: 'none'
-              }}
-            >
-              <Link 
-                to={`/lesson-plan/${plan.id}`}
-                className="block transition-transform hover:scale-105"
-              >
-                <CardHeader>
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <Book className="h-5 w-5" />
-                    {capitalizeSubject(plan.subject)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4" />
-                      {plan.duration} minutes
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Target className="h-4 w-4 mt-1" />
-                      <p className="text-sm line-clamp-3">
-                        {plan.objectives.split('.')[0]}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Link>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Deleting this lesson plan will permanently remove all associated information. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-red-500 hover:bg-red-600"
-                      onClick={() => handleDeleteLessonPlan(plan.id)}
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </Card>
-          ))}
+  if (isLoading) {
+    return (
+      <DashboardLayout sidebarItems={sidebarItems}>
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-pulse">Loading lesson plans...</div>
         </div>
-      )}
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout sidebarItems={sidebarItems}>
+      <div className="space-y-8">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-primary">My Lessons</h1>
+          <Button asChild>
+            <Link to="/lesson-plan">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Lesson
+            </Link>
+          </Button>
+        </div>
+
+        {lessonPlans.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {lessonPlans.map((plan) => (
+              <div
+                key={plan.id}
+                className="group relative bg-card text-card-foreground rounded-lg border shadow-sm transition-all hover:shadow-md"
+              >
+                <Link
+                  to={`/lesson-plan/${plan.id}`}
+                  className="block p-6 space-y-4"
+                >
+                  <div className="space-y-2">
+                    <h2 className="text-xl font-semibold">{plan.subject}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Grade {plan.grade}
+                    </p>
+                  </div>
+                  <p className="text-sm line-clamp-2">{plan.objectives}</p>
+                </Link>
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Lesson Plan</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this lesson plan? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDelete(plan.id);
+                          }}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </DashboardLayout>
   );
 };
