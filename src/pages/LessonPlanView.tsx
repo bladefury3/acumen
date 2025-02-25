@@ -1,14 +1,16 @@
+
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { FileText, Settings, Share, ChevronRight, Clock, GraduationCap } from "lucide-react";
+import { FileText, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LessonPlanData, ParsedSection } from "@/types/lesson";
 import { parseAndStoreAIResponse } from "@/services/lessonService";
-import SectionCard from "@/components/lesson-plan/SectionCard";
-import { Separator } from "@/components/ui/separator";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import LessonBreadcrumb from "@/components/lesson-plan/LessonBreadcrumb";
+import LessonHeader from "@/components/lesson-plan/LessonHeader";
+import LessonSections from "@/components/lesson-plan/LessonSections";
+import { groupSections } from "@/utils/sectionUtils";
 
 const LessonPlanView = () => {
   const { id } = useParams();
@@ -58,37 +60,6 @@ const LessonPlanView = () => {
         return next;
       });
     }
-  };
-
-  const getOrderedSections = (sections: ParsedSection[]) => {
-    return sections.sort((a, b) => {
-      const order: Record<string, number> = {
-        "Learning Objectives": 1,
-        "Materials & Resources": 2,
-        "Introduction & Hook": 3,
-        "Activities": 4,
-        "Assessment Strategies": 5,
-        "Differentiation Strategies": 6,
-        "Close": 7
-      };
-      return (order[a.title] || 99) - (order[b.title] || 99);
-    });
-  };
-
-  const groupSections = (sections: ParsedSection[]) => {
-    const orderedSections = getOrderedSections(sections);
-    const groupedSections = {
-      topRow: orderedSections.filter(s => 
-        s.title === "Learning Objectives" || s.title === "Materials & Resources"
-      ),
-      introduction: orderedSections.find(s => s.title === "Introduction & Hook"),
-      activities: orderedSections.find(s => s.title === "Activities"),
-      assessmentRow: orderedSections.filter(s => 
-        s.title === "Assessment Strategies" || s.title === "Differentiation Strategies"
-      ),
-      close: orderedSections.find(s => s.title === "Close")
-    };
-    return groupedSections;
   };
 
   useEffect(() => {
@@ -156,106 +127,13 @@ const LessonPlanView = () => {
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8 animate-fade-in">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link to="/dashboard" className="hover:text-foreground transition-colors">
-            Dashboard
-          </Link>
-          <ChevronRight className="h-4 w-4 mx-2" />
-          <span className="text-foreground">Lesson Plan</span>
-        </div>
-
-        <div className="relative p-6 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/10">
-          <div className="flex justify-between items-start">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="h-6 w-6 text-primary" />
-                <h1 className="text-3xl font-bold tracking-tight text-primary">
-                  {lessonPlan?.subject}: {lessonPlan?.objectives.split('.')[0]}
-                </h1>
-              </div>
-              <div className="flex items-center gap-4 text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <span className="font-medium">Grade {lessonPlan?.grade}</span>
-                </span>
-                <span className="text-muted-foreground">•</span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span>{lessonPlan?.duration} minutes</span>
-                </span>
-              </div>
-            </div>
-            <Button 
-              onClick={() => toast.info("Share functionality coming soon!")} 
-              variant="outline"
-              className="hover:bg-white/50 transition-colors"
-            >
-              <Share className="mr-2 h-4 w-4" />
-              Share Lesson
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-8">
-          <div className="flex gap-6">
-            {groupedSections.topRow.map((section, index) => (
-              <div key={index} className="flex-1">
-                <SectionCard
-                  section={section}
-                  onGenerateMore={handleGenerateMore}
-                  isGenerating={generatingSections.has(section.title)}
-                />
-              </div>
-            ))}
-          </div>
-
-          <Separator className="bg-primary/10" />
-
-          {groupedSections.introduction && (
-            <div className="w-full">
-              <SectionCard
-                section={groupedSections.introduction}
-                onGenerateMore={handleGenerateMore}
-                isGenerating={generatingSections.has(groupedSections.introduction.title)}
-              />
-            </div>
-          )}
-
-          <Separator className="bg-primary/10" />
-
-          {groupedSections.activities && (
-            <div className="w-full">
-              <SectionCard
-                section={groupedSections.activities}
-                onGenerateMore={handleGenerateMore}
-                isGenerating={generatingSections.has(groupedSections.activities.title)}
-              />
-            </div>
-          )}
-
-          <Separator className="bg-primary/10" />
-
-          <div className="flex gap-6">
-            {groupedSections.assessmentRow.map((section, index) => (
-              <div key={index} className="flex-1">
-                <SectionCard
-                  section={section}
-                  onGenerateMore={handleGenerateMore}
-                  isGenerating={generatingSections.has(section.title)}
-                />
-              </div>
-            ))}
-          </div>
-
-          {groupedSections.close && (
-            <div className="w-full">
-              <SectionCard
-                section={groupedSections.close}
-                onGenerateMore={handleGenerateMore}
-                isGenerating={generatingSections.has(groupedSections.close.title)}
-              />
-            </div>
-          )}
-        </div>
+        <LessonBreadcrumb />
+        <LessonHeader lessonPlan={lessonPlan} />
+        <LessonSections
+          groupedSections={groupedSections}
+          onGenerateMore={handleGenerateMore}
+          generatingSections={generatingSections}
+        />
       </div>
     </DashboardLayout>
   );
