@@ -107,10 +107,11 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
 
 export const parseExistingLessonPlans = async () => {
   try {
+    // Fixed the query to correctly filter non-null ai_responses
     const { data: lessonPlans, error } = await supabase
       .from('lesson_plans')
       .select('id, ai_response')
-      .not('ai_response', 'is', null);
+      .filter('ai_response', 'neq', null);
 
     if (error) throw error;
 
