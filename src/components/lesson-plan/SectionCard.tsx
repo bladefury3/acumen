@@ -16,7 +16,6 @@ const SectionCard = ({
   onGenerateMore,
   isGenerating
 }: SectionCardProps) => {
-  // Icon mapping for different section types
   const getSectionIcon = (title: string) => {
     const iconMap: Record<string, React.ReactNode> = {
       "Learning Objectives": <Target className="h-5 w-5 text-primary" />,
@@ -30,20 +29,8 @@ const SectionCard = ({
     return iconMap[title] || <BookOpen className="h-5 w-5 text-primary" />;
   };
 
-  // Check if this is one of the sections that should be half width
-  const isHalfWidth = 
-    section.title === "Learning Objectives" || 
-    section.title === "Materials & Resources" ||
-    section.title === "Assessment Strategies" ||
-    section.title === "Differentiation Strategies";
-
   return (
-    <Card 
-      className={`${
-        section.title === "Activities" ? 'col-span-2' : 
-        isHalfWidth ? 'col-span-1' : 'col-span-2'
-      } h-full transition-all duration-300 hover:shadow-lg animate-fade-in`}
-    >
+    <Card className="h-full transition-all duration-300 hover:shadow-lg animate-fade-in">
       <CardHeader className="flex flex-row items-center gap-2 pb-2 group">
         <div className="transition-transform duration-200 group-hover:scale-110">
           {getSectionIcon(section.title)}

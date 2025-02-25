@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { LessonPlanData, ParsedSection } from "@/types/lesson";
 import { parseAndStoreAIResponse } from "@/services/lessonService";
 import SectionCard from "@/components/lesson-plan/SectionCard";
+import { Separator } from "@/components/ui/separator";
 
 const LessonPlanView = () => {
   const { id } = useParams();
@@ -74,6 +75,22 @@ const LessonPlanView = () => {
     });
   };
 
+  const groupSections = (sections: ParsedSection[]) => {
+    const orderedSections = getOrderedSections(sections);
+    const groupedSections = {
+      topRow: orderedSections.filter(s => 
+        s.title === "Learning Objectives" || s.title === "Materials & Resources"
+      ),
+      introduction: orderedSections.find(s => s.title === "Introduction & Hook"),
+      activities: orderedSections.find(s => s.title === "Activities"),
+      assessmentRow: orderedSections.filter(s => 
+        s.title === "Assessment Strategies" || s.title === "Differentiation Strategies"
+      ),
+      close: orderedSections.find(s => s.title === "Close")
+    };
+    return groupedSections;
+  };
+
   useEffect(() => {
     const fetchLessonPlan = async () => {
       try {
@@ -134,6 +151,8 @@ const LessonPlanView = () => {
     );
   }
 
+  const groupedSections = groupSections(parsedSections);
+
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8 animate-fade-in">
@@ -176,15 +195,66 @@ const LessonPlanView = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          {getOrderedSections(parsedSections).map((section, index) => (
-            <SectionCard
-              key={index}
-              section={section}
-              onGenerateMore={handleGenerateMore}
-              isGenerating={generatingSections.has(section.title)}
-            />
-          ))}
+        <div className="space-y-8">
+          <div className="flex gap-6">
+            {groupedSections.topRow.map((section, index) => (
+              <div key={index} className="flex-1">
+                <SectionCard
+                  section={section}
+                  onGenerateMore={handleGenerateMore}
+                  isGenerating={generatingSections.has(section.title)}
+                />
+              </div>
+            ))}
+          </div>
+
+          <Separator className="bg-primary/10" />
+
+          {groupedSections.introduction && (
+            <div className="w-full">
+              <SectionCard
+                section={groupedSections.introduction}
+                onGenerateMore={handleGenerateMore}
+                isGenerating={generatingSections.has(groupedSections.introduction.title)}
+              />
+            </div>
+          )}
+
+          <Separator className="bg-primary/10" />
+
+          {groupedSections.activities && (
+            <div className="w-full">
+              <SectionCard
+                section={groupedSections.activities}
+                onGenerateMore={handleGenerateMore}
+                isGenerating={generatingSections.has(groupedSections.activities.title)}
+              />
+            </div>
+          )}
+
+          <Separator className="bg-primary/10" />
+
+          <div className="flex gap-6">
+            {groupedSections.assessmentRow.map((section, index) => (
+              <div key={index} className="flex-1">
+                <SectionCard
+                  section={section}
+                  onGenerateMore={handleGenerateMore}
+                  isGenerating={generatingSections.has(section.title)}
+                />
+              </div>
+            ))}
+          </div>
+
+          {groupedSections.close && (
+            <div className="w-full">
+              <SectionCard
+                section={groupedSections.close}
+                onGenerateMore={handleGenerateMore}
+                isGenerating={generatingSections.has(groupedSections.close.title)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
