@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,48 +13,8 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { FileText, Settings, Share, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-interface LessonPlanData {
-  id: string;
-  objectives: string;
-  grade: string;
-  subject: string;
-  fun_elements: string;
-  duration: string;
-  curriculum: string;
-  learning_tools: string[];
-  learning_needs: string[];
-  activities: string[];
-  assessments: string[];
-  ai_response: string;
-}
-
-interface Activity {
-  title: string;
-  duration: string;
-  steps: string[];
-}
-
-interface ParsedSection {
-  title: string;
-  content: string[];
-  activities?: Activity[];
-  generated?: boolean;
-}
-
-interface ParsedLesson {
-  learning_objectives: string;
-  materials_resources: string;
-  introduction_hook: string;
-  assessment_strategies: string;
-  differentiation_strategies: string;
-  close: string;
-  activities: {
-    activity_name: string;
-    description: string;
-    instructions: string;
-  }[];
-}
+import { LessonPlanData, ParsedSection } from "@/types/lesson";
+import { parseAndStoreAIResponse, parseExistingLessonPlans } from "@/services/lessonService";
 
 const LessonPlanView = () => {
   const { id } = useParams();
@@ -61,204 +22,6 @@ const LessonPlanView = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [parsedSections, setParsedSections] = useState<ParsedSection[]>([]);
   const [generatingSections, setGeneratingSections] = useState<Set<string>>(new Set());
-
-  const parseAndStoreAIResponse = async (aiResponse: string, responseId: string) => {
-    try {
-      const sections = parseAIResponse(aiResponse);
-      console.log('Parsed sections:', sections);
-
-      const parsedLesson: ParsedLesson = {
-        learning_objectives: sections.find(s => s.title.toLowerCase().includes('learning objectives'))?.content.join('\n') || '',
-        materials_resources: sections.find(s => s.title.toLowerCase().includes('materials'))?.content.join('\n') || '',
-        introduction_hook: sections.find(s => s.title.toLowerCase().includes('introduction'))?.content.join('\n') || '',
-        assessment_strategies: sections.find(s => s.title.toLowerCase().includes('assessment'))?.content.join('\n') || '',
-        differentiation_strategies: sections.find(s => s.title.toLowerCase().includes('differentiation'))?.content.join('\n') || '',
-        close: sections.find(s => s.title.toLowerCase().includes('close'))?.content.join('\n') || '',
-        activities: []
-      };
-
-      if (!parsedLesson.learning_objectives || !parsedLesson.materials_resources || 
-          !parsedLesson.introduction_hook || !parsedLesson.assessment_strategies || 
-          !parsedLesson.differentiation_strategies || !parsedLesson.close) {
-        throw new Error('Missing required fields in lesson plan');
-      }
-
-      const activitiesSection = sections.find(s => s.title.toLowerCase().includes('activities'));
-      if (activitiesSection?.activities) {
-        parsedLesson.activities = activitiesSection.activities.map(activity => ({
-          activity_name: activity.title || 'Untitled Activity',
-          description: activity.duration || 'No duration specified',
-          instructions: activity.steps?.join('\n') || 'No instructions provided'
-        }));
-      }
-
-      const { data: existingLesson } = await supabase
-        .from('lessons')
-        .select('id')
-        .eq('response_id', responseId)
-        .maybeSingle();
-
-      let lessonId;
-
-      if (existingLesson?.id) {
-        const { error: updateError } = await supabase
-          .from('lessons')
-          .update({
-            learning_objectives: parsedLesson.learning_objectives,
-            materials_resources: parsedLesson.materials_resources,
-            introduction_hook: parsedLesson.introduction_hook,
-            assessment_strategies: parsedLesson.assessment_strategies,
-            differentiation_strategies: parsedLesson.differentiation_strategies,
-            close: parsedLesson.close
-          })
-          .eq('id', existingLesson.id);
-
-        if (updateError) throw updateError;
-        lessonId = existingLesson.id;
-
-        const { error: deleteError } = await supabase
-          .from('activities_detail')
-          .delete()
-          .eq('lesson_id', lessonId);
-
-        if (deleteError) throw deleteError;
-      } else {
-        const { data: newLesson, error: lessonError } = await supabase
-          .from('lessons')
-          .insert({
-            response_id: responseId,
-            learning_objectives: parsedLesson.learning_objectives,
-            materials_resources: parsedLesson.materials_resources,
-            introduction_hook: parsedLesson.introduction_hook,
-            assessment_strategies: parsedLesson.assessment_strategies,
-            differentiation_strategies: parsedLesson.differentiation_strategies,
-            close: parsedLesson.close
-          })
-          .select('id')
-          .single();
-
-        if (lessonError) throw lessonError;
-        lessonId = newLesson.id;
-      }
-
-      if (parsedLesson.activities.length > 0) {
-        const activitiesWithLessonId = parsedLesson.activities.map(activity => ({
-          lesson_id: lessonId,
-          activity_name: activity.activity_name,
-          description: activity.description,
-          instructions: activity.instructions
-        }));
-
-        const { error: activitiesError } = await supabase
-          .from('activities_detail')
-          .insert(activitiesWithLessonId);
-
-        if (activitiesError) throw activitiesError;
-      }
-
-      setParsedSections(sections);
-      toast.success('Lesson plan parsed and stored successfully');
-    } catch (error) {
-      console.error('Error parsing and storing AI response:', error);
-      toast.error('Failed to parse and store lesson plan');
-    }
-  };
-
-  const parseExistingLessonPlans = async () => {
-    try {
-      const { data: lessonPlans, error } = await supabase
-        .from('lesson_plans')
-        .select('id, ai_response')
-        .is('ai_response', 'not.null');
-
-      if (error) throw error;
-
-      for (const plan of lessonPlans) {
-        if (plan.ai_response) {
-          await parseAndStoreAIResponse(plan.ai_response, plan.id);
-        }
-      }
-
-      toast.success('Successfully parsed all existing lesson plans');
-    } catch (error) {
-      console.error('Error parsing existing lesson plans:', error);
-      toast.error('Failed to parse some existing lesson plans');
-    }
-  };
-
-  const parseActivities = (content: string[]): Activity[] => {
-    return content.map(activity => {
-      const titleMatch = activity.match(/Activity\s+\d+:\s+([^(]+)\s*\((\d+)\s*minutes\)/i);
-      
-      if (!titleMatch) {
-        const basicMatch = activity.match(/([^(]+)\s*\((\d+)\s*minutes\)/i);
-        if (basicMatch) {
-          const [_, title, duration] = basicMatch;
-          const restOfContent = activity.split(')').slice(1).join(')').trim();
-          const steps = restOfContent.split(/[.!?]\s+/)
-            .map(step => step.trim())
-            .filter(Boolean)
-            .map(step => step.endsWith('.') ? step : `${step}.`);
-          
-          return {
-            title: title.trim(),
-            duration: `${duration} minutes`,
-            steps
-          };
-        }
-        return { title: activity, duration: "", steps: [] };
-      }
-
-      const [_, title, duration] = titleMatch;
-      const description = activity.split(':').slice(2).join(':').trim();
-      const steps = description.split(/[.!?]\s+/)
-        .map(step => step.trim())
-        .filter(Boolean)
-        .map(step => step.endsWith('.') ? step : `${step}.`);
-
-      return {
-        title: title.trim(),
-        duration: `${duration} minutes`,
-        steps
-      };
-    });
-  };
-
-  const parseAIResponse = (aiResponse: string): ParsedSection[] => {
-    const sections: ParsedSection[] = [];
-    let currentSection: ParsedSection | null = null;
-
-    const sectionTexts = aiResponse.split(/(?=###\s)/);
-
-    sectionTexts.forEach(sectionText => {
-      const lines = sectionText.split('\n').map(line => line.trim()).filter(Boolean);
-      
-      if (lines.length === 0) return;
-
-      const titleLine = lines[0];
-      const title = titleLine.replace('###', '').trim();
-      const content = lines.slice(1)
-        .filter(line => line.startsWith('-') || /^\d+\./.test(line))
-        .map(line => line.replace(/^-\s*/, '').replace(/^\d+\.\s*/, '').trim());
-
-      if (title.toLowerCase().includes('activities')) {
-        sections.push({
-          title,
-          content: content,
-          activities: parseActivities(content),
-          generated: false
-        });
-      } else {
-        sections.push({
-          title,
-          content: content,
-          generated: false
-        });
-      }
-    });
-
-    return sections;
-  };
 
   const handleGenerateMore = async (sectionTitle: string) => {
     if (!id || generatingSections.has(sectionTitle)) return;
@@ -316,7 +79,8 @@ const LessonPlanView = () => {
         setLessonPlan(data);
         
         if (data.ai_response) {
-          await parseAndStoreAIResponse(data.ai_response, data.id);
+          const sections = await parseAndStoreAIResponse(data.ai_response, data.id);
+          setParsedSections(sections);
         }
       } catch (error) {
         console.error('Error fetching lesson plan:', error);
