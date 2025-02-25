@@ -98,7 +98,18 @@ const Dashboard = () => {
         </div>
 
         {lessonPlans.length === 0 ? (
-          <EmptyState />
+          <EmptyState 
+            title="No Lesson Plans Yet"
+            description="Create your first lesson plan to get started."
+            action={
+              <Button asChild>
+                <Link to="/lesson-plan">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Lesson
+                </Link>
+              </Button>
+            }
+          />
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {lessonPlans.map((plan) => (
