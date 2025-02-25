@@ -1,6 +1,10 @@
 
 import { Activity, ParsedSection } from "@/types/lesson";
 
+export const cleanMarkdown = (text: string): string => {
+  return text.replace(/\*\*/g, '').trim();
+};
+
 export const parseActivities = (content: string[]): Activity[] => {
   return content.map(activity => {
     const titleMatch = activity.match(/Activity\s+\d+:\s+([^(]+)\s*\((\d+)\s*minutes\)/i);
@@ -16,12 +20,12 @@ export const parseActivities = (content: string[]): Activity[] => {
           .map(step => step.endsWith('.') ? step : `${step}.`);
         
         return {
-          title: title.trim(),
+          title: cleanMarkdown(title.trim()),
           duration: `${duration} minutes`,
           steps
         };
       }
-      return { title: activity, duration: "", steps: [] };
+      return { title: cleanMarkdown(activity), duration: "", steps: [] };
     }
 
     const [_, title, duration] = titleMatch;
@@ -32,41 +36,51 @@ export const parseActivities = (content: string[]): Activity[] => {
       .map(step => step.endsWith('.') ? step : `${step}.`);
 
     return {
-      title: title.trim(),
+      title: cleanMarkdown(title.trim()),
       duration: `${duration} minutes`,
       steps
     };
   });
 };
 
+const findSectionContent = (lines: string[]): string[] => {
+  return lines
+    .filter(line => line.startsWith('-') || /^\d+\./.test(line))
+    .map(line => cleanMarkdown(line.replace(/^-\s*/, '').replace(/^\d+\.\s*/, '').trim()));
+};
+
 export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
   const sections: ParsedSection[] = [];
-  const sectionTexts = aiResponse.split(/(?=###\s)/);
+  const sectionTexts = aiResponse.split(/(?=###\s*|^\d+\.\s+)/m);
 
   sectionTexts.forEach(sectionText => {
     const lines = sectionText.split('\n').map(line => line.trim()).filter(Boolean);
-    
     if (lines.length === 0) return;
 
     const titleLine = lines[0];
-    const title = titleLine.replace('###', '').trim();
-    const content = lines.slice(1)
-      .filter(line => line.startsWith('-') || /^\d+\./.test(line))
-      .map(line => line.replace(/^-\s*/, '').replace(/^\d+\.\s*/, '').trim());
+    const title = cleanMarkdown(titleLine.replace(/^###\s*/, '').replace(/^\d+\.\s*/, '').trim());
+    const content = findSectionContent(lines.slice(1));
+
+    if (!title) return; // Skip sections without titles
 
     if (title.toLowerCase().includes('activities')) {
-      sections.push({
-        title,
-        content: content,
-        activities: parseActivities(content),
-        generated: false
-      });
+      const activities = parseActivities(content);
+      if (activities.length > 0) {
+        sections.push({
+          title,
+          content,
+          activities,
+          generated: false
+        });
+      }
     } else {
-      sections.push({
-        title,
-        content: content,
-        generated: false
-      });
+      if (content.length > 0) {
+        sections.push({
+          title,
+          content,
+          generated: false
+        });
+      }
     }
   });
 
