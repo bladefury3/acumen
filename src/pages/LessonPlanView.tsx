@@ -1,9 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { FileText, Settings, Share, ChevronRight, Clock } from "lucide-react";
+import { FileText, Settings, Share, ChevronRight, Clock, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LessonPlanData, ParsedSection } from "@/types/lesson";
@@ -60,6 +59,21 @@ const LessonPlanView = () => {
     }
   };
 
+  const getOrderedSections = (sections: ParsedSection[]) => {
+    return sections.sort((a, b) => {
+      const order: Record<string, number> = {
+        "Learning Objectives": 1,
+        "Materials & Resources": 2,
+        "Introduction & Hook": 3,
+        "Activities": 4,
+        "Assessment Strategies": 5,
+        "Differentiation Strategies": 6,
+        "Close": 7
+      };
+      return (order[a.title] || 99) - (order[b.title] || 99);
+    });
+  };
+
   useEffect(() => {
     const fetchLessonPlan = async () => {
       try {
@@ -98,7 +112,10 @@ const LessonPlanView = () => {
     return (
       <DashboardLayout sidebarItems={sidebarItems}>
         <div className="flex items-center justify-center h-full">
-          <div className="animate-pulse">Loading lesson plan...</div>
+          <div className="flex items-center space-x-4">
+            <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-muted-foreground animate-pulse">Loading lesson plan...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -119,7 +136,7 @@ const LessonPlanView = () => {
 
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
-      <div className="space-y-8">
+      <div className="space-y-8 animate-fade-in">
         <div className="flex items-center text-sm text-muted-foreground">
           <Link to="/dashboard" className="hover:text-foreground transition-colors">
             Dashboard
@@ -128,34 +145,39 @@ const LessonPlanView = () => {
           <span className="text-foreground">Lesson Plan</span>
         </div>
 
-        <div className="flex justify-between items-start">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
-              {lessonPlan?.subject}: {lessonPlan?.objectives.split('.')[0]}
-            </h1>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <span className="flex items-center">
-                Grade {lessonPlan?.grade}
-              </span>
-              <span className="text-muted-foreground">•</span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {lessonPlan?.duration} minutes
-              </span>
+        <div className="relative p-6 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/10">
+          <div className="flex justify-between items-start">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-6 w-6 text-primary" />
+                <h1 className="text-3xl font-bold tracking-tight text-primary">
+                  {lessonPlan?.subject}: {lessonPlan?.objectives.split('.')[0]}
+                </h1>
+              </div>
+              <div className="flex items-center gap-4 text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <span className="font-medium">Grade {lessonPlan?.grade}</span>
+                </span>
+                <span className="text-muted-foreground">•</span>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  <span>{lessonPlan?.duration} minutes</span>
+                </span>
+              </div>
             </div>
+            <Button 
+              onClick={() => toast.info("Share functionality coming soon!")} 
+              variant="outline"
+              className="hover:bg-white/50 transition-colors"
+            >
+              <Share className="mr-2 h-4 w-4" />
+              Share Lesson
+            </Button>
           </div>
-          <Button 
-            onClick={() => toast.info("Share functionality coming soon!")} 
-            variant="outline"
-            className="hover:bg-primary/5"
-          >
-            <Share className="mr-2 h-4 w-4" />
-            Share Lesson
-          </Button>
         </div>
 
         <div className="grid grid-cols-2 gap-6">
-          {parsedSections.map((section, index) => (
+          {getOrderedSections(parsedSections).map((section, index) => (
             <SectionCard
               key={index}
               section={section}

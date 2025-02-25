@@ -30,18 +30,29 @@ const SectionCard = ({
     return iconMap[title] || <BookOpen className="h-5 w-5 text-primary" />;
   };
 
-  // Check if this is one of the sections that should be side by side
-  const isHalfWidth = section.title === "Learning Objectives" || section.title === "Materials & Resources";
+  // Check if this is one of the sections that should be half width
+  const isHalfWidth = 
+    section.title === "Learning Objectives" || 
+    section.title === "Materials & Resources" ||
+    section.title === "Assessment Strategies" ||
+    section.title === "Differentiation Strategies";
 
   return (
-    <Card className={`${isHalfWidth ? 'col-span-1' : 'col-span-2'} h-full`}>
-      <CardHeader className="flex flex-row items-center gap-2 pb-2">
-        {getSectionIcon(section.title)}
+    <Card 
+      className={`${
+        section.title === "Activities" ? 'col-span-2' : 
+        isHalfWidth ? 'col-span-1' : 'col-span-2'
+      } h-full transition-all duration-300 hover:shadow-lg animate-fade-in`}
+    >
+      <CardHeader className="flex flex-row items-center gap-2 pb-2 group">
+        <div className="transition-transform duration-200 group-hover:scale-110">
+          {getSectionIcon(section.title)}
+        </div>
         <CardTitle className="text-lg font-semibold">{section.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 pt-2">
         {section.activities ? (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {section.activities.map((activity, idx) => (
               <ActivityCard key={idx} activity={activity} />
             ))}
@@ -50,7 +61,10 @@ const SectionCard = ({
           <div className="prose prose-sm max-w-none">
             <ul className="list-disc pl-4 space-y-2 marker:text-primary">
               {section.content.map((item, idx) => (
-                <li key={idx} className="text-sm leading-relaxed text-muted-foreground">
+                <li 
+                  key={idx} 
+                  className="text-sm leading-relaxed text-muted-foreground hover:text-foreground transition-colors"
+                >
                   {item}
                 </li>
               ))}
