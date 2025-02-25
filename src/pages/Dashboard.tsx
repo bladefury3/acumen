@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { FileText, Plus, Settings, Trash2 } from "lucide-react";
+import { BookOpen, Plus, Settings, Trash2 } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import EmptyState from "@/components/dashboard/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Card } from "@/components/ui/card";
 
 interface LessonPlan {
   id: string;
@@ -70,7 +71,7 @@ const Dashboard = () => {
   }, []);
 
   const sidebarItems = [
-    { label: "My Lessons", href: "/dashboard", icon: FileText },
+    { label: "My Lessons", href: "/dashboard", icon: BookOpen },
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
@@ -78,7 +79,10 @@ const Dashboard = () => {
     return (
       <DashboardLayout sidebarItems={sidebarItems}>
         <div className="flex items-center justify-center h-full">
-          <div className="animate-pulse">Loading lesson plans...</div>
+          <div className="flex items-center space-x-4">
+            <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-muted-foreground animate-pulse">Loading lesson plans...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -88,9 +92,14 @@ const Dashboard = () => {
     <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-primary">My Lessons</h1>
-          <Button asChild>
-            <Link to="/lesson-plan">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight">My Lessons</h1>
+            <p className="text-muted-foreground">
+              Manage and organize your lesson plans.
+            </p>
+          </div>
+          <Button>
+            <Link to="/lesson-plan" className="flex items-center">
               <Plus className="mr-2 h-4 w-4" />
               Create Lesson
             </Link>
@@ -102,8 +111,8 @@ const Dashboard = () => {
             title="No Lesson Plans Yet"
             description="Create your first lesson plan to get started."
             action={
-              <Button asChild>
-                <Link to="/lesson-plan">
+              <Button>
+                <Link to="/lesson-plan" className="flex items-center">
                   <Plus className="mr-2 h-4 w-4" />
                   Create Lesson
                 </Link>
@@ -113,57 +122,70 @@ const Dashboard = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {lessonPlans.map((plan) => (
-              <div
+              <Card
                 key={plan.id}
-                className="group relative bg-card text-card-foreground rounded-lg border shadow-sm transition-all hover:shadow-md"
+                className="group relative overflow-hidden transition-all hover:shadow-lg"
               >
                 <Link
                   to={`/lesson-plan/${plan.id}`}
                   className="block p-6 space-y-4"
                 >
                   <div className="space-y-2">
-                    <h2 className="text-xl font-semibold">{plan.subject}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Grade {plan.grade}
-                    </p>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h2 className="text-xl font-semibold tracking-tight hover:text-primary transition-colors">
+                          {plan.subject}
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                          Grade {plan.grade}
+                        </p>
+                      </div>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                              onClick={(e) => e.preventDefault()}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete lesson plan</span>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-destructive">
+                                Delete Lesson Plan
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete this lesson plan
+                                and all associated activities.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleDelete(plan.id);
+                                }}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm line-clamp-2">{plan.objectives}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {plan.objectives}
+                  </p>
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/40 to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => e.preventDefault()}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Lesson Plan</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete this lesson plan? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleDelete(plan.id);
-                          }}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
