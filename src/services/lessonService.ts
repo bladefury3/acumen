@@ -9,23 +9,45 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     const sections = parseAIResponse(aiResponse);
     console.log('Parsed sections:', sections);
 
+    // Helper function to find content with flexible title matching
+    const findSectionContent = (titlePattern: string[]): string => {
+      const section = sections.find(s => 
+        titlePattern.some(pattern => 
+          s.title.toLowerCase().includes(pattern.toLowerCase())
+        )
+      );
+      return section?.content.join('\n') || '';
+    };
+
     const parsedLesson: ParsedLesson = {
-      learning_objectives: sections.find(s => s.title.toLowerCase().includes('learning objectives'))?.content.join('\n') || '',
-      materials_resources: sections.find(s => s.title.toLowerCase().includes('materials'))?.content.join('\n') || '',
-      introduction_hook: sections.find(s => s.title.toLowerCase().includes('introduction'))?.content.join('\n') || '',
-      assessment_strategies: sections.find(s => s.title.toLowerCase().includes('assessment'))?.content.join('\n') || '',
-      differentiation_strategies: sections.find(s => s.title.toLowerCase().includes('differentiation'))?.content.join('\n') || '',
-      close: sections.find(s => s.title.toLowerCase().includes('close'))?.content.join('\n') || '',
+      learning_objectives: findSectionContent(['learning objectives', 'learning goals', 'objectives']),
+      materials_resources: findSectionContent(['materials', 'resources', 'supplies']),
+      introduction_hook: findSectionContent(['introduction', 'hook', 'opening']),
+      assessment_strategies: findSectionContent(['assessment', 'evaluation', 'measuring']),
+      differentiation_strategies: findSectionContent(['differentiation', 'accommodations', 'modifications']),
+      close: findSectionContent(['close', 'closure', 'wrap up', 'conclusion']),
       activities: []
     };
 
-    if (!parsedLesson.learning_objectives || !parsedLesson.materials_resources || 
-        !parsedLesson.introduction_hook || !parsedLesson.assessment_strategies || 
-        !parsedLesson.differentiation_strategies || !parsedLesson.close) {
-      throw new Error('Missing required fields in lesson plan');
+    // Validate each required field and provide specific error messages
+    const missingFields = [];
+    if (!parsedLesson.learning_objectives) missingFields.push('Learning Objectives');
+    if (!parsedLesson.materials_resources) missingFields.push('Materials/Resources');
+    if (!parsedLesson.introduction_hook) missingFields.push('Introduction/Hook');
+    if (!parsedLesson.assessment_strategies) missingFields.push('Assessment Strategies');
+    if (!parsedLesson.differentiation_strategies) missingFields.push('Differentiation Strategies');
+    if (!parsedLesson.close) missingFields.push('Close/Closure');
+
+    if (missingFields.length > 0) {
+      throw new Error(`Missing required fields in lesson plan: ${missingFields.join(', ')}`);
     }
 
-    const activitiesSection = sections.find(s => s.title.toLowerCase().includes('activities'));
+    const activitiesSection = sections.find(s => 
+      ['activities', 'main activities', 'learning activities'].some(term => 
+        s.title.toLowerCase().includes(term)
+      )
+    );
+
     if (activitiesSection?.activities) {
       parsedLesson.activities = activitiesSection.activities.map(activity => ({
         activity_name: activity.title || 'Untitled Activity',
@@ -107,7 +129,6 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
 
 export const parseExistingLessonPlans = async () => {
   try {
-    // Fixed the query to correctly filter non-null ai_responses
     const { data: lessonPlans, error } = await supabase
       .from('lesson_plans')
       .select('id, ai_response')
@@ -129,6 +150,9 @@ export const parseExistingLessonPlans = async () => {
           console.log(`Successfully processed lesson plan ${plan.id}`);
         } catch (error) {
           console.error(`Error processing lesson plan ${plan.id}:`, error);
+          if (error instanceof Error) {
+            console.error('Error details:', error.message);
+          }
           failureCount++;
         }
       }
@@ -138,7 +162,7 @@ export const parseExistingLessonPlans = async () => {
       toast.success(`Successfully parsed ${successCount} lesson plans`);
     }
     if (failureCount > 0) {
-      toast.error(`Failed to parse ${failureCount} lesson plans`);
+      toast.error(`Failed to parse ${failureCount} lesson plans. Check console for details.`);
     }
   } catch (error) {
     console.error('Error parsing existing lesson plans:', error);
