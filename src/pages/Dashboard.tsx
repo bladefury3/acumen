@@ -202,9 +202,10 @@ const Dashboard = () => {
                   key={plan.id}
                   className="group relative overflow-hidden transition-all hover:shadow-lg"
                 >
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                   <Link
                     to={`/lesson-plan/${plan.id}`}
-                    className="block p-6 space-y-4"
+                    className="block p-6 space-y-4 relative"
                   >
                     <div className="space-y-2">
                       <div className="flex items-start justify-between">
@@ -216,44 +217,45 @@ const Dashboard = () => {
                             Grade {plan.grade}
                           </p>
                         </div>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                                onClick={(e) => e.preventDefault()}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete lesson plan</span>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-destructive">
+                                Delete Lesson Plan
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete this lesson plan
+                                and all associated activities.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleDelete(plan.id);
+                                }}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete lesson plan</span>
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="text-destructive">
-                                  Delete Lesson Plan
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete this lesson plan
-                                  and all associated activities.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    handleDelete(plan.id);
-                                  }}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-2">
@@ -263,7 +265,6 @@ const Dashboard = () => {
                       <Calendar className="mr-2 h-4 w-4" />
                       {format(new Date(plan.created_at), "MMMM d, yyyy")}
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/40 to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                   </Link>
                 </Card>
               ))}
