@@ -1,12 +1,10 @@
-
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { FileText, Settings, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
 import BasicInformation from "@/components/lesson-plan/BasicInformation";
 import AdditionalSettings from "@/components/lesson-plan/AdditionalSettings";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,21 +51,18 @@ const LessonPlan = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("You must be logged in to create a lesson plan");
         return;
       }
 
-      // Call OpenAI via edge function
       const { data: aiData, error: aiError } = await supabase.functions.invoke('generate-lesson-plan', {
         body: formData
       });
       if (aiError) throw aiError;
       const aiResponse = aiData.response;
 
-      // Save to database
       const { data: savedPlan, error: dbError } = await supabase
         .from('lesson_plans')
         .insert({
@@ -90,7 +85,6 @@ const LessonPlan = () => {
       if (dbError) throw dbError;
       toast.success("Lesson plan generated successfully!");
 
-      // Redirect to the view page
       navigate(`/lesson-plan/${savedPlan.id}`);
     } catch (error) {
       console.error('Error:', error);
