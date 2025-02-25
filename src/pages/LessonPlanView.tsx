@@ -1,19 +1,14 @@
+
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { FileText, Settings, Share, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LessonPlanData, ParsedSection } from "@/types/lesson";
 import { parseAndStoreAIResponse } from "@/services/lessonService";
+import SectionCard from "@/components/lesson-plan/SectionCard";
 
 const LessonPlanView = () => {
   const { id } = useParams();
@@ -150,53 +145,12 @@ const LessonPlanView = () => {
 
         <div className="grid grid-cols-1 gap-6">
           {parsedSections.map((section, index) => (
-            <Card key={index}>
-              <CardHeader>
-                <CardTitle>{section.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {section.activities ? (
-                  <div className="grid grid-cols-1 gap-6">
-                    {section.activities.map((activity, idx) => (
-                      <Card key={idx} className="bg-accent/50">
-                        <CardHeader>
-                          <CardTitle>{activity.title}</CardTitle>
-                          <CardDescription>{activity.duration}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="prose prose-sm max-w-none">
-                            <h3 className="text-sm font-medium mb-2">Instructions:</h3>
-                            <ul className="list-decimal pl-4 space-y-2">
-                              {activity.steps.map((step, stepIdx) => (
-                                <li key={stepIdx}>{step}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="prose prose-sm max-w-none">
-                    <ul className="list-disc pl-4 space-y-2">
-                      {section.content.map((item, idx) => (
-                        <li key={idx}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {!section.generated && (
-                  <Button
-                    variant="secondary"
-                    className="w-full"
-                    onClick={() => handleGenerateMore(section.title)}
-                    disabled={generatingSections.has(section.title)}
-                  >
-                    {generatingSections.has(section.title) ? 'Generating...' : 'Generate More'}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+            <SectionCard
+              key={index}
+              section={section}
+              onGenerateMore={handleGenerateMore}
+              isGenerating={generatingSections.has(section.title)}
+            />
           ))}
         </div>
       </div>
