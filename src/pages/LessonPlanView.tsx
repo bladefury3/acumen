@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,7 @@ import { FileText, Settings, Share, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LessonPlanData, ParsedSection } from "@/types/lesson";
-import { parseAndStoreAIResponse, parseExistingLessonPlans } from "@/services/lessonService";
+import { parseAndStoreAIResponse } from "@/services/lessonService";
 
 const LessonPlanView = () => {
   const { id } = useParams();
@@ -92,7 +91,6 @@ const LessonPlanView = () => {
 
     if (id) {
       fetchLessonPlan();
-      parseExistingLessonPlans();
     }
   }, [id]);
 
