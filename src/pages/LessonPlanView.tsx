@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { FileText, Settings, Trash2 } from "lucide-react";
@@ -40,21 +39,43 @@ const LessonPlanView = () => {
     setIsDeleting(true);
     
     try {
-      // The ON DELETE CASCADE we set up will handle the deletion of related records
-      const { error } = await supabase
+      // 1. Delete activities first
+      const { error: activitiesError } = await supabase
+        .from('activities_detail')
+        .delete()
+        .eq('lesson_id', id);
+
+      if (activitiesError) {
+        console.error('Error deleting activities:', activitiesError);
+        throw new Error('Failed to delete activities');
+      }
+
+      // 2. Delete lessons
+      const { error: lessonsError } = await supabase
+        .from('lessons')
+        .delete()
+        .eq('response_id', id);
+
+      if (lessonsError) {
+        console.error('Error deleting lessons:', lessonsError);
+        throw new Error('Failed to delete lessons');
+      }
+
+      // 3. Finally delete the lesson plan
+      const { error: lessonPlanError } = await supabase
         .from('lesson_plans')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Database error:', error);
+      if (lessonPlanError) {
+        console.error('Error deleting lesson plan:', lessonPlanError);
         throw new Error('Failed to delete lesson plan');
       }
 
       toast.success("Lesson plan and all related items deleted successfully");
       navigate('/dashboard', { replace: true });
     } catch (error) {
-      console.error('Error deleting lesson plan:', error);
+      console.error('Error during deletion:', error);
       toast.error("Failed to delete lesson plan and related items");
     } finally {
       setIsDeleting(false);

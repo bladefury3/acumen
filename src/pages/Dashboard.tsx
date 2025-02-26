@@ -1,15 +1,15 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Calendar, Plus, Settings, Trash2 } from "lucide-react";
+import { BookOpen, Calendar, Plus, Settings } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import EmptyState from "@/components/dashboard/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 
 interface LessonPlan {
   id: string;
@@ -35,12 +35,11 @@ const Dashboard = () => {
 
   const fetchLessonPlans = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('lesson_plans').select('*').order('created_at', {
-        ascending: false
-      });
+      const { data, error } = await supabase
+        .from('lesson_plans')
+        .select('*')
+        .order('created_at', { ascending: false });
+
       if (error) throw error;
 
       const subjects = [...new Set((data || []).map(plan => plan.subject))];
@@ -51,20 +50,6 @@ const Dashboard = () => {
       toast.error("Failed to load lesson plans");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      const {
-        error
-      } = await supabase.from('lesson_plans').delete().eq('id', id);
-      if (error) throw error;
-      setLessonPlans(prev => prev.filter(plan => plan.id !== id));
-      toast.success("Lesson plan deleted successfully");
-    } catch (error) {
-      console.error('Error deleting lesson plan:', error);
-      toast.error("Failed to delete lesson plan");
     }
   };
 
@@ -84,32 +69,46 @@ const Dashboard = () => {
     });
   };
 
+  const groupLessonPlansByDate = (plans: LessonPlan[]) => {
+    const groups: { [key: string]: LessonPlan[] } = {};
+    
+    plans.forEach(plan => {
+      const date = new Date(plan.created_at);
+      const dateKey = format(date, 'yyyy-MM-dd');
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(plan);
+    });
+
+    return Object.entries(groups).sort(([dateA], [dateB]) => {
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+  };
+
   useEffect(() => {
     fetchLessonPlans();
   }, []);
 
-  const sidebarItems = [{
-    label: "My Lessons",
-    href: "/dashboard",
-    icon: BookOpen
-  }, {
-    label: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings
-  }];
+  const sidebarItems = [
+    { label: "My Lessons", href: "/dashboard", icon: BookOpen },
+    { label: "Settings", href: "/dashboard/settings", icon: Settings },
+  ];
 
   if (isLoading) {
     return <DashboardLayout sidebarItems={sidebarItems}>
-        <div className="flex items-center justify-center h-full">
-          <div className="flex items-center space-x-4">
-            <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-muted-foreground animate-pulse">Loading lesson plans...</p>
-          </div>
+      <div className="flex items-center justify-center h-full">
+        <div className="flex items-center space-x-4">
+          <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-muted-foreground animate-pulse">Loading lesson plans...</p>
         </div>
-      </DashboardLayout>;
+      </div>
+    </DashboardLayout>;
   }
 
   const filteredLessonPlans = getFilteredAndSortedLessonPlans();
+  const groupedLessonPlans = groupLessonPlansByDate(filteredLessonPlans);
 
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
@@ -145,10 +144,7 @@ const Dashboard = () => {
         ) : (
           <>
             <div className="flex gap-4 flex-wrap">
-              <Select
-                value={sortBy}
-                onValueChange={(value) => setSortBy(value as "date" | "subject")}
-              >
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as "date" | "subject")}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
@@ -173,76 +169,48 @@ const Dashboard = () => {
               </Select>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredLessonPlans.map((plan) => (
-                <Card
-                  key={plan.id}
-                  className="group relative overflow-hidden transition-all hover:shadow-lg"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <Link
-                    to={`/lesson-plan/${plan.id}`}
-                    className="block p-4 sm:p-6 space-y-4 relative"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <h2 className="text-lg sm:text-xl font-semibold tracking-tight hover:text-primary transition-colors line-clamp-1">
-                            {subjectDisplayNames[plan.subject] || plan.subject}
-                          </h2>
-                          <p className="text-sm text-muted-foreground">
-                            Grade {plan.grade}
-                          </p>
-                        </div>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete lesson plan</span>
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="sm:max-w-[425px]">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-destructive">
-                                Delete Lesson Plan
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete this lesson plan
-                                and all associated activities.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleDelete(plan.id);
-                                }}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+            <div className="space-y-6">
+              {groupedLessonPlans.map(([date, plans]) => (
+                <Card key={date}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      {format(new Date(date), 'MMMM d, yyyy')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {plans.map((plan) => (
+                        <Card
+                          key={plan.id}
+                          className="group relative overflow-hidden transition-all hover:shadow-lg"
+                        >
+                          <Link
+                            to={`/lesson-plan/${plan.id}`}
+                            className="block p-4 sm:p-6 space-y-4"
+                          >
+                            <div className="space-y-2">
+                              <div className="space-y-1">
+                                <h2 className="text-lg sm:text-xl font-semibold tracking-tight hover:text-primary transition-colors line-clamp-1">
+                                  {subjectDisplayNames[plan.subject] || plan.subject}
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
+                                  Grade {plan.grade}
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {plan.objectives}
+                            </p>
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <Calendar className="mr-2 h-4 w-4" />
+                              {format(new Date(plan.created_at), "MMMM d, yyyy")}
+                            </div>
+                          </Link>
+                        </Card>
+                      ))}
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {plan.objectives}
-                    </p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {format(new Date(plan.created_at), "MMMM d, yyyy")}
-                    </div>
-                  </Link>
+                  </CardContent>
                 </Card>
               ))}
             </div>
