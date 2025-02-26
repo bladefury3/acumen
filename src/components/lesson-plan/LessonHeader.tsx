@@ -10,20 +10,20 @@ interface LessonHeaderProps {
 
 const LessonHeader = ({ lessonPlan }: LessonHeaderProps) => {
   return (
-    <div className="relative p-6 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/10">
-      <div className="flex justify-between items-start">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
+    <div className="relative p-4 sm:p-6 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/10">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+        <div className="space-y-3 w-full">
+          <div className="flex items-start gap-2">
+            <GraduationCap className="h-6 w-6 text-primary shrink-0 mt-1" />
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary">
               {lessonPlan.subject}: {lessonPlan.objectives.split('.')[0]}
             </h1>
           </div>
-          <div className="flex items-center gap-4 text-muted-foreground">
+          <div className="flex items-center gap-4 text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1">
               <span className="font-medium">Grade {lessonPlan.grade}</span>
             </span>
-            <span className="text-muted-foreground">•</span>
+            <span className="text-muted-foreground hidden sm:inline">•</span>
             <span className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
               <span>{lessonPlan.duration} minutes</span>
@@ -33,7 +33,7 @@ const LessonHeader = ({ lessonPlan }: LessonHeaderProps) => {
         <Button 
           onClick={() => toast.info("Share functionality coming soon!")} 
           variant="outline"
-          className="hover:bg-white/50 transition-colors"
+          className="hover:bg-white/50 transition-colors w-full sm:w-auto"
         >
           <Share className="mr-2 h-4 w-4" />
           Share Lesson

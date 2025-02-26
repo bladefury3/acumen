@@ -1,5 +1,4 @@
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ParsedSection } from "@/types/lesson";
 import ActivityCard from "./ActivityCard";
@@ -12,9 +11,7 @@ interface SectionCardProps {
 }
 
 const SectionCard = ({
-  section,
-  onGenerateMore,
-  isGenerating
+  section
 }: SectionCardProps) => {
   const getSectionIcon = (title: string) => {
     const iconMap: Record<string, React.ReactNode> = {
@@ -35,11 +32,11 @@ const SectionCard = ({
         <div className="transition-transform duration-200 group-hover:scale-110">
           {getSectionIcon(section.title)}
         </div>
-        <CardTitle className="text-lg font-semibold">{section.title}</CardTitle>
+        <CardTitle className="text-base sm:text-lg font-semibold">{section.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 pt-2">
         {section.activities ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {section.activities.map((activity, idx) => (
               <ActivityCard key={idx} activity={activity} />
             ))}
@@ -57,16 +54,6 @@ const SectionCard = ({
               ))}
             </ul>
           </div>
-        )}
-        {!section.generated && (
-          <Button
-            variant="secondary"
-            onClick={() => onGenerateMore(section.title)}
-            disabled={isGenerating}
-            className="w-full bg-primary/5 hover:bg-primary/10 transition-colors"
-          >
-            {isGenerating ? 'Generating...' : 'Generate More'}
-          </Button>
         )}
       </CardContent>
     </Card>

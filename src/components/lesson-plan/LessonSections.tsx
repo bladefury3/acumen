@@ -21,10 +21,10 @@ const LessonSections = ({
   generatingSections
 }: LessonSectionsProps) => {
   return (
-    <div className="space-y-8">
-      <div className="flex gap-6">
+    <div className="space-y-6 sm:space-y-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {groupedSections.topRow.map((section, index) => (
-          <div key={index} className="flex-1">
+          <div key={index}>
             <SectionCard
               section={section}
               onGenerateMore={onGenerateMore}
@@ -60,9 +60,9 @@ const LessonSections = ({
 
       <Separator className="bg-primary/10" />
 
-      <div className="flex gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {groupedSections.assessmentRow.map((section, index) => (
-          <div key={index} className="flex-1">
+          <div key={index}>
             <SectionCard
               section={section}
               onGenerateMore={onGenerateMore}

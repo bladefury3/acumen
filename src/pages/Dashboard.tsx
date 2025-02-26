@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+
 interface LessonPlan {
   id: string;
   subject: string;
@@ -18,20 +19,20 @@ interface LessonPlan {
   created_at: string;
 }
 
-// Subject mapping for display names
 const subjectDisplayNames: Record<string, string> = {
   "pe": "Physical Education",
   "math": "Mathematics",
   "english": "English",
   "science": "Science"
-  // Add more mappings as needed
 };
+
 const Dashboard = () => {
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"date" | "subject">("date");
   const [uniqueSubjects, setUniqueSubjects] = useState<string[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
+
   const fetchLessonPlans = async () => {
     try {
       const {
@@ -42,7 +43,6 @@ const Dashboard = () => {
       });
       if (error) throw error;
 
-      // Extract unique subjects
       const subjects = [...new Set((data || []).map(plan => plan.subject))];
       setUniqueSubjects(subjects);
       setLessonPlans(data || []);
@@ -53,6 +53,7 @@ const Dashboard = () => {
       setIsLoading(false);
     }
   };
+
   const handleDelete = async (id: string) => {
     try {
       const {
@@ -66,15 +67,14 @@ const Dashboard = () => {
       toast.error("Failed to delete lesson plan");
     }
   };
+
   const getFilteredAndSortedLessonPlans = () => {
     let filtered = [...lessonPlans];
 
-    // Filter by subject if one is selected
     if (selectedSubject !== "all") {
       filtered = filtered.filter(plan => plan.subject === selectedSubject);
     }
 
-    // Sort based on selected criteria
     return filtered.sort((a, b) => {
       if (sortBy === "date") {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -83,9 +83,11 @@ const Dashboard = () => {
       }
     });
   };
+
   useEffect(() => {
     fetchLessonPlans();
   }, []);
+
   const sidebarItems = [{
     label: "My Lessons",
     href: "/dashboard",
@@ -95,6 +97,7 @@ const Dashboard = () => {
     href: "/dashboard/settings",
     icon: Settings
   }];
+
   if (isLoading) {
     return <DashboardLayout sidebarItems={sidebarItems}>
         <div className="flex items-center justify-center h-full">
@@ -105,10 +108,13 @@ const Dashboard = () => {
         </div>
       </DashboardLayout>;
   }
+
   const filteredLessonPlans = getFilteredAndSortedLessonPlans();
-  return <DashboardLayout sidebarItems={sidebarItems}>
+
+  return (
+    <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight">My Lessons</h1>
             <p className="text-muted-foreground">
@@ -116,21 +122,33 @@ const Dashboard = () => {
             </p>
           </div>
           <Button className="bg-blue-600 hover:bg-blue-500 text-slate-50">
-            <Link to="/lesson-plan" className="flex items-center">
+            <Link to="/lesson-plan/create" className="flex items-center">
               <Plus className="mr-2 h-4 w-4" />
               Create Lesson
             </Link>
           </Button>
         </div>
 
-        {lessonPlans.length === 0 ? <EmptyState title="No Lesson Plans Yet" description="Create your first lesson plan to get started." action={<Button>
-                <Link to="/lesson-plan" className="flex items-center">
+        {lessonPlans.length === 0 ? (
+          <EmptyState
+            title="No Lesson Plans Yet"
+            description="Create your first lesson plan to get started."
+            action={
+              <Button>
+                <Link to="/lesson-plan/create" className="flex items-center">
                   <Plus className="mr-2 h-4 w-4" />
                   Create Lesson
                 </Link>
-              </Button>} /> : <>
-            <div className="flex gap-4">
-              <Select value={sortBy} onValueChange={value => setSortBy(value as "date" | "subject")}>
+              </Button>
+            }
+          />
+        ) : (
+          <>
+            <div className="flex gap-4 flex-wrap">
+              <Select
+                value={sortBy}
+                onValueChange={(value) => setSortBy(value as "date" | "subject")}
+              >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
@@ -146,21 +164,30 @@ const Dashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Subjects</SelectItem>
-                  {uniqueSubjects.map(subject => <SelectItem key={subject} value={subject}>
+                  {uniqueSubjects.map((subject) => (
+                    <SelectItem key={subject} value={subject}>
                       {subjectDisplayNames[subject] || subject}
-                    </SelectItem>)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredLessonPlans.map(plan => <Card key={plan.id} className="group relative overflow-hidden transition-all hover:shadow-lg">
+              {filteredLessonPlans.map((plan) => (
+                <Card
+                  key={plan.id}
+                  className="group relative overflow-hidden transition-all hover:shadow-lg"
+                >
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <Link to={`/lesson-plan/${plan.id}`} className="block p-6 space-y-4 relative">
+                  <Link
+                    to={`/lesson-plan/${plan.id}`}
+                    className="block p-4 sm:p-6 space-y-4 relative"
+                  >
                     <div className="space-y-2">
                       <div className="flex items-start justify-between">
-                        <div>
-                          <h2 className="text-xl font-semibold tracking-tight hover:text-primary transition-colors">
+                        <div className="space-y-1">
+                          <h2 className="text-lg sm:text-xl font-semibold tracking-tight hover:text-primary transition-colors line-clamp-1">
                             {subjectDisplayNames[plan.subject] || plan.subject}
                           </h2>
                           <p className="text-sm text-muted-foreground">
@@ -169,15 +196,20 @@ const Dashboard = () => {
                         </div>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={e => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }} className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive text-neutral-400">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                            >
                               <Trash2 className="h-4 w-4" />
                               <span className="sr-only">Delete lesson plan</span>
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="sm:max-w-[425px]">
                             <AlertDialogHeader>
                               <AlertDialogTitle className="text-destructive">
                                 Delete Lesson Plan
@@ -189,10 +221,13 @@ const Dashboard = () => {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={e => {
-                          e.preventDefault();
-                          handleDelete(plan.id);
-                        }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              <AlertDialogAction
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleDelete(plan.id);
+                                }}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
                                 Delete
                               </AlertDialogAction>
                             </AlertDialogFooter>
@@ -208,10 +243,14 @@ const Dashboard = () => {
                       {format(new Date(plan.created_at), "MMMM d, yyyy")}
                     </div>
                   </Link>
-                </Card>)}
+                </Card>
+              ))}
             </div>
-          </>}
+          </>
+        )}
       </div>
-    </DashboardLayout>;
+    </DashboardLayout>
+  );
 };
+
 export default Dashboard;
