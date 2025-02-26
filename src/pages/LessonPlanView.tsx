@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { FileText, Settings, Trash2 } from "lucide-react";
@@ -31,23 +32,32 @@ const LessonPlanView = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [parsedSections, setParsedSections] = useState<ParsedSection[]>([]);
   const [generatingSections, setGeneratingSections] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (!id) return;
+    if (!id || isDeleting) return;
 
+    setIsDeleting(true);
+    
     try {
+      // The ON DELETE CASCADE we set up will handle the deletion of related records
       const { error } = await supabase
         .from('lesson_plans')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw new Error('Failed to delete lesson plan');
+      }
 
-      toast.success("Lesson plan deleted successfully");
-      navigate('/dashboard');
+      toast.success("Lesson plan and all related items deleted successfully");
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('Error deleting lesson plan:', error);
-      toast.error("Failed to delete lesson plan");
+      toast.error("Failed to delete lesson plan and related items");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -170,9 +180,17 @@ const LessonPlanView = () => {
         <div className="flex justify-end">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="flex items-center gap-2">
-                <Trash2 className="h-4 w-4" />
-                Delete Lesson Plan
+              <Button 
+                variant="destructive" 
+                className="flex items-center gap-2"
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                {isDeleting ? "Deleting..." : "Delete Lesson Plan"}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -182,14 +200,15 @@ const LessonPlanView = () => {
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   This action cannot be undone. This will permanently delete this lesson plan
-                  and all associated activities.
+                  and all associated activities, lessons, and related content.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleDelete}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={isDeleting}
                 >
                   Delete
                 </AlertDialogAction>
