@@ -4,6 +4,7 @@ import LessonHeader from "./LessonHeader";
 import LessonSections from "./LessonSections";
 import { Separator } from "@/components/ui/separator";
 import DeleteLessonDialog from "./DeleteLessonDialog";
+import DownloadLessonPDF from "./DownloadLessonPDF";
 
 interface LessonPlanContentProps {
   lessonPlan: LessonPlanData;
@@ -24,6 +25,15 @@ const LessonPlanContent = ({
   onGenerateMore,
   generatingSections
 }: LessonPlanContentProps) => {
+  // Convert grouped sections back to array for PDF
+  const allSections = [
+    ...groupedSections.topRow,
+    groupedSections.introduction,
+    groupedSections.activities,
+    ...groupedSections.assessmentRow,
+    groupedSections.close,
+  ].filter((section): section is ParsedSection => section !== undefined);
+
   return (
     <div className="space-y-8 animate-fade-in pb-16">
       <LessonHeader lessonPlan={lessonPlan} />
@@ -33,7 +43,11 @@ const LessonPlanContent = ({
         generatingSections={generatingSections}
       />
       <Separator className="my-8" />
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center">
+        <DownloadLessonPDF
+          lessonTitle={`${lessonPlan.grade} ${lessonPlan.subject} Lesson Plan`}
+          sections={allSections}
+        />
         <DeleteLessonDialog lessonId={lessonPlan.id} />
       </div>
     </div>
