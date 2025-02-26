@@ -19,45 +19,36 @@ const ActivityCard = ({ activity, activityId }: ActivityCardProps) => {
   const [instructions, setInstructions] = useState<Instruction[]>([]);
 
   useEffect(() => {
-    if (activityId) {
-      const fetchInstructions = async () => {
-        const { data, error } = await supabase
-          .from('instructions')
-          .select('*')
-          .eq('activities_detail_id', activityId)
-          .order('created_at', { ascending: true });
+    if (!activityId) return;
 
-        if (error) {
-          console.error('Error fetching instructions:', error);
-          return;
-        }
+    const fetchInstructions = async () => {
+      const { data, error } = await supabase
+        .from('instructions')
+        .select('*')
+        .eq('activities_detail_id', activityId)
+        .order('created_at', { ascending: true });
 
+      if (!error && data) {
         setInstructions(data);
-      };
+      }
+    };
 
-      // Set up realtime subscription
-      const channel = supabase
-        .channel('instructions-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'instructions',
-            filter: `activities_detail_id=eq.${activityId}`
-          },
-          () => {
-            fetchInstructions();
-          }
-        )
-        .subscribe();
+    const channel = supabase
+      .channel('instructions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'instructions',
+          filter: `activities_detail_id=eq.${activityId}`
+        },
+        fetchInstructions
+      )
+      .subscribe();
 
-      fetchInstructions();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
+    fetchInstructions();
+    return () => { supabase.removeChannel(channel); };
   }, [activityId]);
 
   return (

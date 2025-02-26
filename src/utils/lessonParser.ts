@@ -1,3 +1,4 @@
+
 import { Activity, ParsedSection } from "@/types/lesson";
 
 export const cleanMarkdown = (text: string): string => {
@@ -15,7 +16,7 @@ const extractActivityTitle = (text: string): string => {
 };
 
 const parseSteps = (content: string): string[] => {
-  const steps = content
+  return content
     .split(/(?:\r?\n|\s*[+•-]\s*|\d+\.\s*)/)
     .map(step => step.trim())
     .filter(step => step.length > 0)
@@ -23,49 +24,34 @@ const parseSteps = (content: string): string[] => {
       const cleanStep = cleanMarkdown(step);
       return cleanStep.endsWith('.') ? cleanStep : `${cleanStep}.`;
     });
-
-  return steps;
 };
 
 export const parseActivities = (content: string[]): Activity[] => {
-  try {
-    return content.map(activity => {
-      const duration = extractDuration(activity) || "";
-      const title = extractActivityTitle(activity);
-      
-      const descriptionStart = activity.indexOf(')') + 1;
-      const description = descriptionStart > 0 ? 
-        activity.slice(descriptionStart) : 
-        activity;
-      
-      const steps = parseSteps(description);
+  return content.map(activity => {
+    const duration = extractDuration(activity) || "";
+    const title = extractActivityTitle(activity);
+    
+    const descriptionStart = activity.indexOf(')') + 1;
+    const description = descriptionStart > 0 ? 
+      activity.slice(descriptionStart) : 
+      activity;
+    
+    const steps = parseSteps(description);
 
-      if (!title) {
-        throw new Error(`Failed to parse activity title from: ${activity}`);
-      }
+    if (!title || steps.length === 0) {
+      throw new Error(`Invalid activity format: missing title or steps for "${activity}"`);
+    }
 
-      if (steps.length === 0) {
-        throw new Error(`No steps found for activity: ${title}`);
-      }
-
-      return {
-        title,
-        duration,
-        steps
-      };
-    });
-  } catch (error) {
-    console.error('Error parsing activities:', error);
-    throw error;
-  }
+    return { title, duration, steps };
+  });
 };
 
 const findSectionContent = (lines: string[]): string[] => {
   return lines
     .filter(line => {
       const cleaned = line.trim();
-      if (!cleaned || cleaned.startsWith('#')) return false;
-      return cleaned.startsWith('-') || /^\d+\./.test(cleaned) || cleaned.length > 0;
+      return cleaned && !cleaned.startsWith('#') && 
+        (cleaned.startsWith('-') || /^\d+\./.test(cleaned) || cleaned.length > 0);
     })
     .map(line => cleanMarkdown(line.replace(/^[-*•]\s*|\d+\.\s*/, '')))
     .filter(line => line.length > 0);
@@ -86,67 +72,48 @@ const identifySectionType = (title: string): string => {
 };
 
 export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
-  try {
-    const sectionTexts = aiResponse.split(/(?=###\s*|\d+\.\s+)/m);
-    const sections: ParsedSection[] = [];
-    const requiredSections = new Set([
-      'Learning Objectives',
-      'Materials & Resources',
-      'Introduction & Hook',
-      'Activities',
-      'Assessment Strategies',
-      'Differentiation Strategies',
-      'Close'
-    ]);
-    const foundSections = new Set<string>();
+  const sectionTexts = aiResponse.split(/(?=###\s*|\d+\.\s+)/m);
+  const sections: ParsedSection[] = [];
+  const requiredSections = new Set([
+    'Learning Objectives',
+    'Materials & Resources',
+    'Introduction & Hook',
+    'Activities',
+    'Assessment Strategies',
+    'Differentiation Strategies',
+    'Close'
+  ]);
+  const foundSections = new Set<string>();
 
-    sectionTexts.forEach(sectionText => {
-      const lines = sectionText.split('\n').map(line => line.trim()).filter(Boolean);
-      if (lines.length === 0) return;
+  sectionTexts.forEach(sectionText => {
+    const lines = sectionText.split('\n').map(line => line.trim()).filter(Boolean);
+    if (lines.length === 0) return;
 
-      const titleLine = lines[0];
-      let title = cleanMarkdown(titleLine.replace(/^###\s*|\d+\.\s*/, ''));
-      title = identifySectionType(title);
-      
-      if (!title) return;
+    const titleLine = lines[0];
+    let title = cleanMarkdown(titleLine.replace(/^###\s*|\d+\.\s*/, ''));
+    title = identifySectionType(title);
+    
+    if (!title) return;
 
-      const content = findSectionContent(lines.slice(1));
-      if (content.length === 0) return;
+    const content = findSectionContent(lines.slice(1));
+    if (content.length === 0) return;
 
-      foundSections.add(title);
+    foundSections.add(title);
 
-      if (title.toLowerCase().includes('activit')) {
-        try {
-          const activities = parseActivities(content);
-          sections.push({
-            title,
-            content,
-            activities,
-            generated: false
-          });
-        } catch (error) {
-          console.error(`Error parsing activities in section ${title}:`, error);
-          throw new Error(`Failed to parse activities section: ${error.message}`);
-        }
-      } else {
-        sections.push({
-          title,
-          content,
-          generated: false
-        });
-      }
-    });
-
-    const missingSections = Array.from(requiredSections)
-      .filter(section => !foundSections.has(section));
-
-    if (missingSections.length > 0) {
-      throw new Error(`Missing required sections: ${missingSections.join(', ')}`);
+    if (title.toLowerCase().includes('activit')) {
+      const activities = parseActivities(content);
+      sections.push({ title, content, activities, generated: false });
+    } else {
+      sections.push({ title, content, generated: false });
     }
+  });
 
-    return sections;
-  } catch (error) {
-    console.error('Error parsing AI response:', error);
-    throw error;
+  const missingSections = Array.from(requiredSections)
+    .filter(section => !foundSections.has(section));
+
+  if (missingSections.length > 0) {
+    throw new Error(`Missing required sections: ${missingSections.join(', ')}`);
   }
+
+  return sections;
 };
