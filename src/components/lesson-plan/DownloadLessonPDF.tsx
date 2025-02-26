@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
@@ -84,15 +84,61 @@ const LessonPDF = ({ lessonTitle, sections }: DownloadLessonPDFProps) => (
 const DownloadLessonPDF = ({ lessonTitle, sections }: DownloadLessonPDFProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Reset generating state if component unmounts while generating
+  useEffect(() => {
+    return () => {
+      if (isGenerating) {
+        setIsGenerating(false);
+      }
+    };
+  }, [isGenerating]);
+
+  // Reset generating state after 5 seconds as a fallback
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    if (isGenerating) {
+      timeoutId = setTimeout(() => {
+        setIsGenerating(false);
+      }, 5000);
+    }
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [isGenerating]);
+
+  const handleDownloadStart = () => {
+    setIsGenerating(true);
+    toast.success("Starting PDF download...");
+  };
+
+  const handleDownloadComplete = () => {
+    setIsGenerating(false);
+    toast.success("PDF downloaded successfully!");
+  };
+
+  const handleError = () => {
+    setIsGenerating(false);
+    toast.error("Failed to generate PDF");
+  };
+
   return (
     <PDFDownloadLink
       document={<LessonPDF lessonTitle={lessonTitle} sections={sections} />}
       fileName={`${lessonTitle.toLowerCase().replace(/\s+/g, '-')}-lesson-plan.pdf`}
       className="inline-block"
+      onClick={handleDownloadStart}
     >
-      {({ loading, error }) => {
+      {({ loading, error, blob }) => {
+        // If we have a blob and were generating, the download is complete
+        if (blob && isGenerating) {
+          handleDownloadComplete();
+        }
+        
+        // Handle any errors
         if (error) {
-          toast.error("Failed to generate PDF");
+          handleError();
           return null;
         }
 
@@ -101,10 +147,6 @@ const DownloadLessonPDF = ({ lessonTitle, sections }: DownloadLessonPDFProps) =>
             variant="outline"
             className="flex items-center gap-2"
             disabled={loading || isGenerating}
-            onClick={() => {
-              setIsGenerating(true);
-              toast.success("Generating PDF...");
-            }}
           >
             {loading || isGenerating ? (
               <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
