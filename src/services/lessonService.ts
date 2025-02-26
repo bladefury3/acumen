@@ -10,13 +10,15 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     console.log('Parsed sections:', sections);
 
     // Helper function to find content with flexible title matching
-    const findSectionContent = (titlePattern: string[]): string => {
-      const section = sections.find(s => 
-        titlePattern.some(pattern => 
+    const findSectionContent = (titlePatterns: string[]): string => {
+      const matchingSection = sections.find(s => 
+        titlePatterns.some(pattern => 
           s.title.toLowerCase().includes(pattern.toLowerCase())
         )
       );
-      return section?.content.join('\n') || '';
+      return matchingSection?.content.join('\n') || matchingSection?.activities?.map(a => 
+        `${a.title}\n${a.steps.join('\n')}`
+      ).join('\n') || '';
     };
 
     const parsedLesson: ParsedLesson = {
@@ -29,17 +31,19 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       activities: []
     };
 
-    // Validate each required field and provide specific error messages
-    const missingFields = [];
-    if (!parsedLesson.learning_objectives) missingFields.push('Learning Objectives');
-    if (!parsedLesson.materials_resources) missingFields.push('Materials/Resources');
-    if (!parsedLesson.introduction_hook) missingFields.push('Introduction/Hook');
-    if (!parsedLesson.assessment_strategies) missingFields.push('Assessment Strategies');
-    if (!parsedLesson.differentiation_strategies) missingFields.push('Differentiation Strategies');
-    if (!parsedLesson.close) missingFields.push('Close/Closure');
+    // Only validate if there are no sections found
+    if (sections.length === 0) {
+      const missingFields = [];
+      if (!parsedLesson.learning_objectives) missingFields.push('Learning Objectives');
+      if (!parsedLesson.materials_resources) missingFields.push('Materials/Resources');
+      if (!parsedLesson.introduction_hook) missingFields.push('Introduction/Hook');
+      if (!parsedLesson.assessment_strategies) missingFields.push('Assessment Strategies');
+      if (!parsedLesson.differentiation_strategies) missingFields.push('Differentiation Strategies');
+      if (!parsedLesson.close) missingFields.push('Close/Closure');
 
-    if (missingFields.length > 0) {
-      throw new Error(`Missing required fields in lesson plan: ${missingFields.join(', ')}`);
+      if (missingFields.length > 0) {
+        throw new Error(`Missing required fields in lesson plan: ${missingFields.join(', ')}`);
+      }
     }
 
     const activitiesSection = sections.find(s => 
@@ -56,6 +60,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       }));
     }
 
+    // Check if lesson already exists
     const { data: existingLesson } = await supabase
       .from('lessons')
       .select('id')
@@ -65,6 +70,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     let lessonId;
 
     if (existingLesson?.id) {
+      // Update existing lesson
       const { error: updateError } = await supabase
         .from('lessons')
         .update({
@@ -80,6 +86,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       if (updateError) throw updateError;
       lessonId = existingLesson.id;
 
+      // Delete existing activities
       const { error: deleteError } = await supabase
         .from('activities_detail')
         .delete()
@@ -87,6 +94,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
 
       if (deleteError) throw deleteError;
     } else {
+      // Create new lesson
       const { data: newLesson, error: lessonError } = await supabase
         .from('lessons')
         .insert({
@@ -105,6 +113,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       lessonId = newLesson.id;
     }
 
+    // Insert activities if they exist
     if (parsedLesson.activities.length > 0) {
       const activitiesWithLessonId = parsedLesson.activities.map(activity => ({
         lesson_id: lessonId,
@@ -150,9 +159,6 @@ export const parseExistingLessonPlans = async () => {
           console.log(`Successfully processed lesson plan ${plan.id}`);
         } catch (error) {
           console.error(`Error processing lesson plan ${plan.id}:`, error);
-          if (error instanceof Error) {
-            console.error('Error details:', error.message);
-          }
           failureCount++;
         }
       }
@@ -162,7 +168,7 @@ export const parseExistingLessonPlans = async () => {
       toast.success(`Successfully parsed ${successCount} lesson plans`);
     }
     if (failureCount > 0) {
-      toast.error(`Failed to parse ${failureCount} lesson plans. Check console for details.`);
+      toast.error(`Failed to parse ${failureCount} lesson plans`);
     }
   } catch (error) {
     console.error('Error parsing existing lesson plans:', error);
