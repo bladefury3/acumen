@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ParsedLesson, ParsedSection } from "@/types/lesson";
 import { parseAIResponse } from "@/utils/lessonParser";
@@ -8,7 +9,6 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     const sections = parseAIResponse(aiResponse);
     console.log('Parsed sections:', sections);
 
-    // Helper function to find content with flexible title matching
     const findSectionContent = (titlePatterns: string[]): string => {
       const matchingSection = sections.find(s => 
         titlePatterns.some(pattern => 
@@ -59,25 +59,21 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       instructions: activity.steps.join('\n')
     }));
 
-    // If parsing succeeded but no activities were created, throw an error
     if (parsedLesson.activities.length === 0) {
       throw new Error('Failed to parse activities from the lesson plan');
     }
 
-    // Delete existing data if parsing successful but before saving new data
+    // Clean up existing data
     try {
-      // 1. Delete activities first
       await supabase
         .from('activities_detail')
         .delete()
         .eq('lesson_id', responseId);
 
-      // 2. Delete lessons
       await supabase
         .from('lessons')
         .delete()
         .eq('response_id', responseId);
-
     } catch (error) {
       console.error('Error cleaning up existing data:', error);
       throw new Error('Failed to clean up existing data before saving new lesson plan');
@@ -100,24 +96,43 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
 
     if (lessonError) throw lessonError;
 
-    // Insert activities
-    const activitiesWithLessonId = parsedLesson.activities.map(activity => ({
-      lesson_id: newLesson.id,
-      activity_name: activity.activity_name,
-      description: activity.description,
-      instructions: activity.instructions
-    }));
+    // Insert activities and their instructions
+    for (const activity of parsedLesson.activities) {
+      // Insert activity
+      const { data: newActivity, error: activityError } = await supabase
+        .from('activities_detail')
+        .insert({
+          lesson_id: newLesson.id,
+          activity_name: activity.activity_name,
+          description: activity.description,
+          instructions: activity.instructions
+        })
+        .select('id')
+        .single();
 
-    const { error: activitiesError } = await supabase
-      .from('activities_detail')
-      .insert(activitiesWithLessonId);
+      if (activityError) throw activityError;
 
-    if (activitiesError) throw activitiesError;
+      // Insert individual instructions
+      const instructionsToInsert = activity.instructions
+        .split('\n')
+        .filter(text => text.trim().length > 0)
+        .map(instruction_text => ({
+          instruction_text,
+          activities_detail_id: newActivity.id
+        }));
+
+      if (instructionsToInsert.length > 0) {
+        const { error: instructionsError } = await supabase
+          .from('instructions')
+          .insert(instructionsToInsert);
+
+        if (instructionsError) throw instructionsError;
+      }
+    }
 
     return sections;
   } catch (error) {
     console.error('Error parsing and storing AI response:', error);
-    // Delete the lesson plan if parsing or storing fails
     try {
       await supabase
         .from('lesson_plans')

@@ -131,6 +131,35 @@ export type Database = {
         }
         Relationships: []
       }
+      instructions: {
+        Row: {
+          activities_detail_id: string
+          created_at: string
+          id: string
+          instruction_text: string
+        }
+        Insert: {
+          activities_detail_id: string
+          created_at?: string
+          id?: string
+          instruction_text: string
+        }
+        Update: {
+          activities_detail_id?: string
+          created_at?: string
+          id?: string
+          instruction_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructions_activities_detail_id_fkey"
+            columns: ["activities_detail_id"]
+            isOneToOne: false
+            referencedRelation: "activities_detail"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       learning_needs: {
         Row: {
           created_at: string

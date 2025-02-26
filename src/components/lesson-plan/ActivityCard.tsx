@@ -1,4 +1,5 @@
 
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -6,13 +7,59 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Activity } from "@/types/lesson";
+import { Activity, Instruction } from "@/types/lesson";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ActivityCardProps {
   activity: Activity;
+  activityId?: string;
 }
 
-const ActivityCard = ({ activity }: ActivityCardProps) => {
+const ActivityCard = ({ activity, activityId }: ActivityCardProps) => {
+  const [instructions, setInstructions] = useState<Instruction[]>([]);
+
+  useEffect(() => {
+    if (activityId) {
+      const fetchInstructions = async () => {
+        const { data, error } = await supabase
+          .from('instructions')
+          .select('*')
+          .eq('activities_detail_id', activityId)
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          console.error('Error fetching instructions:', error);
+          return;
+        }
+
+        setInstructions(data);
+      };
+
+      // Set up realtime subscription
+      const channel = supabase
+        .channel('instructions-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'instructions',
+            filter: `activities_detail_id=eq.${activityId}`
+          },
+          () => {
+            fetchInstructions();
+          }
+        )
+        .subscribe();
+
+      fetchInstructions();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [activityId]);
+
   return (
     <Card className="bg-accent/50">
       <CardHeader className="p-4 pb-2">
@@ -23,9 +70,15 @@ const ActivityCard = ({ activity }: ActivityCardProps) => {
         <div className="prose prose-sm max-w-none">
           <h3 className="text-sm font-medium mb-2">Instructions:</h3>
           <ul className="list-decimal pl-4 space-y-2 text-sm">
-            {activity.steps.map((step, stepIdx) => (
-              <li key={stepIdx}>{step}</li>
-            ))}
+            {activityId && instructions.length > 0 ? (
+              instructions.map((instruction) => (
+                <li key={instruction.id}>{instruction.instruction_text}</li>
+              ))
+            ) : (
+              activity.steps.map((step, stepIdx) => (
+                <li key={stepIdx}>{step}</li>
+              ))
+            )}
           </ul>
         </div>
       </CardContent>
