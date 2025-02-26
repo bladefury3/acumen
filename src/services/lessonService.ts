@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ParsedSection } from "@/types/lesson";
 import { parseAIResponse } from "@/utils/lessonParser";
@@ -111,7 +112,6 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
 
     // Insert activities and their instructions
     for (const activity of parsedLesson.activities) {
-      // Insert activity
       const { data: newActivity, error: activityError } = await supabase
         .from('activities_detail')
         .insert({
@@ -125,7 +125,6 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
 
       if (activityError) throw activityError;
 
-      // Insert individual instructions
       const instructionsToInsert = activity.instructions
         .split('\n')
         .filter(text => text.trim().length > 0)
@@ -146,56 +145,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     return sections;
   } catch (error) {
     console.error('Error parsing and storing AI response:', error);
-    try {
-      await supabase
-        .from('lesson_plans')
-        .delete()
-        .eq('id', responseId);
-      
-      toast.error(`Failed to create lesson plan: ${error.message}`);
-    } catch (deleteError) {
-      console.error('Error deleting failed lesson plan:', deleteError);
-    }
+    toast.error(`Failed to create lesson plan: ${error.message}`);
     throw error;
-  }
-};
-
-export const parseExistingLessonPlans = async () => {
-  try {
-    const { data: lessonPlans, error } = await supabase
-      .from('lesson_plans')
-      .select('id, ai_response')
-      .filter('ai_response', 'neq', null);
-
-    if (error) throw error;
-
-    let successCount = 0;
-    let failureCount = 0;
-
-    console.log(`Found ${lessonPlans?.length || 0} lesson plans to process`);
-
-    for (const plan of lessonPlans || []) {
-      if (plan.ai_response) {
-        try {
-          console.log(`Processing lesson plan ${plan.id}`);
-          await parseAndStoreAIResponse(plan.ai_response, plan.id);
-          successCount++;
-          console.log(`Successfully processed lesson plan ${plan.id}`);
-        } catch (error) {
-          console.error(`Error processing lesson plan ${plan.id}:`, error);
-          failureCount++;
-        }
-      }
-    }
-
-    if (successCount > 0) {
-      toast.success(`Successfully parsed ${successCount} lesson plans`);
-    }
-    if (failureCount > 0) {
-      toast.error(`Failed to parse ${failureCount} lesson plans`);
-    }
-  } catch (error) {
-    console.error('Error parsing existing lesson plans:', error);
-    toast.error('Failed to parse lesson plans');
   }
 };

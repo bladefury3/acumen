@@ -15,15 +15,11 @@ interface LessonPlanContentProps {
     assessmentRow: ParsedSection[];
     close?: ParsedSection;
   };
-  onGenerateMore: (sectionTitle: string) => void;
-  generatingSections: Set<string>;
 }
 
 const LessonPlanContent = ({
   lessonPlan,
   groupedSections,
-  onGenerateMore,
-  generatingSections
 }: LessonPlanContentProps) => {
   // Convert grouped sections back to array for PDF
   const allSections = [
@@ -37,11 +33,7 @@ const LessonPlanContent = ({
   return (
     <div className="space-y-8 animate-fade-in pb-16">
       <LessonHeader lessonPlan={lessonPlan} />
-      <LessonSections
-        groupedSections={groupedSections}
-        onGenerateMore={onGenerateMore}
-        generatingSections={generatingSections}
-      />
+      <LessonSections groupedSections={groupedSections} />
       <Separator className="my-8" />
       <div className="flex justify-between items-center">
         <DownloadLessonPDF

@@ -6,8 +6,6 @@ import { BookOpen, Target, Boxes, Brain, PenTool, CheckCircle, LayoutGrid } from
 
 interface SectionCardProps {
   section: ParsedSection;
-  onGenerateMore: (sectionTitle: string) => void;
-  isGenerating: boolean;
 }
 
 const SectionCard = ({
