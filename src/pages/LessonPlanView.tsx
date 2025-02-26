@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { FileText, Settings } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { FileText, Settings, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LessonPlanData, ParsedSection } from "@/types/lesson";
@@ -11,13 +10,46 @@ import LessonBreadcrumb from "@/components/lesson-plan/LessonBreadcrumb";
 import LessonHeader from "@/components/lesson-plan/LessonHeader";
 import LessonSections from "@/components/lesson-plan/LessonSections";
 import { groupSections } from "@/utils/sectionUtils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const LessonPlanView = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [lessonPlan, setLessonPlan] = useState<LessonPlanData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [parsedSections, setParsedSections] = useState<ParsedSection[]>([]);
   const [generatingSections, setGeneratingSections] = useState<Set<string>>(new Set());
+
+  const handleDelete = async () => {
+    if (!id) return;
+
+    try {
+      const { error } = await supabase
+        .from('lesson_plans')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success("Lesson plan deleted successfully");
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error deleting lesson plan:', error);
+      toast.error("Failed to delete lesson plan");
+    }
+  };
 
   const handleGenerateMore = async (sectionTitle: string) => {
     if (!id || generatingSections.has(sectionTitle)) return;
@@ -126,7 +158,7 @@ const LessonPlanView = () => {
 
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-8 animate-fade-in pb-16">
         <LessonBreadcrumb />
         <LessonHeader lessonPlan={lessonPlan} />
         <LessonSections
@@ -134,6 +166,37 @@ const LessonPlanView = () => {
           onGenerateMore={handleGenerateMore}
           generatingSections={generatingSections}
         />
+        <Separator className="my-8" />
+        <div className="flex justify-end">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="flex items-center gap-2">
+                <Trash2 className="h-4 w-4" />
+                Delete Lesson Plan
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-destructive">
+                  Delete Lesson Plan
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete this lesson plan
+                  and all associated activities.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </DashboardLayout>
   );
