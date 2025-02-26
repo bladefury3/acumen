@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ParsedLesson, ParsedSection } from "@/types/lesson";
 import { parseAIResponse } from "@/utils/lessonParser";
@@ -31,19 +30,17 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       activities: []
     };
 
-    // Only validate if there are no sections found
-    if (sections.length === 0) {
-      const missingFields = [];
-      if (!parsedLesson.learning_objectives) missingFields.push('Learning Objectives');
-      if (!parsedLesson.materials_resources) missingFields.push('Materials/Resources');
-      if (!parsedLesson.introduction_hook) missingFields.push('Introduction/Hook');
-      if (!parsedLesson.assessment_strategies) missingFields.push('Assessment Strategies');
-      if (!parsedLesson.differentiation_strategies) missingFields.push('Differentiation Strategies');
-      if (!parsedLesson.close) missingFields.push('Close/Closure');
+    // Validate required sections
+    const missingFields = [];
+    if (!parsedLesson.learning_objectives) missingFields.push('Learning Objectives');
+    if (!parsedLesson.materials_resources) missingFields.push('Materials/Resources');
+    if (!parsedLesson.introduction_hook) missingFields.push('Introduction/Hook');
+    if (!parsedLesson.assessment_strategies) missingFields.push('Assessment Strategies');
+    if (!parsedLesson.differentiation_strategies) missingFields.push('Differentiation Strategies');
+    if (!parsedLesson.close) missingFields.push('Close/Closure');
 
-      if (missingFields.length > 0) {
-        throw new Error(`Missing required fields in lesson plan: ${missingFields.join(', ')}`);
-      }
+    if (missingFields.length > 0) {
+      throw new Error(`Missing required fields in lesson plan: ${missingFields.join(', ')}`);
     }
 
     const activitiesSection = sections.find(s => 
@@ -52,86 +49,85 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       )
     );
 
-    if (activitiesSection?.activities) {
-      parsedLesson.activities = activitiesSection.activities.map(activity => ({
-        activity_name: activity.title || 'Untitled Activity',
-        description: activity.duration || 'No duration specified',
-        instructions: activity.steps?.join('\n') || 'No instructions provided'
-      }));
+    if (!activitiesSection?.activities || activitiesSection.activities.length === 0) {
+      throw new Error('No activities found in the lesson plan');
     }
 
-    // Check if lesson already exists
-    const { data: existingLesson } = await supabase
-      .from('lessons')
-      .select('id')
-      .eq('response_id', responseId)
-      .maybeSingle();
+    parsedLesson.activities = activitiesSection.activities.map(activity => ({
+      activity_name: activity.title,
+      description: activity.duration || 'Duration not specified',
+      instructions: activity.steps.join('\n')
+    }));
 
-    let lessonId;
+    // If parsing succeeded but no activities were created, throw an error
+    if (parsedLesson.activities.length === 0) {
+      throw new Error('Failed to parse activities from the lesson plan');
+    }
 
-    if (existingLesson?.id) {
-      // Update existing lesson
-      const { error: updateError } = await supabase
-        .from('lessons')
-        .update({
-          learning_objectives: parsedLesson.learning_objectives,
-          materials_resources: parsedLesson.materials_resources,
-          introduction_hook: parsedLesson.introduction_hook,
-          assessment_strategies: parsedLesson.assessment_strategies,
-          differentiation_strategies: parsedLesson.differentiation_strategies,
-          close: parsedLesson.close
-        })
-        .eq('id', existingLesson.id);
-
-      if (updateError) throw updateError;
-      lessonId = existingLesson.id;
-
-      // Delete existing activities
-      const { error: deleteError } = await supabase
+    // Delete existing data if parsing successful but before saving new data
+    try {
+      // 1. Delete activities first
+      await supabase
         .from('activities_detail')
         .delete()
-        .eq('lesson_id', lessonId);
+        .eq('lesson_id', responseId);
 
-      if (deleteError) throw deleteError;
-    } else {
-      // Create new lesson
-      const { data: newLesson, error: lessonError } = await supabase
+      // 2. Delete lessons
+      await supabase
         .from('lessons')
-        .insert({
-          response_id: responseId,
-          learning_objectives: parsedLesson.learning_objectives,
-          materials_resources: parsedLesson.materials_resources,
-          introduction_hook: parsedLesson.introduction_hook,
-          assessment_strategies: parsedLesson.assessment_strategies,
-          differentiation_strategies: parsedLesson.differentiation_strategies,
-          close: parsedLesson.close
-        })
-        .select('id')
-        .single();
+        .delete()
+        .eq('response_id', responseId);
 
-      if (lessonError) throw lessonError;
-      lessonId = newLesson.id;
+    } catch (error) {
+      console.error('Error cleaning up existing data:', error);
+      throw new Error('Failed to clean up existing data before saving new lesson plan');
     }
 
-    // Insert activities if they exist
-    if (parsedLesson.activities.length > 0) {
-      const activitiesWithLessonId = parsedLesson.activities.map(activity => ({
-        lesson_id: lessonId,
-        activity_name: activity.activity_name,
-        description: activity.description,
-        instructions: activity.instructions
-      }));
+    // Create new lesson
+    const { data: newLesson, error: lessonError } = await supabase
+      .from('lessons')
+      .insert({
+        response_id: responseId,
+        learning_objectives: parsedLesson.learning_objectives,
+        materials_resources: parsedLesson.materials_resources,
+        introduction_hook: parsedLesson.introduction_hook,
+        assessment_strategies: parsedLesson.assessment_strategies,
+        differentiation_strategies: parsedLesson.differentiation_strategies,
+        close: parsedLesson.close
+      })
+      .select('id')
+      .single();
 
-      const { error: activitiesError } = await supabase
-        .from('activities_detail')
-        .insert(activitiesWithLessonId);
+    if (lessonError) throw lessonError;
 
-      if (activitiesError) throw activitiesError;
-    }
+    // Insert activities
+    const activitiesWithLessonId = parsedLesson.activities.map(activity => ({
+      lesson_id: newLesson.id,
+      activity_name: activity.activity_name,
+      description: activity.description,
+      instructions: activity.instructions
+    }));
+
+    const { error: activitiesError } = await supabase
+      .from('activities_detail')
+      .insert(activitiesWithLessonId);
+
+    if (activitiesError) throw activitiesError;
 
     return sections;
   } catch (error) {
     console.error('Error parsing and storing AI response:', error);
+    // Delete the lesson plan if parsing or storing fails
+    try {
+      await supabase
+        .from('lesson_plans')
+        .delete()
+        .eq('id', responseId);
+      
+      toast.error(`Failed to create lesson plan: ${error.message}`);
+    } catch (deleteError) {
+      console.error('Error deleting failed lesson plan:', deleteError);
+    }
     throw error;
   }
 };
