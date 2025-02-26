@@ -18,50 +18,6 @@ const LessonPlanView = () => {
   const [lessonPlan, setLessonPlan] = useState<LessonPlanData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [parsedSections, setParsedSections] = useState<ParsedSection[]>([]);
-  const [generatingSections, setGeneratingSections] = useState<Set<string>>(new Set());
-
-  const handleGenerateMore = async (sectionTitle: string) => {
-    if (!id || generatingSections.has(sectionTitle)) return;
-
-    setGeneratingSections(prev => new Set([...prev, sectionTitle]));
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-lesson-plan', {
-        body: {
-          prompt: `Generate 3 more ${sectionTitle.toLowerCase()} for this lesson plan that are different from the existing ones.`,
-          existingContent: parsedSections.find(s => s.title === sectionTitle)?.content || []
-        }
-      });
-
-      if (error) throw error;
-
-      const newContent = data.response.split('\n')
-        .filter((line: string) => line.trim().startsWith('- '))
-        .map((line: string) => line.trim().replace('- ', ''));
-
-      setParsedSections(prev => prev.map(section => {
-        if (section.title === sectionTitle) {
-          return {
-            ...section,
-            content: [...section.content, ...newContent],
-            generated: true
-          };
-        }
-        return section;
-      }));
-
-      toast.success(`Generated new ${sectionTitle.toLowerCase()}`);
-    } catch (error) {
-      console.error('Error generating content:', error);
-      toast.error(`Failed to generate new ${sectionTitle.toLowerCase()}`);
-    } finally {
-      setGeneratingSections(prev => {
-        const next = new Set(prev);
-        next.delete(sectionTitle);
-        return next;
-      });
-    }
-  };
 
   useEffect(() => {
     const fetchLessonPlan = async () => {
@@ -122,8 +78,6 @@ const LessonPlanView = () => {
         <LessonPlanContent
           lessonPlan={lessonPlan}
           groupedSections={groupedSections}
-          onGenerateMore={handleGenerateMore}
-          generatingSections={generatingSections}
         />
       </div>
     </DashboardLayout>
