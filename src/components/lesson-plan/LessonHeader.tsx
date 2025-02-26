@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
-import { Clock, GraduationCap, Download } from "lucide-react";
+import { Clock, GraduationCap, Share } from "lucide-react";
+import { toast } from "sonner";
 import { LessonPlanData } from "@/types/lesson";
 
 interface LessonHeaderProps {
@@ -29,6 +30,14 @@ const LessonHeader = ({ lessonPlan }: LessonHeaderProps) => {
             </span>
           </div>
         </div>
+        <Button 
+          onClick={() => toast.info("Share functionality coming soon!")} 
+          variant="outline"
+          className="hover:bg-white/50 transition-colors w-full sm:w-auto"
+        >
+          <Share className="mr-2 h-4 w-4" />
+          Share Lesson
+        </Button>
       </div>
     </div>
   );
