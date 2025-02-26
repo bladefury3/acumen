@@ -29,15 +29,7 @@ const LessonHeader = ({ lessonPlan }: LessonHeaderProps) => {
               <span>{lessonPlan.duration} minutes</span>
             </span>
           </div>
-        </div>
-        <Button 
-          onClick={() => toast.info("Share functionality coming soon!")} 
-          variant="outline"
-          className="hover:bg-white/50 transition-colors w-full sm:w-auto"
-        >
-          <Share className="mr-2 h-4 w-4" />
-          Share Lesson
-        </Button>
+        </div>        
       </div>
     </div>
   );
