@@ -1,5 +1,5 @@
 
-import { Home, FileText, MessageCircle } from 'lucide-react';
+import { Home, FileText, MessageCircle, PieChart } from 'lucide-react';
 import { NavBar } from '@/components/ui/tubelight-navbar';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +8,8 @@ const Navigation = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { name: 'Features', url: '#features', icon: Home },
+    { name: 'Home', url: '#', icon: Home },
+    { name: 'Features', url: '#features', icon: PieChart },
     { name: 'Testimonials', url: '#testimonials', icon: MessageCircle },
     { name: 'Pricing', url: '#pricing', icon: FileText }
   ];
