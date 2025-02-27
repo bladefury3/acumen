@@ -63,7 +63,7 @@ const DashboardLayout = ({
       </SidebarFooter>
     </Sidebar>
 
-    <main className="flex-1 min-w-100vh">
+    <main className="flex-1 min-w-100vh bg-slate-50">
       <div className="px-4 py-2 bg-neutral-50">
         <SidebarTrigger className="h-4 w-4 mt-2" />
       </div>
