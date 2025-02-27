@@ -157,7 +157,6 @@ const Dashboard = () => {
 
             <div className="space-y-6">
             {groupedLessonPlans.map(([date, plans]) => (                              
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {plans.map((plan) => {
                     const subjectColor = subjectColors[plan.subject] || subjectColors.default;
                     return (
@@ -191,8 +190,7 @@ const Dashboard = () => {
                         </div>
                       </Link>
                     );
-                  })}
-                </div>              
+                  })}                
             ))}
             </div>
           </>}
