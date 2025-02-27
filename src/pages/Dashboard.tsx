@@ -25,9 +25,18 @@ const subjectDisplayNames: Record<string, string> = {
   "english": "English",
   "science": "Science"
 };
+const subjectColors = {
+  Math: 'bg-indigo-100 text-indigo-600',
+  Science: 'bg-green-100 text-green-600',
+  History: 'bg-yellow-100 text-yellow-600',
+  English: 'bg-blue-100 text-blue-600',
+  Art: 'bg-pink-100 text-pink-600',
+  default: 'bg-gray-100 text-gray-600',
+};
+
 
 const Dashboard = () => {
-  const [lessonPlans, setLessonPlans] = useState<LessonPlan[] ></LessonPlan>([]);
+  const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"date" | "subject">("date");
   const [uniqueSubjects, setUniqueSubjects] = useState<string[]>([]);
@@ -97,7 +106,7 @@ const Dashboard = () => {
   ];
 
   if (isLoading) {
-    return <DashboardLayout sidebarItems={sidebarItems} ></DashboardLayout>
+    return <DashboardLayout sidebarItems={sidebarItems}>
       <div className="flex items-center justify-center h-full">
         <div className="flex items-center space-x-4">
           <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -111,7 +120,7 @@ const Dashboard = () => {
   const groupedLessonPlans = groupLessonPlansByDate(filteredLessonPlans);
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems} ></DashboardLayout>
+    <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8">
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div className="space-y-1">
@@ -120,9 +129,9 @@ const Dashboard = () => {
               Manage and organize your lesson plans.
             </p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-500 text-slate-50" ></Button>
-            <Link to="/lesson-plan/create" className="flex items-center" />
-              <Plus className="mr-2 h-4 w-4" / />
+          <Button className="bg-blue-600 hover:bg-blue-500 text-slate-50">
+            <Link to="/lesson-plan/create" className="flex items-center">
+              <Plus className="mr-2 h-4 w-4" />
               Create Lesson
             </Link>
           </Button>
@@ -133,9 +142,9 @@ const Dashboard = () => {
             title="No Lesson Plans Yet"
             description="Create your first lesson plan to get started."
             action={
-              <Button  ></EmptyState></Button>
-                <Link to="/lesson-plan/create" className="flex items-center" />
-                  <Plus className="mr-2 h-4 w-4" / />
+              <Button>
+                <Link to="/lesson-plan/create" className="flex items-center">
+                  <Plus className="mr-2 h-4 w-4" />
                   Create Lesson
                 </Link>
               </Button>
@@ -144,24 +153,24 @@ const Dashboard = () => {
         ) : (
           <>
             <div className="flex gap-4 flex-wrap">
-              <Select value={sortBy} onValueChange={(value) = ></Select> setSortBy(value as "date" | "subject")}>
-                <SelectTrigger className="w-[180px]"  ></SelectTrigger></Select>
-                  <SelectValue placeholder="Sort by" / / />
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as "date" | "subject")}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
-                <SelectContent  ></SelectContent></Select>
-                  <SelectItem value="date"  ></SelectItem></Select>Sort by Date</SelectItem>
-                  <SelectItem value="subject"  ></SelectItem></Select>Sort by Subject</SelectItem>
+                <SelectContent>
+                  <SelectItem value="date">Sort by Date</SelectItem>
+                  <SelectItem value="subject">Sort by Subject</SelectItem>
                 </SelectContent>
               </Select>
 
-              <Select value={selectedSubject} onValueChange={setSelectedSubject} ></Select>
-                <SelectTrigger className="w-[180px]"  ></SelectTrigger></Select>
-                  <SelectValue placeholder="Filter by subject" / / />
+              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by subject" />
                 </SelectTrigger>
-                <SelectContent  ></SelectContent></Select>
-                  <SelectItem value="all"  ></SelectItem></Select>All Subjects</SelectItem>
+                <SelectContent>
+                  <SelectItem value="all">All Subjects</SelectItem>
                   {uniqueSubjects.map((subject) => (
-                    <SelectItem key={subject} value={subject}  ></SelectItem></Select>
+                    <SelectItem key={subject} value={subject}>
                       {subjectDisplayNames[subject] || subject}
                     </SelectItem>
                   ))}
@@ -171,62 +180,60 @@ const Dashboard = () => {
 
             <div className="space-y-6">
             {groupedLessonPlans.map(([date, plans]) => (
-              <Card key={date} className="mb-6 border rounded-lg shadow-sm hover:shadow-md transition-shadow" ></Card>
-                <CardContent  ></CardContent></Card>
+              <Card key={date} className="mb-6 border rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold text-muted-foreground">
+                    {format(new Date(date), 'MMMM d, yyyy')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {plans.map((plan) => (
-                      <Card
-                        key={plan.id}
-                        className="group relative overflow-hidden transition-shadow hover:shadow-lg rounded-lg border"
-                       ></Card>
-                        <Link to={`/lesson-plan/${plan.id}`}
-                          className="block p-4 sm:p-6 space-y-4 hover:no-underline"
-                         />
-                          <div className="flex justify-between items-start">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                plan.subject === "Math"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : plan.subject === "Science"
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-purple-100 text-purple-700"
-                              }`}
-                            >
-                              {subjectDisplayNames[plan.subject] || plan.subject}
-                            </span>
-                            <button className="text-muted-foreground hover:text-primary transition-colors">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 4a2 2 0 110-4 2 2 0 010 4zm0 4a2 2 0 110-4 2 2 0 010 4z" />
-                              </svg>
-                            </button>
-                          </div>
-                          <h3 className="text-xl font-bold text-primary">
-                            {plan.title || subjectDisplayNames[plan.subject] || plan.subject}
-                          </h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {plan.objectives}
-                          </p>
-                          <div className="flex justify-between items-center text-sm text-muted-foreground">
-                            <div className="flex items-center">
-                              <Calendar className="mr-2 h-4 w-4" />
-                              {format(new Date(plan.created_at), "MMM d")}
+                    {plans.map((plan) => {
+                      const subjectColor = subjectColors[plan.subject] || subjectColors.default;
+                      
+                      return (
+                        <Card
+                          key={plan.id}
+                          className="group relative overflow-hidden transition-shadow hover:shadow-lg rounded-lg border"
+                        >
+                          <Link
+                            href={`/lesson-plan/${plan.id}`}
+                            className="block p-4 space-y-2 hover:no-underline"
+                          >
+                            <div className="flex justify-between items-start">
+                              <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${subjectColor}`}>
+                                {subjectDisplayNames[plan.subject] || plan.subject}
+                              </span>
+                              <button className="text-muted-foreground hover:text-primary">
+                                <MoreHorizontal className="h-5 w-5" />
+                              </button>
                             </div>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
-                              Grade {plan.grade}
-                            </span>
-                          </div>
-                        </Link>
-                      </Card>
-                    ))}
+                            <h3 className="text-lg font-bold text-gray-900">
+                              {plan.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {plan.objectives}
+                            </p>
+                            <div className="flex justify-between items-center text-sm text-muted-foreground mt-2">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                {format(new Date(plan.created_at), "MMM d")}
+                              </div>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
+                                Grade {plan.grade}
+                              </span>
+                            </div>
+                          </Link>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
             ))}
+            </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );
