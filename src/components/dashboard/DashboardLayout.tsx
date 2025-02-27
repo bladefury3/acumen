@@ -13,7 +13,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarTrigger,
-} from "@/components/blocks/sidebar"
+} from "@/components/sidebar"
 
 import { 
   User,
@@ -25,39 +25,12 @@ import {
   Settings 
 } from "lucide-react"
 
-const items = [
-  {
-    title: "Home",
-    url: "#",
-    icon: Home,
-  },
-  {
-    title: "Inbox",
-    url: "#",
-    icon: Inbox,
-  },
-  {
-    title: "Calendar",
-    url: "#",
-    icon: Calendar,
-  },
-  {
-    title: "Search",
-    url: "#",
-    icon: Search,
-  },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
-  },
-]
-
 interface SidebarItem {
   label: string;
   href: string;
   icon: LucideIcon;
 }
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
   sidebarItems: SidebarItem[];
@@ -73,7 +46,7 @@ const DashboardLayout = ({
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
+          <SidebarGroupLabel>{image}Acumen</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {sidebarItems.map((sidebarItems) => (
