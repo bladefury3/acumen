@@ -30,6 +30,13 @@ export function NavBar({ items, className }: NavBarProps) {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+  const handleScroll = (url: string, name: string) => {
+    const element = document.getElementById(url.replace("#", ""));
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+      setActiveTab(name);
+    }
+  };
 
   return (
     <div
@@ -45,9 +52,8 @@ export function NavBar({ items, className }: NavBarProps) {
 
           return (
             <Link
-              key={item.name}
-              to={item.url}
-              onClick={() => setActiveTab(item.name)}
+              key={item.name}              
+              onClick={() => handleScroll(item.url, item.name)}
               className={cn(
                 "relative cursor-pointer text-sm font-semibold px-6 py-2 rounded-full transition-colors",
                 "text-foreground/80 hover:text-primary",
