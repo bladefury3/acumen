@@ -64,10 +64,10 @@ const DashboardLayout = ({
     </Sidebar>
 
     <main className="flex-1 min-w-100vh">
-      <div className="px-4 py-2 bg-slate-50">
+      <div className="px-4 py-2 bg-neutral-50">
         <SidebarTrigger className="h-4 w-4 mt-2" />
       </div>
-      <div className="p-6 py-0 bg-slate-50">
+      <div className="p-6 py-0 bg-neutral-50">
       <div className="px-8 py-6">{children}</div>
       </div>
     </main>
