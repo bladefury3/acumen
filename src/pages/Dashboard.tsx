@@ -160,12 +160,11 @@ const Dashboard = () => {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {plans.map((plan) => {
                     const subjectColor = subjectColors[plan.subject] || subjectColors.default;
-                    
                     return (
                       <Link
                         key={plan.id}
                         href={`/lesson-plan/${plan.id}`}
-                        className="block p-4 space-y-2 rounded-lg border hover:shadow-md transition-shadow hover:no-underline"
+                        className="block p-4 space-y-2 rounded-lg border bg-white hover:shadow-md transition-shadow hover:no-underline"
                       >
                         <div className="flex justify-between items-start">
                           <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${subjectColor}`}>
