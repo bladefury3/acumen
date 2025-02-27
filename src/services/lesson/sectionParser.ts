@@ -1,5 +1,6 @@
 
 import { ParsedSection } from "@/types/lesson";
+import { ParsedLesson } from "./types";
 
 export const findSectionContent = (sections: ParsedSection[], titlePatterns: string[]): string => {
   const matchingSection = sections.find(s => 
@@ -12,7 +13,7 @@ export const findSectionContent = (sections: ParsedSection[], titlePatterns: str
   ).join('\n') || '';
 };
 
-export const validateParsedSections = (parsedLesson: Record<string, string>) => {
+export const validateParsedSections = (parsedLesson: Omit<ParsedLesson, 'activities'>) => {
   const missingFields = [];
   if (!parsedLesson.learning_objectives) missingFields.push('Learning Objectives');
   if (!parsedLesson.materials_resources) missingFields.push('Materials/Resources');
