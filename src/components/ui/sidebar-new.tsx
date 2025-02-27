@@ -51,9 +51,14 @@ export const SidebarNew = ({
 
 export const SidebarBody = (props: HTMLMotionProps<"div">) => {
   const { className, children, ...rest } = props;
+  const motionProps = {
+    ...rest,
+    children: typeof children === 'function' ? children({}) : children
+  };
+  
   return (
     <>
-      <DesktopSidebar className={className} {...rest}>
+      <DesktopSidebar className={className} {...motionProps}>
         {children}
       </DesktopSidebar>
       <MobileSidebar className={className}>
