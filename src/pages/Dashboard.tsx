@@ -172,12 +172,6 @@ const Dashboard = () => {
             <div className="space-y-6">
             {groupedLessonPlans.map(([date, plans]) => (
               <Card key={date} className="mb-6 border rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    {format(new Date(date), 'MMMM d, yyyy')}
-                  </CardTitle>
-                </CardHeader>
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {plans.map((plan) => (
@@ -190,20 +184,42 @@ const Dashboard = () => {
                           className="block p-4 sm:p-6 space-y-4 hover:no-underline"
                         >
                           <div className="flex justify-between items-start">
-                            <h3 className="text-xl font-bold text-primary">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                plan.subject === "Math"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : plan.subject === "Science"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-purple-100 text-purple-700"
+                              }`}
+                            >
                               {subjectDisplayNames[plan.subject] || plan.subject}
-                            </h3>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-muted-foreground text-white">
-                              Grade {plan.grade}
                             </span>
+                            <button className="text-muted-foreground hover:text-primary transition-colors">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 4a2 2 0 110-4 2 2 0 010 4zm0 4a2 2 0 110-4 2 2 0 010 4z" />
+                              </svg>
+                            </button>
                           </div>
+                          <h3 className="text-xl font-bold text-primary">
+                            {plan.title || subjectDisplayNames[plan.subject] || plan.subject}
+                          </h3>
                           <p className="text-sm text-muted-foreground line-clamp-2">
                             {plan.objectives}
                           </p>
-                          <hr className="my-2 border-muted" />
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Calendar className="mr-2 h-4 w-4" />
-                            {format(new Date(plan.created_at), "MMMM d, yyyy")}
+                          <div className="flex justify-between items-center text-sm text-muted-foreground">
+                            <div className="flex items-center">
+                              <Calendar className="mr-2 h-4 w-4" />
+                              {format(new Date(plan.created_at), "MMM d")}
+                            </div>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
+                              Grade {plan.grade}
+                            </span>
                           </div>
                         </Link>
                       </Card>
@@ -212,9 +228,6 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             ))}
-            </div>
-          </>
-        )}
       </div>
     </DashboardLayout>
   );
