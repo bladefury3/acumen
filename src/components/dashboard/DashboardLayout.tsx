@@ -58,7 +58,7 @@ const DashboardLayout = ({
     </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Acumen</SidebarGroupLabel>
+          <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {sidebarItems.map(sidebarItems => <SidebarMenuItem key={sidebarItems.label}>
