@@ -25,14 +25,6 @@ const subjectDisplayNames: Record<string, string> = {
   "english": "English",
   "science": "Science"
 };
-const subjectColors = {
-  Math: 'bg-indigo-100 text-indigo-600',
-  Science: 'bg-green-100 text-green-600',
-  History: 'bg-yellow-100 text-yellow-600',
-  English: 'bg-blue-100 text-blue-600',
-  Art: 'bg-pink-100 text-pink-600',
-  default: 'bg-gray-100 text-gray-600',
-};
 
 
 const Dashboard = () => {
@@ -201,15 +193,15 @@ const Dashboard = () => {
                             className="block p-4 space-y-2 hover:no-underline"
                           >
                             <div className="flex justify-between items-start">
-                              <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${subjectColor}`}>
-                                {subjectDisplayNames[plan.subject] || plan.subject}
+                              <span className={`px-2 py-0.5 rounded-md text-xs font-semibold`}>
+                                {plan.duration}
                               </span>
                               <button className="text-muted-foreground hover:text-primary">
                                 <MoreHorizontal className="h-5 w-5" />
                               </button>
                             </div>
                             <h3 className="text-lg font-bold text-gray-900">
-                              {plan.title}
+                              {plan.subject}
                             </h3>
                             <p className="text-sm text-muted-foreground line-clamp-2">
                               {plan.objectives}
