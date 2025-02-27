@@ -1,8 +1,32 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
-import { Sidebar, SidebarProvider, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger } from "@/components/ui/sidebar";
-import { User, ChevronsUpDown, Calendar, Home, Inbox, Search, Settings } from "lucide-react";
+import { SidebarBrand } from "@/components/ui/sidebar-brand";
+import { 
+  Sidebar,
+  SidebarProvider,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  SidebarTrigger,
+  SidebarHeader,
+} from "@/components/ui/sidebar";
+
+import { 
+  User,
+  ChevronsUpDown,
+  Calendar,
+  Home,
+  Inbox,
+  Search,
+  Settings 
+} from "lucide-react";
+
 interface SidebarItem {
   label: string;
   href: string;
@@ -21,6 +45,17 @@ const DashboardLayout = ({
   const location = useLocation();
   return <SidebarProvider>
     <Sidebar>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarBrand
+              logoSrc="/images/logo.png"
+              companyName="Acumen"
+              href="/"
+            />
+          </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Acumen</SidebarGroupLabel>
