@@ -167,14 +167,14 @@ const Dashboard = () => {
                       >
                         <div className="flex justify-between items-start">
                           <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${subjectColor}`}>
-                            {subjectDisplayNames[plan.subject] || plan.subject}
+                            {subjectDisplayNames[plan.duration] || plan.duration} minutes
                           </span>
                           <button className="text-muted-foreground hover:text-primary">
                             <MoreHorizontal className="h-5 w-5" />
                           </button>
                         </div>
                         <h3 className="text-lg font-bold text-gray-900">
-                          {plan.title}
+                          {plan.subject}
                         </h3>
                         <p className="text-sm text-muted-foreground line-clamp-2">
                           {plan.objectives}
