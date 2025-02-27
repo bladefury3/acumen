@@ -2,7 +2,6 @@ import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { TypographyH4 } from "@/components/ui/typography";
 
 type SidebarBrandProps = {
   logoSrc?: string;
@@ -23,7 +22,7 @@ export const SidebarBrand: React.FC<SidebarBrandProps> = ({
           <AvatarFallback>{companyName[0]}</AvatarFallback>
         </Avatar>
         <CardContent className="p-0">
-          <TypographyH4 className="text-primary">{companyName}</TypographyH4>
+          {<h4 className="text-primary">{companyName}</h4>}
         </CardContent>
       </Card>
     </Link>
