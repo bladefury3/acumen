@@ -25,6 +25,14 @@ const subjectDisplayNames: Record<string, string> = {
   "english": "English",
   "science": "Science"
 };
+const subjectColors = {
+  Math: 'bg-indigo-100 text-indigo-600',
+  Science: 'bg-green-100 text-green-600',
+  History: 'bg-yellow-100 text-yellow-600',
+  English: 'bg-blue-100 text-blue-600',
+  Art: 'bg-pink-100 text-pink-600',
+  default: 'bg-gray-100 text-gray-600',
+};
 
 
 const Dashboard = () => {
