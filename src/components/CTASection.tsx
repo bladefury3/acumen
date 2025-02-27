@@ -1,5 +1,5 @@
 const CTASection = () => {
-  return <section id="pricing" className="py-24 bg-primary relative overflow-hidden">
+  return <section id="pricing" className="bg-primary relative overflow-hidden py-[160px]">
       <div className="bg-gray-300"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="text-center">
