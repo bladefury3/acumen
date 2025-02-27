@@ -18,7 +18,7 @@ const DashboardLayout = ({
 }: DashboardLayoutProps) => {
   const location = useLocation();
   return <div className="flex h-screen bg-white">
-      <aside className="w-64 border-r border-gray-200 bg-[FCEDEB] bg-[#fcedeb]">
+      <aside className="w-64 border-r border-gray-200 bg-[FCEDEB] bg-[#e3f4ff]">
         <div className="p-6">
           <Link to="/" className="flex items-center space-x-2">
             <img alt="Logo" src="/lovable-uploads/60671658-caa0-425a-80aa-01b3fc17c753.png" className="h-8 w-8 object-fill" />
