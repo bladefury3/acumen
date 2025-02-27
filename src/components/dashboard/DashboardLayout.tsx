@@ -25,7 +25,7 @@ const DashboardLayout = ({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarBrand logoSrc="/lovable-uploads/60671658-caa0-425a-80aa-01b3fc17c753.png" companyName="Acumen" href="/" />
+            <SidebarBrand logoSrc="/lovable-uploads/icon.png" companyName="Acumen" href="/" />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
