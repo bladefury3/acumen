@@ -2,31 +2,8 @@ import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import { SidebarBrand } from "@/components/ui/sidebar-brand";
-import { 
-  Sidebar,
-  SidebarProvider,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarTrigger,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
-
-import { 
-  User,
-  ChevronsUpDown,
-  Calendar,
-  Home,
-  Inbox,
-  Search,
-  Settings 
-} from "lucide-react";
-
+import { Sidebar, SidebarProvider, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger, SidebarHeader } from "@/components/ui/sidebar";
+import { User, ChevronsUpDown, Calendar, Home, Inbox, Search, Settings } from "lucide-react";
 interface SidebarItem {
   label: string;
   href: string;
@@ -48,11 +25,7 @@ const DashboardLayout = ({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarBrand
-              logoSrc="/lovable-uploads/60671658-caa0-425a-80aa-01b3fc17c753.png"
-              companyName="Acumen"
-              href="/"
-            />
+            <SidebarBrand logoSrc="/lovable-uploads/60671658-caa0-425a-80aa-01b3fc17c753.png" companyName="Acumen" href="/" />
           </SidebarMenuItem>
       </SidebarMenu>
     </SidebarHeader>
@@ -91,10 +64,10 @@ const DashboardLayout = ({
     </Sidebar>
 
     <main className="flex-1 min-w-100vh">
-      <div className="px-4 py-2">
+      <div className="px-4 py-2 bg-slate-50">
         <SidebarTrigger className="h-4 w-4 mt-2" />
       </div>
-      <div className="p-6 py-0">
+      <div className="p-6 py-0 bg-slate-50">
       <div className="px-8 py-6">{children}</div>
       </div>
     </main>
