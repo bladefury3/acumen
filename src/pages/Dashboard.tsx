@@ -170,49 +170,48 @@ const Dashboard = () => {
             </div>
 
             <div className="space-y-6">
-              {groupedLessonPlans.map(([date, plans]) => (
-                <Card key={date}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      {format(new Date(date), 'MMMM d, yyyy')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {plans.map((plan) => (
-                        <Card
-                          key={plan.id}
-                          className="group relative overflow-hidden transition-all hover:shadow-lg"
+            {groupedLessonPlans.map(([date, plans]) => (
+              <Card key={date} className="mb-6 border rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    {format(new Date(date), 'MMMM d, yyyy')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {plans.map((plan) => (
+                      <Card
+                        key={plan.id}
+                        className="group relative overflow-hidden transition-shadow hover:shadow-lg rounded-lg border"
+                      >
+                        <Link
+                          href={`/lesson-plan/${plan.id}`}
+                          className="block p-4 sm:p-6 space-y-4 hover:no-underline"
                         >
-                          <Link
-                            to={`/lesson-plan/${plan.id}`}
-                            className="block p-4 sm:p-6 space-y-4"
-                          >
-                            <div className="space-y-2">
-                              <div className="space-y-1">
-                                <h2 className="text-lg sm:text-xl font-semibold tracking-tight hover:text-primary transition-colors line-clamp-1">
-                                  {subjectDisplayNames[plan.subject] || plan.subject}
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                  Grade {plan.grade}
-                                </p>
-                              </div>
-                            </div>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {plan.objectives}
-                            </p>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <Calendar className="mr-2 h-4 w-4" />
-                              {format(new Date(plan.created_at), "MMMM d, yyyy")}
-                            </div>
-                          </Link>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                          <div className="flex justify-between items-start">
+                            <h3 className="text-xl font-bold text-primary">
+                              {subjectDisplayNames[plan.subject] || plan.subject}
+                            </h3>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-muted-foreground text-white">
+                              Grade {plan.grade}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {plan.objectives}
+                          </p>
+                          <hr className="my-2 border-muted" />
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Calendar className="mr-2 h-4 w-4" />
+                            {format(new Date(plan.created_at), "MMMM d, yyyy")}
+                          </div>
+                        </Link>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
             </div>
           </>
         )}
