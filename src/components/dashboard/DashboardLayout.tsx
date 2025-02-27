@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { useLocation } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
-import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
+import { SidebarNew, SidebarBody, SidebarLink } from "@/components/ui/sidebar-new";
 
 interface SidebarItem {
   label: string;
@@ -22,7 +22,7 @@ const DashboardLayout = ({ children, sidebarItems, sidebarAction }: DashboardLay
 
   return (
     <div className="flex h-screen bg-white overflow-hidden">
-      <Sidebar open={open} setOpen={setOpen}>
+      <SidebarNew open={open} setOpen={setOpen}>
         <SidebarBody className="justify-between gap-10">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
             <div className="flex items-center space-x-2 py-2">
@@ -48,7 +48,7 @@ const DashboardLayout = ({ children, sidebarItems, sidebarAction }: DashboardLay
             </div>
           )}
         </SidebarBody>
-      </Sidebar>
+      </SidebarNew>
       <main className="flex-1 overflow-auto bg-white">
         <div className="px-8 py-6">{children}</div>
       </main>
