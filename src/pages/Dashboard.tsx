@@ -27,7 +27,7 @@ const subjectDisplayNames: Record<string, string> = {
 };
 
 const Dashboard = () => {
-  const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
+  const [lessonPlans, setLessonPlans] = useState<LessonPlan[] ></LessonPlan>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"date" | "subject">("date");
   const [uniqueSubjects, setUniqueSubjects] = useState<string[]>([]);
@@ -97,7 +97,7 @@ const Dashboard = () => {
   ];
 
   if (isLoading) {
-    return <DashboardLayout sidebarItems={sidebarItems}>
+    return <DashboardLayout sidebarItems={sidebarItems} ></DashboardLayout>
       <div className="flex items-center justify-center h-full">
         <div className="flex items-center space-x-4">
           <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -111,7 +111,7 @@ const Dashboard = () => {
   const groupedLessonPlans = groupLessonPlansByDate(filteredLessonPlans);
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems}>
+    <DashboardLayout sidebarItems={sidebarItems} ></DashboardLayout>
       <div className="space-y-8">
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div className="space-y-1">
@@ -120,9 +120,9 @@ const Dashboard = () => {
               Manage and organize your lesson plans.
             </p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-500 text-slate-50">
-            <Link to="/lesson-plan/create" className="flex items-center">
-              <Plus className="mr-2 h-4 w-4" />
+          <Button className="bg-blue-600 hover:bg-blue-500 text-slate-50" ></Button>
+            <Link to="/lesson-plan/create" className="flex items-center" />
+              <Plus className="mr-2 h-4 w-4" / />
               Create Lesson
             </Link>
           </Button>
@@ -133,9 +133,9 @@ const Dashboard = () => {
             title="No Lesson Plans Yet"
             description="Create your first lesson plan to get started."
             action={
-              <Button>
-                <Link to="/lesson-plan/create" className="flex items-center">
-                  <Plus className="mr-2 h-4 w-4" />
+              <Button  ></EmptyState></Button>
+                <Link to="/lesson-plan/create" className="flex items-center" />
+                  <Plus className="mr-2 h-4 w-4" / />
                   Create Lesson
                 </Link>
               </Button>
@@ -144,24 +144,24 @@ const Dashboard = () => {
         ) : (
           <>
             <div className="flex gap-4 flex-wrap">
-              <Select value={sortBy} onValueChange={(value) => setSortBy(value as "date" | "subject")}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Sort by" />
+              <Select value={sortBy} onValueChange={(value) = ></Select> setSortBy(value as "date" | "subject")}>
+                <SelectTrigger className="w-[180px]"  ></SelectTrigger></Select>
+                  <SelectValue placeholder="Sort by" / / />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date">Sort by Date</SelectItem>
-                  <SelectItem value="subject">Sort by Subject</SelectItem>
+                <SelectContent  ></SelectContent></Select>
+                  <SelectItem value="date"  ></SelectItem></Select>Sort by Date</SelectItem>
+                  <SelectItem value="subject"  ></SelectItem></Select>Sort by Subject</SelectItem>
                 </SelectContent>
               </Select>
 
-              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by subject" />
+              <Select value={selectedSubject} onValueChange={setSelectedSubject} ></Select>
+                <SelectTrigger className="w-[180px]"  ></SelectTrigger></Select>
+                  <SelectValue placeholder="Filter by subject" / / />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Subjects</SelectItem>
+                <SelectContent  ></SelectContent></Select>
+                  <SelectItem value="all"  ></SelectItem></Select>All Subjects</SelectItem>
                   {uniqueSubjects.map((subject) => (
-                    <SelectItem key={subject} value={subject}>
+                    <SelectItem key={subject} value={subject}  ></SelectItem></Select>
                       {subjectDisplayNames[subject] || subject}
                     </SelectItem>
                   ))}
@@ -171,18 +171,17 @@ const Dashboard = () => {
 
             <div className="space-y-6">
             {groupedLessonPlans.map(([date, plans]) => (
-              <Card key={date} className="mb-6 border rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <CardContent>
+              <Card key={date} className="mb-6 border rounded-lg shadow-sm hover:shadow-md transition-shadow" ></Card>
+                <CardContent  ></CardContent></Card>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {plans.map((plan) => (
                       <Card
                         key={plan.id}
                         className="group relative overflow-hidden transition-shadow hover:shadow-lg rounded-lg border"
-                      >
-                        <Link
-                          href={`/lesson-plan/${plan.id}`}
+                       ></Card>
+                        <Link to={`/lesson-plan/${plan.id}`}
                           className="block p-4 sm:p-6 space-y-4 hover:no-underline"
-                        >
+                         />
                           <div className="flex justify-between items-start">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
