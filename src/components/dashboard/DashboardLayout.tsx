@@ -76,12 +76,12 @@ const DashboardLayout = ({
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
+              {sidebarItems.map((sidebarItems) => (
+                <SidebarMenuItem key={sidebarItems.label}>
+                  <SidebarMenuButton asChild tooltip={sidebarItems.label}>
+                    <a href={sidebarItems.href}>
+                      <sidebarItems.icon />
+                      <span>{sidebarItems.label}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
