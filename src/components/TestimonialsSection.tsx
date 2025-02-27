@@ -15,7 +15,7 @@ const testimonials = [{
   quote: "I love how easy it is to customize templates to fit my teaching style. The standards alignment feature saves me so much time!"
 }];
 const TestimonialsSection = () => {
-  return <section id="testimonials" className="bg-gray-50 py-[128px]">
+  return <section id="testimonials" className="bg-gray-50 py-[160px]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
