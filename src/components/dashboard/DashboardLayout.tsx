@@ -1,37 +1,13 @@
-
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
-import { 
-  Sidebar,
-  SidebarProvider,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-
-import { 
-  User,
-  ChevronsUpDown,
-  Calendar,
-  Home,
-  Inbox,
-  Search,
-  Settings 
-} from "lucide-react";
-
+import { Sidebar, SidebarProvider, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger } from "@/components/ui/sidebar";
+import { User, ChevronsUpDown, Calendar, Home, Inbox, Search, Settings } from "lucide-react";
 interface SidebarItem {
   label: string;
   href: string;
   icon: LucideIcon;
 }
-
 interface DashboardLayoutProps {
   children: React.ReactNode;
   sidebarItems: SidebarItem[];
@@ -43,23 +19,21 @@ const DashboardLayout = ({
   sidebarAction
 }: DashboardLayoutProps) => {
   const location = useLocation();
-  return(<SidebarProvider>
+  return <SidebarProvider>
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Acumen</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {sidebarItems.map((sidebarItems) => (
-                <SidebarMenuItem key={sidebarItems.label}>
+              {sidebarItems.map(sidebarItems => <SidebarMenuItem key={sidebarItems.label}>
                   <SidebarMenuButton asChild tooltip={sidebarItems.label}>
                     <a href={sidebarItems.href}>
                       <sidebarItems.icon />
                       <span>{sidebarItems.label}</span>
                     </a>
                   </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                </SidebarMenuItem>)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -85,12 +59,10 @@ const DashboardLayout = ({
       <div className="px-4 py-2">
         <SidebarTrigger className="h-4 w-4 mt-2" />
       </div>
-      <div className="p-6">
+      <div className="p-6 py-0">
       <div className="px-8 py-6">{children}</div>
       </div>
     </main>
-  </SidebarProvider>   
-  );
+  </SidebarProvider>;
 };
-
 export default DashboardLayout;
