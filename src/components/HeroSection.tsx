@@ -2,7 +2,7 @@ import { BookOpen, Clock, Users, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 const HeroSection = () => {
-  return <div id="hero" className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50/30 to-white pt-32 pb-24 py-[129px] bg-slate-400">
+  return <div id="hero" className="relative overflow-hidden from-gray-50 via-blue-50/30 to-white pt-32 pb-24 py-[129px] bg-[C3CFF5] bg-[#c3cff5]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-8 animate-fade-in">
           <div className="space-y-6">
