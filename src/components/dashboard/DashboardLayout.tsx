@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
@@ -13,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarTrigger,
-} from "@/components/sidebar"
+} from "@/components/ui/sidebar"
 
 import { 
   User,
@@ -46,7 +47,7 @@ const DashboardLayout = ({
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{image}Acumen</SidebarGroupLabel>
+          <SidebarGroupLabel>Acumen</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {sidebarItems.map((sidebarItems) => (
