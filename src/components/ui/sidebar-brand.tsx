@@ -23,7 +23,7 @@ export const SidebarBrand: React.FC<SidebarBrandProps> = ({
           </AvatarFallback>
         </Avatar>
         <CardContent className="p-0">
-          <h2 className="text-base font-semibold text-primary">
+          <h2 className="text-base font-semibold text-primary leading-3">
             {companyName}
           </h2>
           <span className="text-xs text-muted-foreground">{subtitle}</span>
