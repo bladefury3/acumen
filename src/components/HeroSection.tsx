@@ -1,11 +1,8 @@
-
 import { BookOpen, Clock, Users, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-
 const HeroSection = () => {
-  return (
-    <div id="hero" className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50/30 to-white pt-32 pb-24">
+  return <div id="hero" className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50/30 to-white pt-32 pb-24 py-[129px] bg-slate-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-8 animate-fade-in">
           <div className="space-y-6">
@@ -26,18 +23,10 @@ const HeroSection = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Button 
-              asChild 
-              size="lg" 
-              className="w-full sm:w-auto bg-[#003C5A] text-white hover:bg-[#003C5A]/90"
-            >
+            <Button asChild size="lg" className="w-full sm:w-auto bg-[#003C5A] text-white hover:bg-[#003C5A]/90">
               <Link to="/auth">Start Free Trial</Link>
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="w-full sm:w-auto border-[#003C5A] text-[#003C5A] hover:bg-[#003C5A]/10"
-            >
+            <Button variant="outline" size="lg" className="w-full sm:w-auto border-[#003C5A] text-[#003C5A] hover:bg-[#003C5A]/10">
               Watch Demo
             </Button>
           </div>
@@ -58,8 +47,6 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default HeroSection;
