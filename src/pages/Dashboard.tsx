@@ -156,9 +156,11 @@ const Dashboard = () => {
             </div>
 
             <div className="space-y-6">
-            {groupedLessonPlans.map(([date, plans]) => (                              
-                  {plans.map((plan) => {
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {groupedLessonPlans.map(([_, plans]) => 
+                  plans.map((plan) => {
                     const subjectColor = subjectColors[plan.subject] || subjectColors.default;
+                    
                     return (
                       <Link
                         key={plan.id}
@@ -190,8 +192,9 @@ const Dashboard = () => {
                         </div>
                       </Link>
                     );
-                  })}                
-            ))}
+                  })
+                )}
+              </div>
             </div>
           </>}
       </div>
