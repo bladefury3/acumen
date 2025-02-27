@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,6 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, isSameDay } from "date-fns";
-
 interface LessonPlan {
   id: string;
   subject: string;
@@ -18,7 +16,6 @@ interface LessonPlan {
   objectives: string;
   created_at: string;
 }
-
 const subjectDisplayNames: Record<string, string> = {
   "pe": "Physical Education",
   "math": "Mathematics",
@@ -31,26 +28,23 @@ const subjectColors = {
   History: 'bg-yellow-100 text-yellow-600',
   English: 'bg-blue-100 text-blue-600',
   Art: 'bg-pink-100 text-pink-600',
-  default: 'bg-gray-100 text-gray-600',
+  default: 'bg-gray-100 text-gray-600'
 };
-
-
 const Dashboard = () => {
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"date" | "subject">("date");
   const [uniqueSubjects, setUniqueSubjects] = useState<string[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
-
   const fetchLessonPlans = async () => {
     try {
-      const { data, error } = await supabase
-        .from('lesson_plans')
-        .select('*')
-        .order('created_at', { ascending: false });
-
+      const {
+        data,
+        error
+      } = await supabase.from('lesson_plans').select('*').order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
-
       const subjects = [...new Set((data || []).map(plan => plan.subject))];
       setUniqueSubjects(subjects);
       setLessonPlans(data || []);
@@ -61,14 +55,11 @@ const Dashboard = () => {
       setIsLoading(false);
     }
   };
-
   const getFilteredAndSortedLessonPlans = () => {
     let filtered = [...lessonPlans];
-
     if (selectedSubject !== "all") {
       filtered = filtered.filter(plan => plan.subject === selectedSubject);
     }
-
     return filtered.sort((a, b) => {
       if (sortBy === "date") {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -77,34 +68,34 @@ const Dashboard = () => {
       }
     });
   };
-
   const groupLessonPlansByDate = (plans: LessonPlan[]) => {
-    const groups: { [key: string]: LessonPlan[] } = {};
-    
+    const groups: {
+      [key: string]: LessonPlan[];
+    } = {};
     plans.forEach(plan => {
       const date = new Date(plan.created_at);
       const dateKey = format(date, 'yyyy-MM-dd');
-      
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
       groups[dateKey].push(plan);
     });
-
     return Object.entries(groups).sort(([dateA], [dateB]) => {
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
   };
-
   useEffect(() => {
     fetchLessonPlans();
   }, []);
-
-  const sidebarItems = [
-    { label: "My Lessons", href: "/dashboard", icon: BookOpen },
-    { label: "Settings", href: "/dashboard/settings", icon: Settings },
-  ];
-
+  const sidebarItems = [{
+    label: "My Lessons",
+    href: "/dashboard",
+    icon: BookOpen
+  }, {
+    label: "Settings",
+    href: "/dashboard/settings",
+    icon: Settings
+  }];
   if (isLoading) {
     return <DashboardLayout sidebarItems={sidebarItems}>
       <div className="flex items-center justify-center h-full">
@@ -115,12 +106,9 @@ const Dashboard = () => {
       </div>
     </DashboardLayout>;
   }
-
   const filteredLessonPlans = getFilteredAndSortedLessonPlans();
   const groupedLessonPlans = groupLessonPlansByDate(filteredLessonPlans);
-
-  return (
-    <DashboardLayout sidebarItems={sidebarItems}>
+  return <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8">
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div className="space-y-1">
@@ -137,23 +125,14 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {lessonPlans.length === 0 ? (
-          <EmptyState
-            title="No Lesson Plans Yet"
-            description="Create your first lesson plan to get started."
-            action={
-              <Button>
+        {lessonPlans.length === 0 ? <EmptyState title="No Lesson Plans Yet" description="Create your first lesson plan to get started." action={<Button>
                 <Link to="/lesson-plan/create" className="flex items-center">
                   <Plus className="mr-2 h-4 w-4" />
                   Create Lesson
                 </Link>
-              </Button>
-            }
-          />
-        ) : (
-          <>
+              </Button>} /> : <>
             <div className="flex gap-4 flex-wrap">
-              <Select value={sortBy} onValueChange={(value) => setSortBy(value as "date" | "subject")}>
+              <Select value={sortBy} onValueChange={value => setSortBy(value as "date" | "subject")}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
@@ -169,18 +148,15 @@ const Dashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Subjects</SelectItem>
-                  {uniqueSubjects.map((subject) => (
-                    <SelectItem key={subject} value={subject}>
+                  {uniqueSubjects.map(subject => <SelectItem key={subject} value={subject}>
                       {subjectDisplayNames[subject] || subject}
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-6">
-            {groupedLessonPlans.map(([date, plans]) => (
-              <Card key={date} className="mb-6 border rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            {groupedLessonPlans.map(([date, plans]) => <Card key={date} className="mb-6 border rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold text-muted-foreground">
                     {format(new Date(date), 'MMMM d, yyyy')}
@@ -188,20 +164,12 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {plans.map((plan) => {
-                      const subjectColor = subjectColors[plan.subject] || subjectColors.default;
-                      
-                      return (
-                        <Card
-                          key={plan.id}
-                          className="group relative overflow-hidden transition-shadow hover:shadow-lg rounded-lg border"
-                        >
-                          <Link
-                            href={`/lesson-plan/${plan.id}`}
-                            className="block p-4 space-y-2 hover:no-underline"
-                          >
+                    {plans.map(plan => {
+                  const subjectColor = subjectColors[plan.subject] || subjectColors.default;
+                  return <Card key={plan.id} className="group relative overflow-hidden transition-shadow hover:shadow-lg rounded-lg border">
+                          <Link href={`/lesson-plan/${plan.id}`} className="block p-4 space-y-2 hover:no-underline">
                             <div className="flex justify-between items-start">
-                              <span className={`px-2 py-0.5 rounded-md text-xs font-semibold`}>
+                              <span className="text-xs bg-blue-100 text-blue-600">
                                 {subjectDisplayNames[plan.duration] || plan.duration} mins
                               </span>
                               <button className="text-muted-foreground hover:text-primary">
@@ -224,19 +192,14 @@ const Dashboard = () => {
                               </span>
                             </div>
                           </Link>
-                        </Card>
-                      );
-                    })}
+                        </Card>;
+                })}
                   </div>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
             </div>
-          </>
-        )}
+          </>}
       </div>
-    </DashboardLayout>
-  );
+    </DashboardLayout>;
 };
-
 export default Dashboard;
