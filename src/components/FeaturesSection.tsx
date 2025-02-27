@@ -25,7 +25,7 @@ const features = [{
   description: "Plan your entire semester with our intelligent scheduling assistant."
 }];
 const FeaturesSection = () => {
-  return <section id="features" className="bg-white py-[128px]">
+  return <section id="features" className="bg-white py-[160px]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
