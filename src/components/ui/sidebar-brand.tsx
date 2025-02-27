@@ -15,7 +15,7 @@ export const SidebarBrand: React.FC<SidebarBrandProps> = ({
   href = "/"
 }) => {
   return <Link to={href}>
-      <a className="flex items-center gap-3 p-4 hover:bg-accent transition-colors rounded-lg cursor-pointer px-[4px] py-[4px]">
+      <a className="flex items-center gap-3 p-4 hover:bg-white transition-colors rounded-lg cursor-pointer px-[4px] py-[4px]">
         <Avatar className="h-10 w-10 bg-muted rounded-md">
           <AvatarImage src={logoSrc} alt={`${companyName} Logo`} />
           <AvatarFallback>
