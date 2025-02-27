@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarTrigger,
-} from "@/components/blocks/sidebar"
+} from "@/components/blocks/sidebar";
 
 import { 
   User,
@@ -24,7 +24,7 @@ import {
   Inbox,
   Search,
   Settings 
-} from "lucide-react"
+} from "lucide-react";
 
 interface SidebarItem {
   label: string;
