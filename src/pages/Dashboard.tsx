@@ -164,7 +164,7 @@ const Dashboard = () => {
                     return (
                       <Link
                         key={plan.id}
-                        href={`/lesson-plan/${plan.id}`}
+                        href={/lesson-plan/${plan.id}}
                         className="block p-4 space-y-2 rounded-lg border bg-white hover:shadow-md transition-shadow hover:no-underline"
                       >
                         <div className="flex justify-between items-start">
