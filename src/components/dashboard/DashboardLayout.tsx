@@ -21,7 +21,7 @@ const DashboardLayout = ({
       <aside className="w-64 border-r border-gray-200">
         <div className="p-6">
           <Link to="/" className="flex items-center space-x-2">
-            <img alt="Logo" src="/lovable-uploads/7bb9eb68-6599-42a9-95a7-c400dd526205.png" className="h-16 w-16" />
+            <img alt="Logo" src="/lovable-uploads/60671658-caa0-425a-80aa-01b3fc17c753.png" className="h-8 w-8 object-fill" />
             <span className="text-xl font-semibold text-gray-900">acumen</span>
           </Link>
           <nav className="mt-6 space-y-1">
