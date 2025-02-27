@@ -1,7 +1,6 @@
 
 import { Home, FileText, MessageCircle, PieChart, LogIn } from 'lucide-react';
 import { NavBar } from '@/components/ui/tubelight-navbar';
-import { Link } from 'react-router-dom';
 
 const Navigation = () => {
   const navItems = [
