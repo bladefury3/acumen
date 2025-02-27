@@ -49,7 +49,7 @@ const DashboardLayout = ({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarBrand
-              logoSrc="../loveable-uploads/60671658-caa0-425a-80aa-01b3fc17c753.png"
+              logoSrc="https://picsum.photos/200/300"
               companyName="Acumen"
               href="/"
             />
