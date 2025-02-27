@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,10 +14,9 @@ interface NavItem {
 interface NavBarProps {
   items: NavItem[];
   className?: string;
-  onItemClick?: (url: string) => void;
 }
 
-export function NavBar({ items, className, onItemClick }: NavBarProps) {
+export function NavBar({ items, className }: NavBarProps) {
   const [activeTab, setActiveTab] = useState(items[0].name);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -29,11 +29,6 @@ export function NavBar({ items, className, onItemClick }: NavBarProps) {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const handleClick = (item: NavItem) => {
-    setActiveTab(item.name);
-    onItemClick?.(item.url);
-  };
 
   return (
     <div
@@ -48,9 +43,10 @@ export function NavBar({ items, className, onItemClick }: NavBarProps) {
           const isActive = activeTab === item.name;
 
           return (
-            <button
+            <Link
               key={item.name}
-              onClick={() => handleClick(item)}
+              to={item.url}
+              onClick={() => setActiveTab(item.name)}
               className={cn(
                 "relative cursor-pointer text-sm font-semibold px-6 py-2 rounded-full transition-colors",
                 "text-foreground/80 hover:text-primary",
@@ -79,7 +75,7 @@ export function NavBar({ items, className, onItemClick }: NavBarProps) {
                   </div>
                 </motion.div>
               )}
-            </button>
+            </Link>
           );
         })}
       </div>
