@@ -36,7 +36,7 @@ const DashboardLayout = ({
             <SidebarMenu>
               {sidebarItems.map(sidebarItems => <SidebarMenuItem key={sidebarItems.label}>
                   <SidebarMenuButton asChild tooltip={sidebarItems.label}>
-                    <a href={sidebarItems.href}>
+                    <a href={sidebarItems.href} className="hover:bg-accent">
                       <sidebarItems.icon />
                       <span>{sidebarItems.label}</span>
                     </a>
