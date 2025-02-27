@@ -156,47 +156,45 @@ const Dashboard = () => {
             </div>
 
             <div className="space-y-6">
-            {groupedLessonPlans.map(([date, plans]) => <Card key={date} className="mb-6 border rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold text-muted-foreground">
-                    {format(new Date(date), 'MMMM d, yyyy')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {plans.map(plan => {
-                  const subjectColor = subjectColors[plan.subject] || subjectColors.default;
-                  return <Card key={plan.id} className="group relative overflow-hidden transition-shadow hover:shadow-lg rounded-lg border">
-                          <Link href={`/lesson-plan/${plan.id}`} className="block p-4 space-y-2 hover:no-underline">
-                            <div className="flex justify-between items-start">
-                              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-md text-xs font-semibold">
-                                {subjectDisplayNames[plan.duration] || plan.duration} mins
-                              </span>
-                              <button className="text-muted-foreground hover:text-primary">
-                                <MoreHorizontal className="h-5 w-5" />
-                              </button>
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900">
-                              {plan.subject}
-                            </h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {plan.objectives}
-                            </p>
-                            <div className="flex justify-between items-center text-sm text-muted-foreground mt-2">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                {format(new Date(plan.created_at), "MMM d")}
-                              </div>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
-                                Grade {plan.grade}
-                              </span>
-                            </div>
-                          </Link>
-                        </Card>;
-                })}
-                  </div>
-                </CardContent>
-              </Card>)}
+            {groupedLessonPlans.map(([date, plans]) => (                              
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {plans.map((plan) => {
+                    const subjectColor = subjectColors[plan.subject] || subjectColors.default;
+                    
+                    return (
+                      <Link
+                        key={plan.id}
+                        href={`/lesson-plan/${plan.id}`}
+                        className="block p-4 space-y-2 rounded-lg border hover:shadow-md transition-shadow hover:no-underline"
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${subjectColor}`}>
+                            {subjectDisplayNames[plan.subject] || plan.subject}
+                          </span>
+                          <button className="text-muted-foreground hover:text-primary">
+                            <MoreHorizontal className="h-5 w-5" />
+                          </button>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900">
+                          {plan.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {plan.objectives}
+                        </p>
+                        <div className="flex justify-between items-center text-sm text-muted-foreground mt-2">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {format(new Date(plan.created_at), "MMM d")}
+                          </div>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
+                            Grade {plan.grade}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>              
+            ))}
             </div>
           </>}
       </div>
