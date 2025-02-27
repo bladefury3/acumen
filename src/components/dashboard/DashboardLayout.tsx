@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
+} from "@/components/blocks/sidebar"
 
 import { 
   User,
