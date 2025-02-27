@@ -22,7 +22,7 @@ const DashboardLayout = ({
         <div className="p-6">
           <Link to="/" className="flex items-center space-x-2">
             <img alt="Logo" src="/lovable-uploads/60671658-caa0-425a-80aa-01b3fc17c753.png" className="h-8 w-8 object-fill" />
-            <span className="text-xl font-semibold text-[#c3cff5]">acumen</span>
+            <span className="text-xl font-semibold text-[#d95d27]">acumen</span>
           </Link>
           <nav className="mt-6 space-y-1">
             {sidebarItems.map(item => <Link key={item.href} to={item.href} className={cn("flex items-center px-3 py-2 text-sm rounded-md transition-colors", location.pathname === item.href ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900")}>
