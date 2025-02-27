@@ -169,7 +169,7 @@ const Dashboard = () => {
                   return <Card key={plan.id} className="group relative overflow-hidden transition-shadow hover:shadow-lg rounded-lg border">
                           <Link href={`/lesson-plan/${plan.id}`} className="block p-4 space-y-2 hover:no-underline">
                             <div className="flex justify-between items-start">
-                              <span className="text-xs bg-blue-100 text-blue-600">
+                              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-md text-xs font-semibold">
                                 {subjectDisplayNames[plan.duration] || plan.duration} mins
                               </span>
                               <button className="text-muted-foreground hover:text-primary">
