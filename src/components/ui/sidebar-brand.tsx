@@ -15,14 +15,14 @@ export const SidebarBrand: React.FC<SidebarBrandProps> = ({
   href = "/"
 }) => {
   return <Link href={href}>
-      <a className="flex items-center gap-3 p-4 transition-colors rounded-lg cursor-pointer px-[4px] py-[4px]">
+      <a className="flex items-center gap-3 p-4 hover:bg-accent transition-colors rounded-lg cursor-pointer px-[4px] py-[4px]">
         <Avatar className="h-10 w-10 bg-muted rounded-md">
           <AvatarImage src={logoSrc} alt={`${companyName} Logo`} />
           <AvatarFallback>
             <span className="text-xl font-bold">{companyName[0]}</span>
           </AvatarFallback>
         </Avatar>
-        <CardContent className="p-0 leading-3">
+        <CardContent className="p-0">
           <h2 className="text-base font-semibold text-primary">
             {companyName}
           </h2>
