@@ -27,14 +27,14 @@ const ActivityCard = ({ activityId, title, isOpen = false }: ActivityCardProps) 
 
         if (error) throw error;
         
-        // Map the data to Instruction interface, ensuring updated_at is handled properly
-        const mappedInstructions = data.map(item => ({
+        // Map the data to Instruction interface without assuming updated_at exists
+        const mappedInstructions: Instruction[] = data.map(item => ({
           id: item.id,
           instruction_text: item.instruction_text,
           activities_detail_id: item.activities_detail_id,
           created_at: item.created_at,
-          // Include updated_at only if it exists
-          ...(item.updated_at && { updated_at: item.updated_at })
+          // Only add updated_at if it exists in the database response
+          ...(item.updated_at ? { updated_at: item.updated_at } : {})
         }));
         
         setInstructions(mappedInstructions);
