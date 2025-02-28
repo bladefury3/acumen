@@ -69,27 +69,34 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
 
 // Helper function to clean instruction text
 const cleanInstructionText = (text: string): string => {
-  // Remove phrases like "Instructions:" or "Instructions: "
-  let cleaned = text.replace(/^instructions:?\s*/i, '');
+  // Remove phrases like "Instructions:" or "Instructions: " at the beginning
+  let cleaned = text.replace(/^(?:instructions|steps|directions|activity steps)(?:\s*:)?\s*/i, '');
   
   // Remove activity title and numbering like "Activity 1: Understanding Prompts"
-  cleaned = cleaned.replace(/^(?:activity\s+\d+:?\s*|[-*•]\s*)/i, '');
+  cleaned = cleaned.replace(/^(?:activity\s+\d+:?\s*|[-*•]\s*|\d+\.\s*Activity\s+\d+:?\s*)/i, '');
   
   // Remove repeated activity title if present
-  cleaned = cleaned.trim();
+  const titleMatch = cleaned.match(/^([^(:.]+)(?:\s*\(|\s*:)/i);
+  if (titleMatch && titleMatch[1].trim().length > 0) {
+    const title = titleMatch[1].trim();
+    // Only remove if it's a title (more than one word typically)
+    if (title.includes(' ') && title.length > 10) {
+      cleaned = cleaned.replace(title, '').replace(/^\s*(?:\(|\s*:)/, '').trim();
+    }
+  }
   
   // Remove time in parentheses (e.g., "(10 minutes)")
   cleaned = cleaned.replace(/\s*\(\d+\s*(?:minute|min|minutes|mins)?\)\s*\.?/i, '');
   
-  // Remove bullet points and numbering
+  // Remove bullet points and numbering at the beginning
   cleaned = cleaned.replace(/^[-•*]\s*|\d+\.\s*/, '');
   
   // Ensure the text ends with a period if it doesn't already
-  if (cleaned && !cleaned.endsWith('.')) {
+  if (cleaned && !cleaned.endsWith('.') && !cleaned.endsWith('?') && !cleaned.endsWith('!')) {
     cleaned += '.';
   }
   
-  return cleaned;
+  return cleaned.trim();
 };
 
 export const createActivities = async (lessonId: string, activities: ParsedLesson['activities']) => {

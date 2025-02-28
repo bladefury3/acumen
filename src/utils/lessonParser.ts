@@ -6,13 +6,33 @@ export const cleanMarkdown = (text: string): string => {
 };
 
 const extractDuration = (text: string): string | null => {
-  const durationMatch = text.match(/\((\d+)\s*(?:minute|min|minutes|mins)?\)/i);
+  // Look for durations in different formats:
+  // 1. In parentheses like "(10 minutes)" 
+  // 2. Explicit duration indicators like "10 minutes:"
+  const durationMatch = text.match(/\((\d+)\s*(?:minute|min|minutes|mins)?\)/i) || 
+                         text.match(/(\d+)\s*(?:minute|min|minutes|mins)(?:\s*:)/i);
   return durationMatch ? `${durationMatch[1]} minutes` : null;
 };
 
 const extractActivityTitle = (text: string): string => {
-  const titleText = text.split('(')[0];
-  return cleanMarkdown(titleText.replace(/^(?:activity\s+\d+:?\s*|[-*•]\s*|\*\*[^*]+\*\*\s*)/i, ''));
+  // Clean up various activity title formats:
+  // 1. Remove "Activity X:" prefix
+  // 2. Remove bullet points or numbering
+  // 3. Remove any bold markdown
+  // 4. If there's a colon followed by text, extract just the title part
+  let titleText = text.split('(')[0]; // Remove duration if in parentheses
+  
+  // If there's a colon that's not part of "Activity X:", extract the title before it
+  if (!/^(?:activity\s+\d+\s*:|[-*•])/i.test(titleText) && titleText.includes(':')) {
+    const parts = titleText.split(':');
+    // Only use the part before the colon as title if it looks like a title (not "Activity X")
+    if (!/^activity\s+\d+\s*$/i.test(parts[0].trim())) {
+      titleText = parts[0];
+    }
+  }
+  
+  // Clean up the title
+  return cleanMarkdown(titleText.replace(/^(?:activity\s+\d+:?\s*|[-*•]\s*|\d+\.\s*|\*\*[^*]+\*\*\s*)/i, ''));
 };
 
 const parseSteps = (content: string): string[] => {
@@ -28,7 +48,39 @@ const parseSteps = (content: string): string[] => {
 
 export const parseActivities = (content: string[]): Activity[] => {
   const activities: Activity[] = [];
+  let currentActivityLines: string[] = [];
   
+  // Process Markdown-style numbered lists (1. Title: content)
+  const processNumberedActivities = (contentLines: string[]) => {
+    for (let i = 0; i < contentLines.length; i++) {
+      const line = contentLines[i].trim();
+      
+      // Skip empty lines
+      if (!line) continue;
+      
+      // Check for numbered activity markers: "1. **Title** (duration):" or "1. **Title:**"
+      const numberedActivityMatch = line.match(/^(\d+)\.\s*(?:\*\*([^*]+)\*\*|\s*([^:]+))(?:\s*\((\d+[^)]+)\))?:?/);
+      
+      if (numberedActivityMatch) {
+        // Extract activity details
+        const title = numberedActivityMatch[2] || numberedActivityMatch[3] || `Activity ${numberedActivityMatch[1]}`;
+        const duration = numberedActivityMatch[4] ? `${numberedActivityMatch[4].trim()}` : "";
+        
+        // Get the content after the title/duration
+        let description = line.substring(line.indexOf(':') + 1).trim();
+        const steps = [description];
+        
+        // Add this as an activity
+        activities.push({
+          title: cleanMarkdown(title),
+          duration,
+          steps: steps.filter(s => s.length > 0).map(s => cleanMarkdown(s))
+        });
+      }
+    }
+  };
+  
+  // First pass: try to find structured activities with "Activity X:" format
   for (let i = 0; i < content.length; i++) {
     const activityLine = content[i].trim();
     
@@ -41,52 +93,64 @@ export const parseActivities = (content: string[]): Activity[] => {
       /^activity\s+\d+:/i.test(activityLine) ||
       /^[-*•]\s*activity/i.test(activityLine)
     ) {
-      // Extract title and duration from the activity line
-      const title = extractActivityTitle(activityLine);
-      const duration = extractDuration(activityLine) || "";
-      
-      // Look for instructions in the following lines until we hit another activity
-      const steps: string[] = [];
-      let j = i + 1;
-      
-      // Find all indented bullet points or numbered lists following the activity
-      while (j < content.length) {
-        const nextLine = content[j].trim();
+      // If we were collecting lines for a previous activity, process them
+      if (currentActivityLines.length > 0) {
+        // Process the previous activity
+        const title = extractActivityTitle(currentActivityLines[0]);
+        const duration = extractDuration(currentActivityLines[0]) || "";
         
-        // If the next line starts a new activity, break
-        if (
-          nextLine.includes('**') ||
-          /^activity\s+\d+:/i.test(nextLine) ||
-          /^[-*•]\s*activity/i.test(nextLine)
-        ) {
-          break;
-        }
+        // Join all lines after the first one as steps
+        const activityContent = currentActivityLines.slice(1).join('\n');
+        const steps = activityContent ? parseSteps(activityContent) : [];
         
-        // Check if this is an instruction bullet point
-        if (nextLine.startsWith('-') || nextLine.startsWith('•') || /^\d+\./.test(nextLine)) {
-          // Clean and add the instruction
-          const cleanedInstruction = nextLine.replace(/^[-•*]\s*|\d+\.\s*/, '').trim();
-          if (cleanedInstruction) {
-            steps.push(cleanedInstruction);
+        // If no steps were found, use first line description
+        if (steps.length === 0) {
+          const descriptionMatch = currentActivityLines[0].match(/\)\s*(.+)$/);
+          if (descriptionMatch && descriptionMatch[1]) {
+            steps.push(descriptionMatch[1].trim());
+          } else {
+            steps.push(`Explain ${title}.`);
           }
         }
         
-        j++;
+        activities.push({ title, duration, steps });
+        currentActivityLines = [];
       }
       
-      // If no steps were found but there's description text in the activity line
-      if (steps.length === 0) {
-        // Extract any description text after the title/duration
-        const descriptionMatch = activityLine.match(/\)\s*(.+)$/);
-        if (descriptionMatch && descriptionMatch[1]) {
-          steps.push(descriptionMatch[1].trim());
-        } else {
-          steps.push(`${title}`);
-        }
-      }
-      
-      activities.push({ title, duration, steps });
+      // Start collecting lines for this new activity
+      currentActivityLines.push(activityLine);
+    } 
+    // Add to current activity if we're in one
+    else if (currentActivityLines.length > 0) {
+      currentActivityLines.push(activityLine);
     }
+  }
+  
+  // Process the last activity if there is one
+  if (currentActivityLines.length > 0) {
+    const title = extractActivityTitle(currentActivityLines[0]);
+    const duration = extractDuration(currentActivityLines[0]) || "";
+    
+    // Join all lines after the first one as steps
+    const activityContent = currentActivityLines.slice(1).join('\n');
+    const steps = activityContent ? parseSteps(activityContent) : [];
+    
+    // If no steps were found, use first line description
+    if (steps.length === 0) {
+      const descriptionMatch = currentActivityLines[0].match(/\)\s*(.+)$/);
+      if (descriptionMatch && descriptionMatch[1]) {
+        steps.push(descriptionMatch[1].trim());
+      } else {
+        steps.push(`Explain ${title}.`);
+      }
+    }
+    
+    activities.push({ title, duration, steps });
+  }
+  
+  // If no activities were found with the standard format, try processing numbered lists
+  if (activities.length === 0) {
+    processNumberedActivities(content);
   }
   
   return activities;
@@ -160,7 +224,30 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
         .map(line => line.trim())
         .filter(line => line.length > 0);
       
-      // Look for activity markers and gather all activity-related lines
+      // Try to parse activities - first check for numbered format like "1. **Title** (duration):"
+      const hasNumberedActivities = contentLines.some(line => 
+        /^\d+\.\s*\*\*[^*]+\*\*(?:\s*\(\d+[^)]+\))?:/.test(line)
+      );
+      
+      if (hasNumberedActivities) {
+        try {
+          const activities = parseActivities(contentLines);
+          if (activities.length > 0) {
+            sections.push({ 
+              title: standardizedTitle, 
+              content: contentLines, 
+              activities,
+              generated: false 
+            });
+            foundSections.add(standardizedTitle);
+            continue;
+          }
+        } catch (error) {
+          console.error(`Error parsing numbered activities: ${error}`);
+        }
+      }
+      
+      // If numbered activities didn't work, look for standard activity markers
       const activityLines: string[] = [];
       let isInActivity = false;
       
@@ -178,28 +265,53 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
         else if (isInActivity && (line.startsWith('-') || line.startsWith('•') || /^\d+\./.test(line) || line.startsWith('  '))) {
           activityLines.push(line);
         }
+        // Also include lines that are likely part of an activity description
+        else if (isInActivity && !line.includes('**') && !/^activity\s+\d+:/i.test(line)) {
+          activityLines.push(line);
+        }
       }
       
-      // If we found structured activities, parse them
+      // If we found activity lines, parse them
       if (activityLines.length > 0) {
         try {
           const activities = parseActivities(activityLines);
-          sections.push({ 
-            title: standardizedTitle, 
-            content: contentLines, 
-            activities,
-            generated: false 
-          });
-          foundSections.add(standardizedTitle);
-          continue;
+          if (activities.length > 0) {
+            sections.push({ 
+              title: standardizedTitle, 
+              content: contentLines, 
+              activities,
+              generated: false 
+            });
+            foundSections.add(standardizedTitle);
+            continue;
+          }
         } catch (error) {
-          console.error(`Error parsing activities: ${error}`);
-          // Fall back to default section parsing if activity parsing fails
+          console.error(`Error parsing standard activities: ${error}`);
         }
+      }
+      
+      // Last resort: try to parse numbered activities directly
+      try {
+        const numberedActivities = contentLines.filter(line => /^\d+\./.test(line));
+        if (numberedActivities.length > 0) {
+          const activities = parseActivities(numberedActivities);
+          if (activities.length > 0) {
+            sections.push({ 
+              title: standardizedTitle, 
+              content: contentLines, 
+              activities,
+              generated: false 
+            });
+            foundSections.add(standardizedTitle);
+            continue;
+          }
+        }
+      } catch (error) {
+        console.error(`Error parsing direct numbered activities: ${error}`);
       }
     }
     
-    // Default section parsing
+    // Default section parsing for non-activity sections or if activity parsing failed
     const contentLines = sectionContent.split('\n');
     const content = findSectionContent(contentLines);
     
