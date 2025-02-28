@@ -32,7 +32,7 @@ export interface LessonPlanData {
 export interface Instruction {
   id: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string; // Make updated_at optional to match Supabase response
   activities_detail_id: string;
   instruction_text: string;
 }

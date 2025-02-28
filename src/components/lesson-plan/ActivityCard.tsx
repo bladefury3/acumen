@@ -23,7 +23,15 @@ const ActivityCard = ({ activity, activityId }: ActivityCardProps) => {
         .order('created_at', { ascending: true });
 
       if (!error && data) {
-        setInstructions(data);
+        // Map the data to match our Instruction interface
+        const instructionsData = data.map(item => ({
+          id: item.id,
+          created_at: item.created_at,
+          updated_at: item.updated_at || undefined, // Handle potentially missing updated_at
+          activities_detail_id: item.activities_detail_id,
+          instruction_text: item.instruction_text
+        }));
+        setInstructions(instructionsData);
       }
     };
 
