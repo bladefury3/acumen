@@ -7,7 +7,8 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <span className="font-display text-2xl font-bold text-primary">Acumen</span>
+            <img src="/lovable-uploads/icon.png" alt="Icon" className="w-6 h-6" />
+            <span className="font-display text-2xl font-bold text-primary">acumen</span>
             <p className="text-gray-600 text-sm">
               Empowering teachers with smart lesson planning tools to create engaging learning experiences.
             </p>
