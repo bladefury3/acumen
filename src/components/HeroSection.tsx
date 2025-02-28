@@ -11,8 +11,8 @@ const HeroSection = () => {
               alt="Acumen Logo"
               className="w-10 h-10"
             />
-            <span className="font-display text-3xl font-bold text-[#003C5A]">
-              Acumen
+            <span className="text-xl font-bold text-[#003C5A]">
+              acumen
             </span>
           </div>
           <div className="space-y-6">
