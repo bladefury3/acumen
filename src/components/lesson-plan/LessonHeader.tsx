@@ -11,7 +11,7 @@ const LessonHeader = ({
         <div className="flex items-start gap-2">
           <GraduationCap className="h-12 w-12 text-primary shrink-0 mt-1 text-[#6C80A3] bg-[#D7E2F4] rounded-xs p-1" />
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
               {lessonPlan.subject}
             </h1>
             <p className="text-lg text-muted-foreground">
