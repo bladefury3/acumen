@@ -1,10 +1,13 @@
 
+import { useState } from "react";
 import { LessonPlanData, ParsedSection } from "@/types/lesson";
 import LessonHeader from "./LessonHeader";
 import LessonSections from "./LessonSections";
 import { Separator } from "@/components/ui/separator";
 import DeleteLessonDialog from "./DeleteLessonDialog";
 import DownloadLessonPDF from "./DownloadLessonPDF";
+import GenerateResourcesButton from "./GenerateResourcesButton";
+import ResourcesCard from "./ResourcesCard";
 
 interface LessonPlanContentProps {
   lessonPlan: LessonPlanData;
@@ -21,6 +24,9 @@ const LessonPlanContent = ({
   lessonPlan,
   groupedSections,
 }: LessonPlanContentProps) => {
+  const [resourcesId, setResourcesId] = useState<string | undefined>(undefined);
+  const [resourcesGenerated, setResourcesGenerated] = useState(false);
+
   // Convert grouped sections back to array for PDF
   const allSections = [
     ...groupedSections.topRow,
@@ -30,18 +36,38 @@ const LessonPlanContent = ({
     groupedSections.close,
   ].filter((section): section is ParsedSection => section !== undefined);
 
+  const handleResourcesGenerated = (id: string) => {
+    setResourcesId(id);
+    setResourcesGenerated(true);
+  };
+
   return (
     <div className="space-y-8 animate-fade-in pb-16">
       <LessonHeader lessonPlan={lessonPlan} />
       <LessonSections groupedSections={groupedSections} />
       <Separator className="my-8" />
+      
       <div className="flex justify-between items-center">
-        <DownloadLessonPDF
-          lessonTitle={`${lessonPlan.grade} ${lessonPlan.subject} Lesson Plan`}
-          sections={allSections}
-        />
+        <div className="flex items-center gap-4">
+          <DownloadLessonPDF
+            lessonTitle={`${lessonPlan.grade} ${lessonPlan.subject} Lesson Plan`}
+            sections={allSections}
+          />
+          <GenerateResourcesButton 
+            lessonPlanId={lessonPlan.id}
+            onResourcesGenerated={handleResourcesGenerated}
+            disabled={resourcesGenerated}
+          />
+        </div>
         <DeleteLessonDialog lessonId={lessonPlan.id} />
       </div>
+      
+      {resourcesGenerated && (
+        <div className="mt-8">
+          <h3 className="text-lg font-medium mb-4">Additional Resources</h3>
+          <ResourcesCard lessonPlanId={lessonPlan.id} resourcesId={resourcesId} />
+        </div>
+      )}
     </div>
   );
 };

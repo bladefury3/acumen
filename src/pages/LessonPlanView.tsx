@@ -18,6 +18,7 @@ const LessonPlanView = () => {
   const [lessonPlan, setLessonPlan] = useState<LessonPlanData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [parsedSections, setParsedSections] = useState<ParsedSection[]>([]);
+  const [hasResources, setHasResources] = useState(false);
 
   useEffect(() => {
     const fetchLessonPlan = async () => {
@@ -35,6 +36,15 @@ const LessonPlanView = () => {
           const sections = await parseAndStoreAIResponse(data.ai_response, data.id);
           setParsedSections(sections);
         }
+        
+        // Check if resources exist
+        const { data: resources } = await supabase
+          .from('lesson_resources')
+          .select('id')
+          .eq('lesson_plan_id', id)
+          .single();
+          
+        setHasResources(!!resources);
       } catch (error) {
         console.error('Error fetching lesson plan:', error);
         toast.error("Failed to load lesson plan");
