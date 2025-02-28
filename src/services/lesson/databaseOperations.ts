@@ -72,11 +72,17 @@ const cleanInstructionText = (text: string): string => {
   // Remove phrases like "Instructions:" or "Instructions: "
   let cleaned = text.replace(/^instructions:?\s*/i, '');
   
+  // Remove activity title and numbering like "Activity 1: Understanding Prompts"
+  cleaned = cleaned.replace(/^(?:activity\s+\d+:?\s*|[-*•]\s*)/i, '');
+  
   // Remove repeated activity title if present
   cleaned = cleaned.trim();
   
   // Remove time in parentheses (e.g., "(10 minutes)")
   cleaned = cleaned.replace(/\s*\(\d+\s*(?:minute|min|minutes|mins)?\)\s*\.?/i, '');
+  
+  // Remove bullet points and numbering
+  cleaned = cleaned.replace(/^[-•*]\s*|\d+\.\s*/, '');
   
   // Ensure the text ends with a period if it doesn't already
   if (cleaned && !cleaned.endsWith('.')) {
@@ -88,34 +94,64 @@ const cleanInstructionText = (text: string): string => {
 
 export const createActivities = async (lessonId: string, activities: ParsedLesson['activities']) => {
   for (const activity of activities) {
-    const { data: newActivity, error: activityError } = await supabase
-      .from('activities_detail')
-      .insert({
-        lesson_id: lessonId,
-        activity_name: activity.activity_name,
-        description: activity.description,
-        instructions: activity.instructions
-      })
-      .select('id')
-      .single();
+    try {
+      console.log(`Creating activity: ${activity.activity_name}`);
+      
+      const { data: newActivity, error: activityError } = await supabase
+        .from('activities_detail')
+        .insert({
+          lesson_id: lessonId,
+          activity_name: activity.activity_name,
+          description: activity.description,
+          instructions: activity.instructions
+        })
+        .select('id')
+        .single();
 
-    if (activityError) throw activityError;
+      if (activityError) {
+        console.error(`Error creating activity ${activity.activity_name}:`, activityError);
+        throw activityError;
+      }
 
-    // Split instructions and clean each one
-    const instructionsToInsert = activity.instructions
-      .split('\n')
-      .filter(text => text.trim().length > 0)
-      .map(instruction_text => ({
-        instruction_text: cleanInstructionText(instruction_text),
-        activities_detail_id: newActivity.id
-      }));
+      // Split instructions and clean each one
+      let instructionsToInsert = [];
+      
+      if (activity.instructions && activity.instructions.trim()) {
+        instructionsToInsert = activity.instructions
+          .split('\n')
+          .filter(text => text.trim().length > 0)
+          .map(instruction_text => ({
+            instruction_text: cleanInstructionText(instruction_text),
+            activities_detail_id: newActivity.id
+          }));
+      }
 
-    if (instructionsToInsert.length > 0) {
-      const { error: instructionsError } = await supabase
-        .from('instructions')
-        .insert(instructionsToInsert);
+      // If no instructions were parsed from the split, try to derive from descriptions
+      if (instructionsToInsert.length === 0 && activity.description) {
+        // Create at least one instruction from the description
+        instructionsToInsert.push({
+          instruction_text: `Explain to students about ${activity.activity_name.toLowerCase()}.`,
+          activities_detail_id: newActivity.id
+        });
+      }
 
-      if (instructionsError) throw instructionsError;
+      if (instructionsToInsert.length > 0) {
+        console.log(`Inserting ${instructionsToInsert.length} instructions for activity ${activity.activity_name}`);
+        
+        const { error: instructionsError } = await supabase
+          .from('instructions')
+          .insert(instructionsToInsert);
+
+        if (instructionsError) {
+          console.error(`Error inserting instructions for activity ${activity.activity_name}:`, instructionsError);
+          throw instructionsError;
+        }
+      } else {
+        console.warn(`No instructions found to insert for activity ${activity.activity_name}`);
+      }
+    } catch (error) {
+      console.error(`Failed to create activity ${activity.activity_name}:`, error);
+      throw error;
     }
   }
 };
