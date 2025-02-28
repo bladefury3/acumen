@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2, FilePdf } from "lucide-react";
+import { Download, Loader2, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { toast } from "sonner";
@@ -129,9 +129,16 @@ const ResourcesDocument = ({ content, title }: { content: string, title: string 
   );
 };
 
+interface ResourceData {
+  id: string;
+  content: string;
+  lesson_plan_id?: string;
+  created_at?: string;
+}
+
 const ResourcesCard = ({ lessonPlanId, resourcesId: initialResourcesId }: ResourcesCardProps) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [resources, setResources] = useState<{ id: string; content: string } | null>(null);
+  const [resources, setResources] = useState<ResourceData | null>(null);
   const [lessonTitle, setLessonTitle] = useState("Lesson Resources");
   
   useEffect(() => {
@@ -152,11 +159,15 @@ const ResourcesCard = ({ lessonPlanId, resourcesId: initialResourcesId }: Resour
         }
         
         // Then get the resources
-        let resourcesQuery = initialResourcesId 
-          ? supabase.from('lesson_resources').select('*').eq('id', initialResourcesId)
-          : supabase.from('lesson_resources').select('*').eq('lesson_plan_id', lessonPlanId);
+        let query = initialResourcesId 
+          ? `id=eq.${initialResourcesId}`
+          : `lesson_plan_id=eq.${lessonPlanId}`;
           
-        const { data, error } = await resourcesQuery.single();
+        const { data, error } = await supabase
+          .from('lesson_resources')
+          .select('*')
+          .or(query)
+          .single();
         
         if (error) {
           console.error("Error fetching resources:", error);
@@ -164,7 +175,7 @@ const ResourcesCard = ({ lessonPlanId, resourcesId: initialResourcesId }: Resour
         }
         
         if (data) {
-          setResources(data);
+          setResources(data as ResourceData);
         }
       } catch (error) {
         console.error("Error in fetch resources:", error);
@@ -200,7 +211,7 @@ const ResourcesCard = ({ lessonPlanId, resourcesId: initialResourcesId }: Resour
     <Card className="shadow-md border-t-4 border-t-[#D95D27]">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-xl">
-          <FilePdf className="h-5 w-5 text-[#D95D27]" />
+          <FileText className="h-5 w-5 text-[#D95D27]" />
           Lesson Resources
         </CardTitle>
       </CardHeader>

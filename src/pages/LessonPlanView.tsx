@@ -37,14 +37,15 @@ const LessonPlanView = () => {
           setParsedSections(sections);
         }
         
-        // Check if resources exist
-        const { data: resources } = await supabase
-          .from('lesson_resources')
-          .select('id')
-          .eq('lesson_plan_id', id)
-          .single();
+        // Check if resources exist using RPC function instead of direct query
+        const { data: resources, error: resourcesError } = await supabase
+          .rpc('get_lesson_resources_by_lesson_id', { p_lesson_plan_id: id });
           
-        setHasResources(!!resources);
+        if (resourcesError) {
+          console.error("Error checking for resources:", resourcesError);
+        } else {
+          setHasResources(resources && resources.length > 0);
+        }
       } catch (error) {
         console.error('Error fetching lesson plan:', error);
         toast.error("Failed to load lesson plan");

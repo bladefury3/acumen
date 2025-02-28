@@ -1,11 +1,6 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.6";
-
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY') || '';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,164 +14,196 @@ serve(async (req) => {
   }
 
   try {
-    const { lessonPlanId } = await req.json();
-    console.log(`Generating resources for lesson plan: ${lessonPlanId}`);
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    // Check if we already have resources for this lesson
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: existingResources } = await supabase
-      .from('lesson_resources')
-      .select('*')
-      .eq('lesson_plan_id', lessonPlanId)
-      .single();
+    // Get the request body
+    const requestData = await req.json();
+    const { lessonPlanId } = requestData;
 
-    if (existingResources) {
-      console.log("Resources already exist for this lesson plan");
+    if (!lessonPlanId) {
       return new Response(
-        JSON.stringify({
-          success: true,
-          message: "Resources already exist for this lesson plan",
-          resources: existingResources
+        JSON.stringify({ 
+          success: false, 
+          error: "Missing required parameter: lessonPlanId" 
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400
+        }
       );
     }
 
-    // Get the lesson plan details
-    const { data: lessonPlan, error: lessonError } = await supabase
+    // Get the lesson plan details to include in prompt
+    const { data: lessonPlan, error: lessonError } = await supabaseClient
       .from('lesson_plans')
       .select('*')
       .eq('id', lessonPlanId)
       .single();
 
-    if (lessonError || !lessonPlan) {
-      console.error("Error fetching lesson plan:", lessonError);
+    if (lessonError) {
+      console.error('Error fetching lesson plan:', lessonError);
       return new Response(
-        JSON.stringify({ success: false, error: "Lesson plan not found" }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: "Failed to fetch lesson plan details" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500
+        }
       );
     }
 
-    // Get associated lesson details
-    const { data: lessonData, error: lessonDataError } = await supabase
+    // Get any related lesson details from the lessons table
+    const { data: lessonDetails } = await supabaseClient
       .from('lessons')
       .select('*')
       .eq('response_id', lessonPlanId)
       .single();
 
-    if (lessonDataError) {
-      console.error("Error fetching lesson details:", lessonDataError);
-      return new Response(
-        JSON.stringify({ success: false, error: "Lesson details not found" }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Get activities
-    const { data: activities, error: activitiesError } = await supabase
+    const { data: activities } = await supabaseClient
       .from('activities_detail')
       .select('*')
-      .eq('lesson_id', lessonData.id);
+      .eq('lesson_id', lessonDetails?.id || '');
 
-    if (activitiesError) {
-      console.error("Error fetching activities:", activitiesError);
-      // Continue anyway as we can generate resources without activities
-    }
-
-    // Construct the LLM prompt based on lesson plan data
+    // Create the prompt for generating resources
     const prompt = `
-Create comprehensive teaching resources for a lesson plan with the following details:
+      Generate comprehensive teaching resources for the following lesson plan:
+      
+      LESSON PLAN DETAILS:
+      - Grade: ${lessonPlan.grade}
+      - Subject: ${lessonPlan.subject}
+      - Duration: ${lessonPlan.duration} minutes
+      - Objectives: ${lessonPlan.objectives}
+      
+      ${lessonDetails ? `
+      LESSON STRUCTURE:
+      - Learning Objectives: ${lessonDetails.learning_objectives}
+      - Materials and Resources: ${lessonDetails.materials_resources}
+      - Introduction/Hook: ${lessonDetails.introduction_hook}
+      - Assessment Strategies: ${lessonDetails.assessment_strategies}
+      - Differentiation Strategies: ${lessonDetails.differentiation_strategies}
+      - Closure: ${lessonDetails.close}
+      ` : ''}
+      
+      ${activities && activities.length > 0 ? `
+      ACTIVITIES:
+      ${activities.map((activity, index) => 
+        `${index + 1}. ${activity.activity_name} (${activity.description})
+         ${activity.instructions}`
+      ).join('\n\n')}
+      ` : ''}
+      
+      Generate the following resources:
+      1. A worksheet for students with 5-10 questions or activities related to the lesson content
+      2. An answer key for the worksheet
+      3. Extension activities for advanced students
+      4. Simplified version of activities for students who need additional support
+      5. Assessment tools (rubric, quiz, or other evaluation methods)
+      
+      Format the resources clearly with appropriate headers, numbered lists, and sections.
+    `;
 
-SUBJECT: ${lessonPlan.subject}
-GRADE LEVEL: ${lessonPlan.grade}
-DURATION: ${lessonPlan.duration}
-OBJECTIVES: ${lessonPlan.objectives}
-CURRICULUM STANDARDS: ${lessonPlan.curriculum}
+    console.log("Generating resources for lesson plan:", lessonPlanId);
 
-LEARNING OBJECTIVES: ${lessonData.learning_objectives || 'Not specified'}
-MATERIALS NEEDED: ${lessonData.materials_resources || 'Not specified'}
-INTRODUCTION/HOOK: ${lessonData.introduction_hook || 'Not specified'}
-ASSESSMENT STRATEGIES: ${lessonData.assessment_strategies || 'Not specified'}
-DIFFERENTIATION STRATEGIES: ${lessonData.differentiation_strategies || 'Not specified'}
-
-ACTIVITIES:
-${activities && activities.length > 0 
-  ? activities.map(act => `- ${act.activity_name}: ${act.description}`).join('\n')
-  : 'No specific activities provided'}
-
-Please create the following resources to support this lesson plan:
-1. STUDENT WORKSHEETS: Create 1-2 worksheets that align with the learning objectives
-2. ASSESSMENT MATERIALS: Create quizzes, rubrics, or other assessment tools
-3. VISUAL AIDS: Describe any visual aids or handouts that would support the lesson
-4. EXTENSION ACTIVITIES: Provide 2-3 extension activities for advanced students
-5. ADDITIONAL RESOURCES: List any helpful websites, books, or materials teachers could use
-
-Format each section with clear headings, and provide ready-to-use materials that a teacher could print and distribute.
-`;
-
-    // Call the OpenAI API
-    console.log("Calling OpenAI API to generate resources");
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: 'You are an expert educator who creates high-quality teaching materials and resources.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-      }),
-    });
-
-    if (!openAIResponse.ok) {
-      const errorData = await openAIResponse.text();
-      console.error("OpenAI API error:", errorData);
+    // Check if you have access to OpenAI or Groq, you only need one working
+    const apiKey = Deno.env.get('OPENAI_API_KEY') || Deno.env.get('GROQ_API_KEY');
+    let modelHost = Deno.env.get('OPENAI_API_KEY') ? 'openai' : 'groq';
+    const model = modelHost === 'openai' ? 'gpt-3.5-turbo' : 'llama3-8b-8192';
+    
+    if (!apiKey) {
+      console.error('No API key found for OpenAI or Groq');
       return new Response(
-        JSON.stringify({ success: false, error: "Failed to generate resources" }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: "No API key configured" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500
+        }
       );
     }
 
-    const aiData = await openAIResponse.json();
-    const generatedResources = aiData.choices[0].message.content;
+    // Call the AI model to generate resources
+    const response = modelHost === 'openai' 
+      ? await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+            max_tokens: 2000,
+          }),
+        })
+      : await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+            max_tokens: 2000,
+          }),
+        });
 
-    // Store the generated resources in the database
-    const { data: savedResources, error: saveError } = await supabase
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Error calling AI model:', errorData);
+      return new Response(
+        JSON.stringify({ success: false, error: "Failed to generate resources" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500
+        }
+      );
+    }
+
+    const aiResponse = await response.json();
+    const resourcesContent = modelHost === 'openai' 
+      ? aiResponse.choices[0].message.content
+      : aiResponse.choices[0].message.content;
+
+    // Save the generated resources to the database
+    const { data: resources, error: resourcesError } = await supabaseClient
       .from('lesson_resources')
       .insert({
         lesson_plan_id: lessonPlanId,
-        content: generatedResources,
-        created_at: new Date().toISOString()
+        content: resourcesContent,
       })
-      .select()
+      .select('*')
       .single();
 
-    if (saveError) {
-      console.error("Error saving resources:", saveError);
+    if (resourcesError) {
+      console.error('Error saving resources:', resourcesError);
       return new Response(
         JSON.stringify({ success: false, error: "Failed to save resources" }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500
+        }
       );
     }
 
-    console.log("Resources generated and saved successfully");
     return new Response(
-      JSON.stringify({
-        success: true,
-        resources: savedResources
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, resources }),
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error('Unexpected error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, error: "Internal server error" }),
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500
+      }
     );
   }
 });

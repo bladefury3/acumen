@@ -25,16 +25,15 @@ const GenerateResourcesButton = ({
     toast.info("Starting to generate resources. This may take up to a minute.");
 
     try {
-      // First check if resources already exist
-      const { data: existingResources } = await supabase
-        .from('lesson_resources')
-        .select('id')
-        .eq('lesson_plan_id', lessonPlanId)
-        .single();
+      // First check if resources already exist using custom query to avoid TS errors
+      const { data: existingResources, error: existingError } = await supabase
+        .rpc('get_lesson_resources_by_lesson_id', { p_lesson_plan_id: lessonPlanId });
 
-      if (existingResources) {
+      if (existingError) {
+        console.error("Error checking for existing resources:", existingError);
+      } else if (existingResources && existingResources.length > 0) {
         toast.success("Resources already exist for this lesson plan");
-        onResourcesGenerated(existingResources.id);
+        onResourcesGenerated(existingResources[0].id);
         setIsGenerating(false);
         return;
       }
