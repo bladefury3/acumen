@@ -6,7 +6,7 @@ interface LessonHeaderProps {
 const LessonHeader = ({
   lessonPlan
 }: LessonHeaderProps) => {
-  return <div className="relative p-6 rounded-lg bg-gradient-to-r from-primary/5 to-primary/0 ">
+  return <div className="relative p-6 rounded-lg bg-gradient-to-r from-[#f5f9ff] to-[#eaf2ff]">
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-2">
           <GraduationCap className="h-7 w-7 text-primary shrink-0 mt-1" />
