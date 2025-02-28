@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ interface LessonPlan {
   grade: string;
   objectives: string;
   created_at: string;
+  duration: string; // Added duration property that was missing
 }
 const subjectDisplayNames: Record<string, string> = {
   "pe": "Physical Education",
@@ -169,7 +171,7 @@ const Dashboard = () => {
                       >
                         <div className="flex justify-between items-start">
                           <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${subjectColor}`}>
-                            {subjectDisplayNames[plan.duration] || plan.duration} minutes
+                            {plan.duration} minutes
                           </span>
                           <button className="text-muted-foreground hover:text-primary">
                             <MoreHorizontal className="h-5 w-5" />

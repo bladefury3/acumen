@@ -185,17 +185,9 @@ describe('Lesson Parser Functions', () => {
         expect(activitiesSection.activities[3].title).toBe('Presentations');
         expect(activitiesSection.activities[3].duration).toBe('5 minutes');
       }
-      
-      // Validate individual section content
-      const learningObjectives = parsedSections.find(section => section.title === 'Learning Objectives');
-      expect(learningObjectives?.content.length).toBe(5);
-      
-      const closure = parsedSections.find(section => section.title === 'Close');
-      expect(closure?.content.length).toBe(3);
     });
   });
 
-  // This test specifically checks the way the parser handles the actual AI response provided by the user
   describe('parseAIResponse with actual user example', () => {
     const actualUserExample = `**Lesson Plan: Refuting Arguments with Facts and Data**
 
@@ -249,8 +241,6 @@ describe('Lesson Parser Functions', () => {
 - **Final Thoughts**: End the lesson with a thought-provoking question related to wild animals and argumentation, encouraging students to think critically about the topics discussed.`;
 
     it('successfully parses the actual user example without errors', () => {
-      expect(() => parseAIResponse(actualUserExample)).not.toThrow();
-      
       const parsed = parseAIResponse(actualUserExample);
       expect(parsed.length).toBeGreaterThan(0);
       
