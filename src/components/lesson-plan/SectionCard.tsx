@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ParsedSection, Activity } from "@/types/lesson";
+import { ParsedSection } from "@/types/lesson";
 import ActivityCard from "./ActivityCard";
 import { BookOpen, Target, Boxes, Brain, PenTool, CheckCircle, LayoutGrid } from "lucide-react";
 
@@ -36,11 +36,7 @@ const SectionCard = ({
         {section.activities ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {section.activities.map((activity, idx) => (
-              <ActivityCard 
-                key={idx} 
-                activityId={activity.id || `activity-${idx}`}
-                title={activity.title}
-              />
+              <ActivityCard key={idx} activity={activity} />
             ))}
           </div>
         ) : (

@@ -1,82 +1,78 @@
 
-import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Instruction } from "@/types/lesson";
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Activity, Instruction } from "@/types/lesson";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ActivityCardProps {
-  activityId: string;
-  title: string;
-  isOpen?: boolean;
+  activity: Activity;
+  activityId?: string;
 }
 
-const ActivityCard = ({ activityId, title, isOpen = false }: ActivityCardProps) => {
-  const [expanded, setExpanded] = useState(isOpen);
+const ActivityCard = ({ activity, activityId }: ActivityCardProps) => {
   const [instructions, setInstructions] = useState<Instruction[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchInstructions = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('instructions')
-          .select('*')
-          .eq('activities_detail_id', activityId);
+    if (!activityId) return;
 
-        if (error) throw error;
-        
-        // Map the data to Instruction interface without assuming updated_at exists
-        const mappedInstructions: Instruction[] = data.map(item => ({
-          id: item.id,
-          instruction_text: item.instruction_text,
-          activities_detail_id: item.activities_detail_id,
-          created_at: item.created_at,
-          // Only add updated_at if it exists in the database response
-          ...(item.updated_at ? { updated_at: item.updated_at } : {})
-        }));
-        
-        setInstructions(mappedInstructions);
-      } catch (error) {
-        console.error('Error fetching instructions:', error);
-      } finally {
-        setLoading(false);
+    const fetchInstructions = async () => {
+      const { data, error } = await supabase
+        .from('instructions')
+        .select('*')
+        .eq('activities_detail_id', activityId)
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        setInstructions(data);
       }
     };
 
+    const channel = supabase
+      .channel('instructions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'instructions',
+          filter: `activities_detail_id=eq.${activityId}`
+        },
+        fetchInstructions
+      )
+      .subscribe();
+
     fetchInstructions();
+    return () => { supabase.removeChannel(channel); };
   }, [activityId]);
 
-  const toggleExpanded = () => setExpanded(!expanded);
-
   return (
-    <Card className="mb-4 border border-primary/10">
-      <CardHeader className="p-4 cursor-pointer" onClick={toggleExpanded}>
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-base font-medium">{title}</CardTitle>
-          <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
-            {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </Button>
-        </div>
+    <Card className="bg-accent/50">
+      <CardHeader className="p-4 pb-2">
+        <CardTitle className="text-base sm:text-lg">{activity.title}</CardTitle>
+        <CardDescription>{activity.duration}</CardDescription>
       </CardHeader>
-      {expanded && (
-        <CardContent className="p-4 pt-0">
-          {loading ? (
-            <div className="flex items-center justify-center p-4">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
-            </div>
-          ) : instructions.length > 0 ? (
-            <ul className="list-disc pl-5 space-y-2">
-              {instructions.map((instruction) => (
+      <CardContent className="p-4 pt-2">
+        <div className="prose prose-sm max-w-none">
+          <h3 className="text-sm font-medium mb-2">Instructions:</h3>
+          <ul className="list-decimal pl-4 space-y-2 text-sm">
+            {activityId && instructions.length > 0 ? (
+              instructions.map((instruction) => (
                 <li key={instruction.id}>{instruction.instruction_text}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground">No instructions available.</p>
-          )}
-        </CardContent>
-      )}
+              ))
+            ) : (
+              activity.steps.map((step, stepIdx) => (
+                <li key={stepIdx}>{step}</li>
+              ))
+            )}
+          </ul>
+        </div>
+      </CardContent>
     </Card>
   );
 };
