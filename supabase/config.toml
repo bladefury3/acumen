@@ -103,27 +103,23 @@ auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 # Use pre-defined map of phone number to OTP for testing.
 [auth.sms.test_otp]
 enabled = true
-# 4 digit OTP
-test_numbers = [
-  { phone = "11111111111", otp = "1234" }
-]
+# Define test phone numbers with their OTPs
+test_phone_numbers = { "11111111111" = "1234" }
 
+# Functions configuration
 [functions]
 enabled = true
 
-[vector]
-enabled = true
-
-[observability]
+# Local Services
+[local]
+# Analytics configuration
+[local.analytics]
 enabled = false
-# Port for tracing ingest.
-otel_port = 54327
-# Configuration for logging. Logs are kept in memory for 30 seconds and can be retrieved by
-# using the GraphQL API: https://supabase.com/docs/guides/platform/logs/getting-started-ui#querying-the-logs-using-graphql
-[observability.logger]
-enabled = true
 
-# Configuration for OpenTelemetry metrics.
-[observability.metrics]
-enabled = true
-prometheus_port = 54328
+# Vector configuration
+[local.vector]
+enabled = false
+
+# Logging and monitoring configuration
+[local.monitoring]
+enabled = false
