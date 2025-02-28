@@ -28,15 +28,43 @@ const parseSteps = (content: string): string[] => {
 
 export const parseActivities = (content: string[]): Activity[] => {
   return content.map(activity => {
-    const duration = extractDuration(activity) || "";
-    const title = extractActivityTitle(activity);
+    // Extract duration from text like "Activity Title (10 minutes):"
+    const durationPattern = /\((\d+)\s*(?:minute|min|minutes|mins)?\)/i;
+    const durationMatch = activity.match(durationPattern);
+    const duration = durationMatch ? `${durationMatch[1]} minutes` : "";
     
-    const descriptionStart = activity.indexOf(')') + 1;
-    const description = descriptionStart > 0 ? 
-      activity.slice(descriptionStart) : 
-      activity;
+    // Extract title from text, handling both "Activity Title:" and "**Activity Title**" formats
+    let title = "";
+    if (activity.includes("**")) {
+      // Handle format like "**Hands-on Project (20 minutes):**"
+      const boldTitleMatch = activity.match(/\*\*([^*]+)\*\*/);
+      if (boldTitleMatch) {
+        title = boldTitleMatch[1]
+          .split('(')[0] // Remove duration part if present
+          .trim();
+      }
+    }
     
-    // For bullet-point style activities, handle indented steps
+    if (!title) {
+      title = extractActivityTitle(activity);
+    }
+    
+    // Get activity description and steps
+    let description = activity;
+    
+    // For descriptions with ":" after the title/duration, get the content after that
+    const colonIndex = activity.indexOf(':');
+    if (colonIndex > 0) {
+      description = activity.slice(colonIndex + 1).trim();
+    } else if (activity.includes(')')) {
+      // For descriptions with format "Title (duration) Description"
+      const closingParenIndex = activity.indexOf(')');
+      if (closingParenIndex > 0) {
+        description = activity.slice(closingParenIndex + 1).trim();
+      }
+    }
+    
+    // Parse steps from the description
     let steps: string[] = [];
     if (description.includes('  -') || description.includes('\n-')) {
       // Split by newlines and filter for indented bullet points
@@ -73,9 +101,9 @@ const findSectionContent = (lines: string[]): string[] => {
     .filter(line => {
       const cleaned = line.trim();
       return cleaned && !cleaned.startsWith('#') && 
-        (cleaned.startsWith('-') || /^\d+\./.test(cleaned) || cleaned.length > 0);
+        (cleaned.startsWith('*') || cleaned.startsWith('-') || /^\d+\./.test(cleaned) || cleaned.length > 0);
     })
-    .map(line => cleanMarkdown(line.replace(/^[-*•]\s*|\d+\.\s*/, '')))
+    .map(line => cleanMarkdown(line.replace(/^\*\s*|\s*\*$|^[-*•]\s*|\d+\.\s*/, '')))
     .filter(line => line.length > 0);
 };
 
@@ -139,10 +167,14 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
     
     // Handle Activities section specially to extract structured activities
     if (standardizedTitle === 'Activities') {
-      const activityLines = contentLines.filter(line => 
-        line.trim().startsWith('-') && 
-        (line.includes('Activity') || line.includes('**'))
-      );
+      // Look for activity patterns in the content
+      const activityLines = contentLines.filter(line => {
+        const trimmedLine = line.trim();
+        // Match lines that start with * or - and contain activity markers like "**Activity Name**"
+        return (trimmedLine.startsWith('*') || trimmedLine.startsWith('-')) && 
+               (trimmedLine.includes('**') || 
+                /\(\d+\s*(?:minute|min|minutes|mins)?\)/i.test(trimmedLine));
+      });
       
       if (activityLines.length > 0) {
         try {
@@ -174,4 +206,34 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
   }
 
   return sections;
+};
+
+// Add a manual test function that we can run to verify the parsing
+export const manualTestParsing = (aiResponse: string) => {
+  try {
+    console.log('Testing parseAIResponse with provided AI response...');
+    const result = parseAIResponse(aiResponse);
+    console.log('Successfully parsed AI response into', result.length, 'sections:');
+    
+    result.forEach(section => {
+      console.log(`\nSection: ${section.title}`);
+      console.log('Content items:', section.content.length);
+      
+      if (section.activities) {
+        console.log('Activities:', section.activities.length);
+        section.activities.forEach((activity, i) => {
+          console.log(`  Activity ${i+1}: ${activity.title} (${activity.duration})`);
+          console.log(`    Steps: ${activity.steps.length}`);
+          activity.steps.forEach((step, j) => {
+            console.log(`      ${j+1}. ${step}`);
+          });
+        });
+      }
+    });
+    
+    return result;
+  } catch (error) {
+    console.error('Error parsing AI response:', error);
+    throw error;
+  }
 };
