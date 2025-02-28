@@ -43,6 +43,22 @@ const steps = [{
   }, {
     label: "Music",
     value: "music"
+  }, {
+    label: "History",
+    value: "history"
+  }
+  , {
+    label: "Computer Science",
+    value: "computer science"
+  }, {
+    label: "Physical Education",
+    value: "physical education"
+  }, {
+    label: "Foreign Languages",
+    value: "foreign languages"
+  }, {
+    label: "Other",
+    value: "other"
   }],
   key: "subjects" as const
 }, {
@@ -60,6 +76,9 @@ const steps = [{
   }, {
     label: "Assessment strategies",
     value: "assessment"
+  }, {
+    label: "Save time",
+    value: "savetime"
   }],
   key: "goals" as const
 }];
