@@ -1,58 +1,57 @@
 
 import { parseAIResponse } from "../lessonParser";
 
-describe('Pokémon Lesson Plan Parser Test', () => {
-  const pokemonLessonPlan = `**Lesson Plan: Mastering Fractions with Pokémon**
+describe('New Pokémon Lesson Plan Parser Test', () => {
+  const newPokemonLessonPlan = `**Lesson Plan: Mastering Fractions with Pokémon**
 
 ### 1. Learning Objectives
-
-* Students will understand the concept of fractions and their real-world applications.
-* Students will learn to identify, write, and simplify fractions.
-* Students will apply fraction concepts to solve problems using Pokémon-themed scenarios.
-* Students will demonstrate their understanding of fractions through a hands-on project and formative quiz.
+- By the end of this lesson, students will be able to define and identify fractions.
+- Students will understand how to simplify fractions.
+- Students will learn to compare fractions.
+- Students will apply fraction concepts to solve real-world problems, incorporating Pokémon-themed scenarios.
 
 ### 2. Materials and Resources
+- Whiteboard and markers
+- Printed or projected Pokémon images and scenarios for context
+- Fraction worksheets with Pokémon-themed problems
+- Blank paper and pencils for calculations
+- Optional: Access to a computer or tablet for interactive fraction tools (though not required)
 
-* Whiteboard and markers
-* Pokémon-themed worksheets and activity sheets
-* Educational apps (e.g., Math Games, Fraction Wall) for auditory learners
-* Tablets or laptops with internet access for each student
-* Pokémon cards or figures for hands-on project
-* Formative quiz worksheets
-* Common Core State Standards for Mathematics (9th grade) reference guide
-
-### 3. Introduction/Hook (10 minutes)
-
-* Begin the lesson with a Pokémon-themed introduction, asking students if they have a favorite Pokémon and what they know about its statistics (e.g., HP, attack, and defense points).
-* Write a sample fraction problem on the board, using a Pokémon scenario: "If Pikachu has 12/16 of its HP remaining, what fraction of its HP is gone?"
-* Introduce the concept of fractions, explaining that they represent a part of a whole, and use the Pokémon example to illustrate this concept.
-* Use an educational app to provide an auditory explanation of fractions, allowing students to listen and interact with the content.
+### 3. Introduction/Hook (5 minutes)
+- **Introduction to Fractions**: Begin by asking students if they've ever had to share something (like a pizza) among friends. Introduce the concept of fractions as a way to show part of a whole.
+- **Pokémon Hook**: Show a popular Pokémon image (e.g., Pikachu) and pose a scenario: "Pikachu has 12 berries and wants to give 1/4 of them to its friend Squirtle. How many berries will Pikachu give away?"
+- This sparks interest and relates fractions to a familiar, engaging context.
 
 ### 4. Main Activities (40 minutes)
-
-* **Hands-on Project (20 minutes):** Divide students into small groups and provide each group with a set of Pokémon cards or figures. Ask each group to create a Pokémon team with 4-6 members, assigning a fraction of HP to each member (e.g., 3/4, 1/2, 2/3). Students will work together to calculate the total HP of their team and determine the fraction of HP remaining after a simulated battle.
-* **Guided Practice (10 minutes):** Use the educational app to provide guided practice exercises, where students can work in pairs to solve fraction problems using Pokémon-themed scenarios.
-* **Independent Practice (10 minutes):** Provide students with a worksheet containing Pokémon-themed fraction problems, allowing them to work independently and apply their understanding of fractions.
+- **Activity 1: Defining and Identifying Fractions** (10 minutes)
+  - Explain the concept of fractions using visual aids. Define numerator and denominator and provide examples.
+  - Use Pokémon images divided into parts to illustrate (e.g., a picture of a Poké Ball divided into quarters).
+- **Activity 2: Simplifying Fractions with Pokémon Scenarios** (15 minutes)
+  - Provide worksheets with Pokémon-themed fraction problems (e.g., "If Charizard has 8/12 of its health left, what fraction of its health is gone?").
+  - Have students work in pairs to simplify fractions and discuss answers as a class.
+- **Activity 3: Comparing Fractions** (10 minutes)
+  - Introduce how to compare fractions (using <, >, =) with Pokémon battle scenarios (e.g., "Which Pokémon has a higher speed, one with 3/4 or 2/3 of the maximum speed?").
+  - Students calculate and compare fractions to determine the winner of each battle.
+- **Activity 4: Applying Fractions to Real-World Problems** (5 minutes)
+  - Present a scenario where Pokémon trainers need to divide items (e.g., potions) among their team. Students apply fraction knowledge to solve the problem.
 
 ### 5. Assessment Strategies
-
-* **Formative Quiz (15 minutes):** Administer a formative quiz to assess students' understanding of fractions, using Pokémon-themed questions and scenarios.
-* **Observation:** Observe students during the hands-on project and guided practice, taking note of their ability to apply fraction concepts and solve problems.
+- **Participation**: Observe student engagement during activities.
+- **Worksheet Review**: Collect worksheets from Activities 2 and 3 to assess understanding of simplifying and comparing fractions.
+- **Class Discussion**: Engage students in a class discussion at the end to assess their ability to apply fractions to real-world problems.
+- **Quiz (Optional)**: Consider a short quiz at the end of the lesson to formally assess comprehension.
 
 ### 6. Differentiation Strategies
-
-* **For auditory learners:** Use educational apps to provide auditory explanations and guided practice exercises, allowing students to listen and interact with the content.
-* **For struggling students:** Provide additional support by offering one-on-one instruction, using visual aids to illustrate fraction concepts, and providing extra practice exercises.
-* **For advanced students:** Offer challenging fraction problems, using Pokémon-themed scenarios with complex fractions (e.g., 3/4 ÷ 2/3).
+- **For Struggling Students**: Provide additional visual aids and one-on-one assistance during activities. Simplify problems or offer basic fraction review worksheets.
+- **For Advanced Students**: Offer more complex Pokémon-themed fraction problems or ask them to create their own problems for peers to solve.
 
 ### 7. Closure (5 minutes)
+- **Review Key Concepts**: Briefly review the definition of fractions, how to simplify them, and how to compare fractions.
+- **Pokémon Fraction Challenge**: End with a fun, simple challenge (e.g., "If a Pokémon has 2/3 of its energy and uses 1/6 of it, what fraction of its energy does it have left?").
+- **Encouragement**: Encourage students to apply fraction concepts in their everyday lives and to continue exploring math through engaging themes like Pokémon.`;
 
-* Review the key concepts learned during the lesson, using Pokémon-themed examples to illustrate fraction concepts.
-* Ask students to reflect on their learning, discussing what they enjoyed about the lesson and what they found challenging.
-* Provide students with a preview of the next lesson, where they will continue to apply fraction concepts to real-world scenarios using Pokémon.`;
-
-  it('should parse the Pokémon lesson plan without errors', () => {
-    const parsedSections = parseAIResponse(pokemonLessonPlan);
+  it('should parse the new Pokémon lesson plan without errors', () => {
+    const parsedSections = parseAIResponse(newPokemonLessonPlan);
     
     // Check that all required sections are parsed
     const sectionTitles = parsedSections.map(section => section.title);
@@ -69,26 +68,34 @@ describe('Pokémon Lesson Plan Parser Test', () => {
     expect(learningObjectives?.content.length).toBe(4);
     
     const materials = parsedSections.find(section => section.title === 'Materials & Resources');
-    expect(materials?.content.length).toBe(7);
+    expect(materials?.content.length).toBe(5);
     
     // Check if activities are parsed correctly
     const activities = parsedSections.find(section => section.title === 'Activities');
     expect(activities?.activities).toBeDefined();
     
     if (activities?.activities) {
-      expect(activities.activities.length).toBe(3);
+      expect(activities.activities.length).toBe(4);
       
       // Check the first activity
-      expect(activities.activities[0].title).toBe('Hands-on Project');
-      expect(activities.activities[0].duration).toBe('20 minutes');
+      expect(activities.activities[0].title).toBe('Defining and Identifying Fractions');
+      expect(activities.activities[0].duration).toBe('10 minutes');
+      expect(activities.activities[0].steps.length).toBe(2);
       
       // Check the second activity
-      expect(activities.activities[1].title).toBe('Guided Practice');
-      expect(activities.activities[1].duration).toBe('10 minutes');
+      expect(activities.activities[1].title).toBe('Simplifying Fractions with Pokémon Scenarios');
+      expect(activities.activities[1].duration).toBe('15 minutes');
+      expect(activities.activities[1].steps.length).toBe(2);
       
       // Check the third activity
-      expect(activities.activities[2].title).toBe('Independent Practice');
+      expect(activities.activities[2].title).toBe('Comparing Fractions');
       expect(activities.activities[2].duration).toBe('10 minutes');
+      expect(activities.activities[2].steps.length).toBe(2);
+      
+      // Check the fourth activity
+      expect(activities.activities[3].title).toBe('Applying Fractions to Real-World Problems');
+      expect(activities.activities[3].duration).toBe('5 minutes');
+      expect(activities.activities[3].steps.length).toBe(1);
     }
   });
 });
