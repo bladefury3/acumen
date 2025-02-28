@@ -9,7 +9,7 @@ const LessonHeader = ({
   return <div className="relative p-6 rounded-lg bg-gradient-to-r from-[#f5f9ff] to-[#eaf2ff]">
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-2">
-          <GraduationCap className="h-7 w-7 text-primary shrink-0 mt-1" />
+          <GraduationCap className="h-7 w-7 text-primary shrink-0 mt-1 text-[#6C80A3] bg-[#D7E2F4] rounded-full p-1" />
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-primary">
               {lessonPlan.subject}
