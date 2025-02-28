@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
           Create complete resources ready for classroom use focusing on worksheets, assessment materials, teacher guides, and visual aids.`
         }
       ],
-      model: "llama3-70b-8192",
+      model: "llama-3.3-70b-versatile",
       temperature: 0.5,
       max_tokens: 4000,
     });
