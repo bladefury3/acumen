@@ -31,6 +31,8 @@ const LessonPlanContent = ({
   onResourcesGenerated = () => {},
 }: LessonPlanContentProps) => {
   const [resourcesGenerated, setResourcesGenerated] = useState(hasResources);
+  const [isLoadingResources, setIsLoadingResources] = useState(false);
+  const [currentResourcesId, setCurrentResourcesId] = useState<string | undefined>(resourcesId);
 
   // Convert grouped sections back to array for PDF
   const allSections = [
@@ -43,6 +45,7 @@ const LessonPlanContent = ({
 
   const handleResourcesGenerated = (id: string) => {
     setResourcesGenerated(true);
+    setCurrentResourcesId(id);
     if (onResourcesGenerated) {
       onResourcesGenerated(id);
     }
@@ -63,7 +66,7 @@ const LessonPlanContent = ({
           <GenerateResourcesButton 
             lessonPlanId={lessonPlan.id}
             onResourcesGenerated={handleResourcesGenerated}
-            disabled={resourcesGenerated}
+            disabled={resourcesGenerated || isLoadingResources}
           />
         </div>
         <DeleteLessonDialog lessonId={lessonPlan.id} />
@@ -72,7 +75,11 @@ const LessonPlanContent = ({
       {resourcesGenerated && (
         <div className="mt-8">
           <h3 className="text-lg font-medium mb-4">Additional Resources</h3>
-          <ResourcesCard lessonPlanId={lessonPlan.id} resourcesId={resourcesId} />
+          <ResourcesCard 
+            lessonPlanId={lessonPlan.id} 
+            resourcesId={currentResourcesId} 
+            onLoadingChange={setIsLoadingResources}
+          />
         </div>
       )}
     </div>

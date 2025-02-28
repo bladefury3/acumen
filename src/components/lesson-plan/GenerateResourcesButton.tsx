@@ -40,22 +40,26 @@ const GenerateResourcesButton = ({
       }
 
       // Call the edge function to generate resources
-      const { data, error } = await supabase.functions.invoke('generate-resources', {
+      const response = await supabase.functions.invoke('generate-resources', {
         body: { lessonPlanId }
       });
 
-      if (error) {
-        console.error("Error generating resources:", error);
-        toast.error("Failed to generate resources. Please try again later.");
+      if (response.error) {
+        console.error("Error generating resources:", response.error);
+        toast.error(`Failed to generate resources: ${response.error.message || "Unknown error"}`);
         setIsGenerating(false);
         return;
       }
 
+      const data = response.data;
+      
       if (data.success && data.resources) {
         toast.success("Resources generated successfully!");
         onResourcesGenerated(data.resources.id);
       } else {
-        toast.error("Failed to generate resources. Please try again later.");
+        const errorMessage = data.error || "Unknown error";
+        console.error("Error in response:", errorMessage);
+        toast.error(`Failed to generate resources: ${errorMessage}`);
       }
     } catch (error) {
       console.error("Error in generate resources:", error);
