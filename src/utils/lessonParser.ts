@@ -12,7 +12,7 @@ const extractDuration = (text: string): string | null => {
 
 const extractActivityTitle = (text: string): string => {
   const titleText = text.split('(')[0];
-  return cleanMarkdown(titleText.replace(/^(?:activity\s+\d+:?\s*|[-*•]\s*)/i, ''));
+  return cleanMarkdown(titleText.replace(/^(?:activity\s+\d+:?\s*|[-*•]\s*|\*\*[^*]+\*\*\s*)/i, ''));
 };
 
 const parseSteps = (content: string): string[] => {
@@ -36,10 +36,32 @@ export const parseActivities = (content: string[]): Activity[] => {
       activity.slice(descriptionStart) : 
       activity;
     
-    const steps = parseSteps(description);
+    // For bullet-point style activities, handle indented steps
+    let steps: string[] = [];
+    if (description.includes('  -') || description.includes('\n-')) {
+      // Split by newlines and filter for indented bullet points
+      const lines = description.split('\n');
+      const stepLines = lines.filter(line => line.trim().startsWith('-'));
+      
+      if (stepLines.length > 0) {
+        steps = stepLines.map(line => {
+          const step = line.trim().replace(/^-\s*/, '');
+          return cleanMarkdown(step);
+        });
+      } else {
+        steps = parseSteps(description);
+      }
+    } else {
+      steps = parseSteps(description);
+    }
 
-    if (!title || steps.length === 0) {
-      throw new Error(`Invalid activity format: missing title or steps for "${activity}"`);
+    if (!title) {
+      throw new Error(`Invalid activity format: missing title for "${activity}"`);
+    }
+
+    if (steps.length === 0) {
+      // If no steps could be parsed, use the entire description as a single step
+      steps = [cleanMarkdown(description)];
     }
 
     return { title, duration, steps };
@@ -72,7 +94,11 @@ const identifySectionType = (title: string): string => {
 };
 
 export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
-  const sectionTexts = aiResponse.split(/(?=###\s*|\d+\.\s+)/m);
+  // Split the AI response into sections
+  // This regex captures sections that start with ### or with numbered headings like "1. "
+  const sectionRegex = /(?:###\s*|(?:\d+\.)\s+)([^\n]+)(?:\n|$)/g;
+  const sectionMatches = [...aiResponse.matchAll(sectionRegex)];
+  
   const sections: ParsedSection[] = [];
   const requiredSections = new Set([
     'Learning Objectives',
@@ -85,29 +111,61 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
   ]);
   const foundSections = new Set<string>();
 
-  sectionTexts.forEach(sectionText => {
-    const lines = sectionText.split('\n').map(line => line.trim()).filter(Boolean);
-    if (lines.length === 0) return;
+  if (sectionMatches.length === 0) {
+    throw new Error("No valid sections found in AI response");
+  }
 
-    const titleLine = lines[0];
-    let title = cleanMarkdown(titleLine.replace(/^###\s*|\d+\.\s*/, ''));
-    title = identifySectionType(title);
+  // Process each section
+  for (let i = 0; i < sectionMatches.length; i++) {
+    const match = sectionMatches[i];
+    const sectionTitle = match[1].trim();
+    const standardizedTitle = identifySectionType(sectionTitle);
     
-    if (!title) return;
-
-    const content = findSectionContent(lines.slice(1));
-    if (content.length === 0) return;
-
-    foundSections.add(title);
-
-    if (title.toLowerCase().includes('activit')) {
-      const activities = parseActivities(content);
-      sections.push({ title, content, activities, generated: false });
+    // Find the content of this section (everything until the next section)
+    const startIndex = match.index! + match[0].length;
+    const endIndex = i < sectionMatches.length - 1 
+      ? sectionMatches[i + 1].index 
+      : aiResponse.length;
+    
+    const sectionContent = aiResponse.slice(startIndex, endIndex).trim();
+    const contentLines = sectionContent.split('\n');
+    
+    // Parse the content
+    const content = findSectionContent(contentLines);
+    
+    if (content.length === 0) continue;
+    
+    foundSections.add(standardizedTitle);
+    
+    // Handle Activities section specially to extract structured activities
+    if (standardizedTitle === 'Activities') {
+      const activityLines = contentLines.filter(line => 
+        line.trim().startsWith('-') && 
+        (line.includes('Activity') || line.includes('**'))
+      );
+      
+      if (activityLines.length > 0) {
+        try {
+          const activities = parseActivities(activityLines);
+          sections.push({ 
+            title: standardizedTitle, 
+            content, 
+            activities,
+            generated: false 
+          });
+        } catch (error) {
+          console.error(`Error parsing activities: ${error}`);
+          sections.push({ title: standardizedTitle, content, generated: false });
+        }
+      } else {
+        sections.push({ title: standardizedTitle, content, generated: false });
+      }
     } else {
-      sections.push({ title, content, generated: false });
+      sections.push({ title: standardizedTitle, content, generated: false });
     }
-  });
+  }
 
+  // Check for missing required sections
   const missingSections = Array.from(requiredSections)
     .filter(section => !foundSections.has(section));
 
