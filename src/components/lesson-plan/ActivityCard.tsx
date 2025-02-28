@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Activity, Instruction } from "@/types/lesson";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ActivityCardProps {
   activity: Activity;
@@ -17,24 +18,43 @@ interface ActivityCardProps {
 
 const ActivityCard = ({ activity, activityId }: ActivityCardProps) => {
   const [instructions, setInstructions] = useState<Instruction[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (!activityId) return;
 
     const fetchInstructions = async () => {
-      const { data, error } = await supabase
-        .from('instructions')
-        .select('*')
-        .eq('activities_detail_id', activityId)
-        .order('created_at', { ascending: true });
+      setIsLoading(true);
+      
+      try {
+        const { data, error } = await supabase
+          .from('instructions')
+          .select('*')
+          .eq('activities_detail_id', activityId)
+          .order('created_at', { ascending: true });
 
-      if (!error && data) {
-        setInstructions(data);
+        if (error) {
+          console.error("Error fetching instructions:", error);
+          toast.error("Failed to load activity instructions");
+          return;
+        }
+
+        if (data && data.length > 0) {
+          console.log(`Loaded ${data.length} instructions for activity ID ${activityId}`);
+          setInstructions(data);
+        } else {
+          console.log(`No instructions found for activity ID ${activityId}`);
+        }
+      } catch (error) {
+        console.error("Exception fetching instructions:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
+    // Set up real-time subscription for changes to instructions
     const channel = supabase
-      .channel('instructions-changes')
+      .channel(`instructions-changes-${activityId}`)
       .on(
         'postgres_changes',
         {
@@ -43,12 +63,23 @@ const ActivityCard = ({ activity, activityId }: ActivityCardProps) => {
           table: 'instructions',
           filter: `activities_detail_id=eq.${activityId}`
         },
-        fetchInstructions
+        (payload) => {
+          console.log("Realtime update for instructions:", payload);
+          fetchInstructions();
+        }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Subscription status for activity ${activityId}:`, status);
+      });
 
+    // Initial fetch
     fetchInstructions();
-    return () => { supabase.removeChannel(channel); };
+    
+    // Cleanup function
+    return () => { 
+      console.log(`Cleaning up subscription for activity ${activityId}`);
+      supabase.removeChannel(channel); 
+    };
   }, [activityId]);
 
   return (
@@ -60,17 +91,25 @@ const ActivityCard = ({ activity, activityId }: ActivityCardProps) => {
       <CardContent className="p-4 pt-2">
         <div className="prose prose-sm max-w-none">
           <h3 className="text-sm font-medium mb-2">Instructions:</h3>
-          <ul className="list-decimal pl-4 space-y-2 text-sm">
-            {activityId && instructions.length > 0 ? (
-              instructions.map((instruction) => (
-                <li key={instruction.id}>{instruction.instruction_text}</li>
-              ))
-            ) : (
-              activity.steps.map((step, stepIdx) => (
-                <li key={stepIdx}>{step}</li>
-              ))
-            )}
-          </ul>
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground">Loading instructions...</div>
+          ) : (
+            <ul className="list-decimal pl-4 space-y-2 text-sm">
+              {activityId && instructions.length > 0 ? (
+                instructions.map((instruction) => (
+                  <li key={instruction.id} className="leading-relaxed">
+                    {instruction.instruction_text}
+                  </li>
+                ))
+              ) : (
+                activity.steps.map((step, stepIdx) => (
+                  <li key={stepIdx} className="leading-relaxed">
+                    {step}
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
         </div>
       </CardContent>
     </Card>
