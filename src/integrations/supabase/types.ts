@@ -264,6 +264,35 @@ export type Database = {
           },
         ]
       }
+      lesson_resources: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          lesson_plan_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          lesson_plan_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          lesson_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_resources_lesson_plan_id_fkey"
+            columns: ["lesson_plan_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           assessment_strategies: string
