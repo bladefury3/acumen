@@ -19,6 +19,7 @@ const LessonPlanView = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [parsedSections, setParsedSections] = useState<ParsedSection[]>([]);
   const [hasResources, setHasResources] = useState(false);
+  const [resourcesId, setResourcesId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const fetchLessonPlan = async () => {
@@ -43,8 +44,9 @@ const LessonPlanView = () => {
           
         if (resourcesError) {
           console.error("Error checking for resources:", resourcesError);
-        } else {
-          setHasResources(resources && resources.length > 0);
+        } else if (resources && resources.length > 0) {
+          setHasResources(true);
+          setResourcesId(resources[0].id);
         }
       } catch (error) {
         console.error('Error fetching lesson plan:', error);
@@ -82,6 +84,11 @@ const LessonPlanView = () => {
 
   const groupedSections = groupSections(parsedSections);
 
+  const handleResourcesGenerated = (id: string) => {
+    setResourcesId(id);
+    setHasResources(true);
+  };
+
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8 animate-fade-in pb-16">
@@ -89,6 +96,9 @@ const LessonPlanView = () => {
         <LessonPlanContent
           lessonPlan={lessonPlan}
           groupedSections={groupedSections}
+          resourcesId={resourcesId}
+          hasResources={hasResources}
+          onResourcesGenerated={handleResourcesGenerated}
         />
       </div>
     </DashboardLayout>

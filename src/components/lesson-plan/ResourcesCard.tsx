@@ -163,7 +163,10 @@ const ResourcesCard = ({ lessonPlanId, resourcesId: initialResourcesId }: Resour
         
         if (initialResourcesId) {
           resourcesQuery = await supabase
-            .rpc('get_lesson_resources_by_lesson_id', { p_lesson_plan_id: lessonPlanId });
+            .from('lesson_resources')
+            .select('*')
+            .eq('id', initialResourcesId)
+            .single();
         } else {
           resourcesQuery = await supabase
             .rpc('get_lesson_resources_by_lesson_id', { p_lesson_plan_id: lessonPlanId });
@@ -176,8 +179,12 @@ const ResourcesCard = ({ lessonPlanId, resourcesId: initialResourcesId }: Resour
           return;
         }
         
-        if (data && data.length > 0) {
-          setResources(data[0] as ResourceData);
+        if (data) {
+          if (Array.isArray(data) && data.length > 0) {
+            setResources(data[0] as ResourceData);
+          } else {
+            setResources(data as ResourceData);
+          }
         }
       } catch (error) {
         console.error("Error in fetch resources:", error);

@@ -18,14 +18,19 @@ interface LessonPlanContentProps {
     assessmentRow: ParsedSection[];
     close?: ParsedSection;
   };
+  resourcesId?: string;
+  hasResources?: boolean;
+  onResourcesGenerated?: (id: string) => void;
 }
 
 const LessonPlanContent = ({
   lessonPlan,
   groupedSections,
+  resourcesId,
+  hasResources = false,
+  onResourcesGenerated = () => {},
 }: LessonPlanContentProps) => {
-  const [resourcesId, setResourcesId] = useState<string | undefined>(undefined);
-  const [resourcesGenerated, setResourcesGenerated] = useState(false);
+  const [resourcesGenerated, setResourcesGenerated] = useState(hasResources);
 
   // Convert grouped sections back to array for PDF
   const allSections = [
@@ -37,8 +42,10 @@ const LessonPlanContent = ({
   ].filter((section): section is ParsedSection => section !== undefined);
 
   const handleResourcesGenerated = (id: string) => {
-    setResourcesId(id);
     setResourcesGenerated(true);
+    if (onResourcesGenerated) {
+      onResourcesGenerated(id);
+    }
   };
 
   return (

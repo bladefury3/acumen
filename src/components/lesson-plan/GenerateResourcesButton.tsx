@@ -70,7 +70,7 @@ const GenerateResourcesButton = ({
       onClick={generateResources}
       disabled={disabled || isGenerating}
       variant="secondary"
-      className="flex items-center gap-2"
+      className="flex items-center gap-2 bg-[#003C5A] text-[#C3CFF5] hover:bg-[#003C5A]/90 hover:text-[#C3CFF5]"
     >
       {isGenerating ? (
         <Loader2 className="h-4 w-4 animate-spin" />

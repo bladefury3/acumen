@@ -1,23 +1,29 @@
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { OpenAI } from "https://esm.sh/openai@4.10.0";
-import { Groq } from "https://esm.sh/groq-sdk@0.5.0";
+// Follow this setup guide to integrate the Deno runtime into your application:
+// https://deno.land/manual/examples/deploy_node_npm
 
-// Define CORS headers
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.48.1'
+import { Groq } from 'https://esm.sh/groq-sdk@0.4.0';
+
+// Initialize Groq client
+const groq = new Groq({
+  apiKey: Deno.env.get('GROQ_API_KEY'),
+});
+
+// CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Initialize supabase client with deno env var
+// Create Supabase client
 const supabaseClient = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_ANON_KEY') ?? '',
 );
 
-serve(async (req) => {
-  // Handle CORS preflight request
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -27,150 +33,159 @@ serve(async (req) => {
     const { lessonPlanId } = await req.json();
 
     if (!lessonPlanId) {
+      console.error('Missing lessonPlanId in request');
       return new Response(
-        JSON.stringify({ success: false, error: "Lesson plan ID is required" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        JSON.stringify({ success: false, error: 'Missing lessonPlanId parameter' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    console.log(`Generating resources for lesson plan: ${lessonPlanId}`);
+    console.log(`Generating resources for lesson plan ID: ${lessonPlanId}`);
 
-    // Check if resources already exist
-    const { data: existingResources, error: checkError } = await supabaseClient
-      .from('lesson_resources')
-      .select('id')
-      .eq('lesson_plan_id', lessonPlanId)
-      .limit(1);
-
-    if (checkError) {
-      console.error(`Error checking for existing resources: ${checkError.message}`);
-      throw new Error(`Database error when checking existing resources: ${checkError.message}`);
-    }
-
-    if (existingResources && existingResources.length > 0) {
-      console.log(`Resources already exist for lesson plan: ${lessonPlanId}`);
-      return new Response(
-        JSON.stringify({ success: true, resources: existingResources[0] }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Get the lesson plan data
-    const { data: lessonPlan, error: lessonError } = await supabaseClient
+    // Get existing lesson plan
+    const { data: lessonPlan, error: lessonPlanError } = await supabaseClient
       .from('lesson_plans')
       .select('*')
       .eq('id', lessonPlanId)
       .single();
 
-    if (lessonError) {
-      console.error(`Error fetching lesson plan: ${lessonError.message}`);
-      throw new Error(`Database error when fetching lesson plan: ${lessonError.message}`);
-    }
-
-    if (!lessonPlan) {
+    if (lessonPlanError) {
+      console.error('Error fetching lesson plan:', lessonPlanError);
       return new Response(
-        JSON.stringify({ success: false, error: "Lesson plan not found" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+        JSON.stringify({ success: false, error: 'Failed to fetch lesson plan' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
 
-    // Try to use either OpenAI or Groq API based on available keys
-    let resourcesContent = "";
+    // First check if resources already exist for this lesson
+    const { data: existingResources, error: existingError } = await supabaseClient
+      .rpc('get_lesson_resources_by_lesson_id', { p_lesson_plan_id: lessonPlanId });
+
+    if (existingError) {
+      console.error('Error checking for existing resources:', existingError);
+    } else if (existingResources && existingResources.length > 0) {
+      console.log('Resources already exist for this lesson plan');
+      return new Response(
+        JSON.stringify({ success: true, resources: existingResources[0] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get more detailed information from the lessons table if available
+    const { data: lessonDetails, error: lessonDetailsError } = await supabaseClient
+      .from('lessons')
+      .select('*')
+      .eq('response_id', lessonPlanId)
+      .maybeSingle();
+
+    if (lessonDetailsError) {
+      console.error('Error fetching lesson details:', lessonDetailsError);
+    }
+
+    // Combine basic and detailed information for the prompt
+    const lessonInfo = {
+      grade: lessonPlan.grade,
+      subject: lessonPlan.subject,
+      objectives: lessonPlan.objectives,
+      duration: lessonPlan.duration,
+      curriculum: lessonPlan.curriculum,
+      learningObjectives: lessonDetails?.learning_objectives || '',
+      materialsResources: lessonDetails?.materials_resources || '',
+      introductionHook: lessonDetails?.introduction_hook || '',
+      assessmentStrategies: lessonDetails?.assessment_strategies || '',
+      differentiationStrategies: lessonDetails?.differentiation_strategies || '',
+      activities: lessonPlan.activities?.join(', ') || '',
+      aiResponse: lessonPlan.ai_response || '',
+    };
+
+    console.log('Generating resources with Groq');
     
-    if (Deno.env.get("OPENAI_API_KEY")) {
-      // Use OpenAI
-      const openai = new OpenAI({
-        apiKey: Deno.env.get("OPENAI_API_KEY") || "",
-      });
+    // Generate resources using Groq
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert educational resource creator. Your task is to create a detailed set of teaching resources for a lesson plan. 
+          Format your response with clear markdown headings and bullet points. Include:
+          1. Student worksheets with questions
+          2. Teacher handouts with answer keys
+          3. Assessment materials aligned to learning objectives
+          4. Extension activity ideas for differentiated learning
+          5. Visual aids descriptions or templates 
+          6. Formative assessment questions
+          
+          Make all resources directly usable in a classroom setting. Use clear organization with proper headings, subheadings, and concise instructions.`
+        },
+        {
+          role: "user",
+          content: `Create comprehensive teaching resources for a ${lessonInfo.grade} ${lessonInfo.subject} lesson with the following details:
+          
+          LESSON OBJECTIVES: ${lessonInfo.objectives}
+          
+          DURATION: ${lessonInfo.duration}
+          
+          CURRICULUM STANDARDS: ${lessonInfo.curriculum}
+          
+          LEARNING OBJECTIVES: ${lessonInfo.learningObjectives}
+          
+          MATERIALS AND RESOURCES: ${lessonInfo.materialsResources}
+          
+          INTRODUCTION/HOOK: ${lessonInfo.introductionHook}
+          
+          ASSESSMENT STRATEGIES: ${lessonInfo.assessmentStrategies}
+          
+          DIFFERENTIATION STRATEGIES: ${lessonInfo.differentiationStrategies}
+          
+          ACTIVITIES: ${lessonInfo.activities}
+          
+          Create complete resources ready for classroom use focusing on worksheets, assessment materials, teacher guides, and visual aids.`
+        }
+      ],
+      model: "llama3-70b-8192",
+      temperature: 0.5,
+      max_tokens: 4000,
+    });
 
-      const prompt = generateResourcesPrompt(lessonPlan);
-      
-      console.log("Calling OpenAI API to generate resources...");
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 2000,
-      });
-
-      resourcesContent = completion.choices[0]?.message?.content || "";
-    } 
-    else if (Deno.env.get("GROQ_API_KEY")) {
-      // Use Groq as fallback
-      const groq = new Groq({
-        apiKey: Deno.env.get("GROQ_API_KEY") || "",
-      });
-      
-      const prompt = generateResourcesPrompt(lessonPlan);
-      
-      console.log("Calling Groq API to generate resources...");
-      const completion = await groq.chat.completions.create({
-        model: "llama3-8b-8192",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 2000, 
-      });
-
-      resourcesContent = completion.choices[0]?.message?.content || "";
-    } 
-    else {
-      throw new Error("No AI API key configured (OPENAI_API_KEY or GROQ_API_KEY)");
-    }
-
+    const resourcesContent = completion.choices[0]?.message?.content || '';
+    
     if (!resourcesContent) {
-      throw new Error("Failed to generate resources content");
+      console.error('Empty response from Groq');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to generate resources content' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
-    // Store in database
-    const { data: resources, error: insertError } = await supabaseClient
+    console.log('Resources generated successfully, saving to database...');
+
+    // Store the generated resources in the database
+    const { data: resources, error: resourcesError } = await supabaseClient
       .from('lesson_resources')
       .insert({
         lesson_plan_id: lessonPlanId,
-        content: resourcesContent,
+        content: resourcesContent
       })
       .select()
       .single();
 
-    if (insertError) {
-      console.error(`Error inserting resources: ${insertError.message}`);
-      throw new Error(`Database error when inserting resources: ${insertError.message}`);
+    if (resourcesError) {
+      console.error('Error storing resources:', resourcesError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to store resources' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
-    console.log(`Resources generated successfully for lesson plan: ${lessonPlanId}`);
     return new Response(
       JSON.stringify({ success: true, resources }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error(`Error in generate-resources function: ${error.message}`);
+    console.error('Unexpected error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      JSON.stringify({ success: false, error: error.message || 'An unexpected error occurred' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
-
-// Generate a comprehensive prompt for creating resources based on the lesson plan
-function generateResourcesPrompt(lessonPlan) {
-  return `Create a comprehensive set of teaching resources for the following lesson plan:
-
-Subject: ${lessonPlan.subject}
-Grade Level: ${lessonPlan.grade}
-Duration: ${lessonPlan.duration}
-Objectives: ${lessonPlan.objectives}
-${lessonPlan.fun_elements ? `Fun Elements: ${lessonPlan.fun_elements}` : ''}
-
-Based on this lesson plan, create the following teaching resources:
-
-1. A detailed worksheet for students that covers the main concepts
-2. An assessment activity or quiz to measure learning
-3. At least one extension activity for advanced students
-4. A list of additional resources (websites, books, videos) that complement the lesson
-5. Teaching tips and common misconceptions to watch for
-
-Format each section with clear headings using markdown format (# for main headings, ## for subheadings).
-Make each resource practical, age-appropriate, and directly aligned with the lesson objectives.
-Include clear instructions for using each resource.
-`;
-}
