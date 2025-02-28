@@ -21,7 +21,7 @@ const ActivityCard = ({ activityId, title, isOpen = false }: ActivityCardProps) 
     const fetchInstructions = async () => {
       try {
         const { data, error } = await supabase
-          .from('activities_instructions')
+          .from('instructions')
           .select('*')
           .eq('activities_detail_id', activityId);
 

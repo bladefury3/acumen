@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,22 +7,17 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import EmptyState from "@/components/dashboard/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, isSameDay } from "date-fns";
-interface LessonPlan {
-  id: string;
-  subject: string;
-  grade: string;
-  objectives: string;
-  created_at: string;
-}
+import { format } from "date-fns";
+import { LessonPlan } from "@/types/lesson";
+
 const subjectDisplayNames: Record<string, string> = {
   "pe": "Physical Education",
   "math": "Mathematics",
   "english": "English",
   "science": "Science"
 };
+
 const subjectColors = {
   Math: 'bg-indigo-100 text-indigo-600',
   Science: 'bg-green-100 text-green-600',
@@ -30,12 +26,14 @@ const subjectColors = {
   Art: 'bg-pink-100 text-pink-600',
   default: 'bg-gray-100 text-gray-600'
 };
+
 const Dashboard = () => {
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"date" | "subject">("date");
   const [uniqueSubjects, setUniqueSubjects] = useState<string[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
+
   const fetchLessonPlans = async () => {
     try {
       const {
@@ -55,6 +53,7 @@ const Dashboard = () => {
       setIsLoading(false);
     }
   };
+
   const getFilteredAndSortedLessonPlans = () => {
     let filtered = [...lessonPlans];
     if (selectedSubject !== "all") {
@@ -68,6 +67,7 @@ const Dashboard = () => {
       }
     });
   };
+
   const groupLessonPlansByDate = (plans: LessonPlan[]) => {
     const groups: {
       [key: string]: LessonPlan[];
@@ -84,9 +84,11 @@ const Dashboard = () => {
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
   };
+
   useEffect(() => {
     fetchLessonPlans();
   }, []);
+
   const sidebarItems = [{
     label: "My Lessons",
     href: "/dashboard",
@@ -96,6 +98,7 @@ const Dashboard = () => {
     href: "/dashboard/settings",
     icon: Settings
   }];
+
   if (isLoading) {
     return <DashboardLayout sidebarItems={sidebarItems}>
       <div className="flex items-center justify-center h-full">
@@ -106,8 +109,10 @@ const Dashboard = () => {
       </div>
     </DashboardLayout>;
   }
+
   const filteredLessonPlans = getFilteredAndSortedLessonPlans();
   const groupedLessonPlans = groupLessonPlansByDate(filteredLessonPlans);
+
   return <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8">
         <div className="flex justify-between items-center flex-wrap gap-4">
@@ -169,7 +174,7 @@ const Dashboard = () => {
                       >
                         <div className="flex justify-between items-start">
                           <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${subjectColor}`}>
-                            {subjectDisplayNames[plan.duration] || plan.duration} minutes
+                            {plan.duration} minutes
                           </span>
                           <button className="text-muted-foreground hover:text-primary">
                             <MoreHorizontal className="h-5 w-5" />
@@ -200,4 +205,5 @@ const Dashboard = () => {
       </div>
     </DashboardLayout>;
 };
+
 export default Dashboard;

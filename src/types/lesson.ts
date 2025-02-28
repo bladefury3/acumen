@@ -15,6 +15,7 @@ export interface LessonPlanData {
 }
 
 export interface Activity {
+  id?: string;
   title: string;
   duration: string;
   steps: string[];
@@ -33,4 +34,14 @@ export interface ParsedSection {
   content: string[];
   activities?: Activity[];
   generated?: boolean;
+}
+
+// Add LessonPlan interface for Dashboard.tsx
+export interface LessonPlan {
+  id: string;
+  subject: string;
+  grade: string;
+  objectives: string;
+  created_at: string;
+  duration: string; // Added duration field
 }
