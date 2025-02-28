@@ -1,21 +1,6 @@
 
-export interface Activity {
-  title: string;
-  duration: string;
-  steps: string[];
-}
-
-export interface ParsedSection {
-  title: string;
-  content: string[];
-  activities?: Activity[];
-}
-
 export interface LessonPlanData {
   id: string;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
   objectives: string;
   grade: string;
   subject: string;
@@ -29,10 +14,22 @@ export interface LessonPlanData {
   ai_response: string;
 }
 
+export interface Activity {
+  title: string;
+  duration: string;
+  steps: string[];
+}
+
 export interface Instruction {
   id: string;
-  created_at: string;
-  updated_at?: string; // Make updated_at optional to match Supabase response
-  activities_detail_id: string;
   instruction_text: string;
+  activities_detail_id: string;
+  created_at: string;
+}
+
+export interface ParsedSection {
+  title: string;
+  content: string[];
+  activities?: Activity[];
+  generated?: boolean;
 }

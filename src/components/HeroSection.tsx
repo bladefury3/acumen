@@ -5,16 +5,6 @@ const HeroSection = () => {
   return <div id="hero" className="relative overflow-hidden from-gray-50 via-blue-50/30 to-white pt-32 pb-24 bg-[C3CFF5] bg-[#c3cff5] py-[160px]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-8 animate-fade-in">
-        <div className="flex items-center justify-center space-x-3">
-            <img
-              src="/lovable-uploads/icon.png" // Replace with your logo path
-              alt="Acumen Logo"
-              className="w-10 h-10"
-            />
-            <span className="text-xl font-bold text-[#003C5A]">
-              acumen
-            </span>
-          </div>
           <div className="space-y-6">
             <div className="flex items-center justify-center gap-2 text-sm">
               <span className="text-muted-foreground">Get started with Acumen</span>
