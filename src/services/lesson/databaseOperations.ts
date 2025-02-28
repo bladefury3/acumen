@@ -4,6 +4,35 @@ import { ParsedLesson } from "./types";
 
 export const cleanExistingLessonData = async (responseId: string) => {
   try {
+    // First get all activities_detail ids to delete their instructions
+    const { data: activitiesData, error: activitiesFetchError } = await supabase
+      .from('activities_detail')
+      .select('id')
+      .eq('lesson_id', responseId);
+
+    if (activitiesFetchError) {
+      console.error('Error fetching activities:', activitiesFetchError);
+      throw new Error('Failed to fetch activities for cleaning');
+    }
+
+    // Delete instructions for each activity
+    if (activitiesData && activitiesData.length > 0) {
+      const activityIds = activitiesData.map(activity => activity.id);
+      
+      for (const activityId of activityIds) {
+        const { error: instructionsError } = await supabase
+          .from('instructions')
+          .delete()
+          .eq('activities_detail_id', activityId);
+
+        if (instructionsError) {
+          console.error(`Error cleaning instructions for activity ${activityId}:`, instructionsError);
+          // Continue with deletion even if some instructions fail
+        }
+      }
+    }
+
+    // Now delete activities and lessons
     await supabase
       .from('activities_detail')
       .delete()

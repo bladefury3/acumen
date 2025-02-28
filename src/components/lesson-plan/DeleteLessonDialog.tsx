@@ -31,6 +31,36 @@ const DeleteLessonDialog = ({ lessonId }: DeleteLessonDialogProps) => {
     setIsDeleting(true);
     
     try {
+      // First, get all activities_detail ids to delete their instructions
+      const { data: activitiesData, error: activitiesFetchError } = await supabase
+        .from('activities_detail')
+        .select('id')
+        .eq('lesson_id', lessonId);
+
+      if (activitiesFetchError) {
+        console.error('Error fetching activities:', activitiesFetchError);
+        throw new Error('Failed to fetch activities');
+      }
+
+      // Delete instructions for each activity
+      if (activitiesData && activitiesData.length > 0) {
+        const activityIds = activitiesData.map(activity => activity.id);
+        
+        // Delete all instructions related to these activities
+        for (const activityId of activityIds) {
+          const { error: instructionsError } = await supabase
+            .from('instructions')
+            .delete()
+            .eq('activities_detail_id', activityId);
+
+          if (instructionsError) {
+            console.error(`Error deleting instructions for activity ${activityId}:`, instructionsError);
+            // Continue with deletion even if some instructions fail
+          }
+        }
+      }
+
+      // Now delete the activities
       const { error: activitiesError } = await supabase
         .from('activities_detail')
         .delete()
@@ -41,6 +71,7 @@ const DeleteLessonDialog = ({ lessonId }: DeleteLessonDialogProps) => {
         throw new Error('Failed to delete activities');
       }
 
+      // Delete the lesson
       const { error: lessonsError } = await supabase
         .from('lessons')
         .delete()
@@ -51,6 +82,7 @@ const DeleteLessonDialog = ({ lessonId }: DeleteLessonDialogProps) => {
         throw new Error('Failed to delete lessons');
       }
 
+      // Finally delete the lesson plan
       const { error: lessonPlanError } = await supabase
         .from('lesson_plans')
         .delete()
@@ -94,7 +126,7 @@ const DeleteLessonDialog = ({ lessonId }: DeleteLessonDialogProps) => {
           </AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete this lesson plan
-            and all associated activities, lessons, and related content.
+            and all associated activities, lessons, instructions, and related content.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
