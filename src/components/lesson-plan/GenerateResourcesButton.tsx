@@ -25,12 +25,13 @@ const GenerateResourcesButton = ({
     toast.info("Starting to generate resources. This may take up to a minute.");
 
     try {
-      // First check if resources already exist using custom query to avoid TS errors
+      // First check if resources already exist using custom RPC function
       const { data: existingResources, error: existingError } = await supabase
         .rpc('get_lesson_resources_by_lesson_id', { p_lesson_plan_id: lessonPlanId });
 
       if (existingError) {
         console.error("Error checking for existing resources:", existingError);
+        toast.error("Error checking for existing resources.");
       } else if (existingResources && existingResources.length > 0) {
         toast.success("Resources already exist for this lesson plan");
         onResourcesGenerated(existingResources[0].id);

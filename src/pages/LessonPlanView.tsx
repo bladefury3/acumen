@@ -37,7 +37,7 @@ const LessonPlanView = () => {
           setParsedSections(sections);
         }
         
-        // Check if resources exist using RPC function instead of direct query
+        // Check if resources exist using RPC function
         const { data: resources, error: resourcesError } = await supabase
           .rpc('get_lesson_resources_by_lesson_id', { p_lesson_plan_id: id });
           

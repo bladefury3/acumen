@@ -393,7 +393,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_lesson_resources_by_lesson_id: {
+        Args: {
+          p_lesson_plan_id: string
+        }
+        Returns: {
+          content: string
+          created_at: string
+          id: string
+          lesson_plan_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
