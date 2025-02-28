@@ -25,6 +25,7 @@ export interface Instruction {
   instruction_text: string;
   activities_detail_id: string;
   created_at: string;
+  updated_at?: string; // Made this optional to fix the error
 }
 
 export interface ParsedSection {

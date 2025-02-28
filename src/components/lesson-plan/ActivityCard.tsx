@@ -1,78 +1,82 @@
 
-import { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Activity, Instruction } from "@/types/lesson";
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Instruction } from "@/types/lesson";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ActivityCardProps {
-  activity: Activity;
-  activityId?: string;
+  activityId: string;
+  title: string;
+  isOpen?: boolean;
 }
 
-const ActivityCard = ({ activity, activityId }: ActivityCardProps) => {
+const ActivityCard = ({ activityId, title, isOpen = false }: ActivityCardProps) => {
+  const [expanded, setExpanded] = useState(isOpen);
   const [instructions, setInstructions] = useState<Instruction[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!activityId) return;
-
     const fetchInstructions = async () => {
-      const { data, error } = await supabase
-        .from('instructions')
-        .select('*')
-        .eq('activities_detail_id', activityId)
-        .order('created_at', { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from('activities_instructions')
+          .select('*')
+          .eq('activities_detail_id', activityId);
 
-      if (!error && data) {
-        setInstructions(data);
+        if (error) throw error;
+        
+        // Map the data to Instruction interface, ensuring updated_at is handled properly
+        const mappedInstructions = data.map(item => ({
+          id: item.id,
+          instruction_text: item.instruction_text,
+          activities_detail_id: item.activities_detail_id,
+          created_at: item.created_at,
+          // Include updated_at only if it exists
+          ...(item.updated_at && { updated_at: item.updated_at })
+        }));
+        
+        setInstructions(mappedInstructions);
+      } catch (error) {
+        console.error('Error fetching instructions:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    const channel = supabase
-      .channel('instructions-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'instructions',
-          filter: `activities_detail_id=eq.${activityId}`
-        },
-        fetchInstructions
-      )
-      .subscribe();
-
     fetchInstructions();
-    return () => { supabase.removeChannel(channel); };
   }, [activityId]);
 
+  const toggleExpanded = () => setExpanded(!expanded);
+
   return (
-    <Card className="bg-accent/50">
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="text-base sm:text-lg">{activity.title}</CardTitle>
-        <CardDescription>{activity.duration}</CardDescription>
-      </CardHeader>
-      <CardContent className="p-4 pt-2">
-        <div className="prose prose-sm max-w-none">
-          <h3 className="text-sm font-medium mb-2">Instructions:</h3>
-          <ul className="list-decimal pl-4 space-y-2 text-sm">
-            {activityId && instructions.length > 0 ? (
-              instructions.map((instruction) => (
-                <li key={instruction.id}>{instruction.instruction_text}</li>
-              ))
-            ) : (
-              activity.steps.map((step, stepIdx) => (
-                <li key={stepIdx}>{step}</li>
-              ))
-            )}
-          </ul>
+    <Card className="mb-4 border border-primary/10">
+      <CardHeader className="p-4 cursor-pointer" onClick={toggleExpanded}>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-base font-medium">{title}</CardTitle>
+          <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
+            {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </Button>
         </div>
-      </CardContent>
+      </CardHeader>
+      {expanded && (
+        <CardContent className="p-4 pt-0">
+          {loading ? (
+            <div className="flex items-center justify-center p-4">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : instructions.length > 0 ? (
+            <ul className="list-disc pl-5 space-y-2">
+              {instructions.map((instruction) => (
+                <li key={instruction.id}>{instruction.instruction_text}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground">No instructions available.</p>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 };
