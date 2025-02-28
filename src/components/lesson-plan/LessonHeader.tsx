@@ -1,13 +1,12 @@
 import { Clock, GraduationCap } from "lucide-react";
 import { LessonPlanData } from "@/types/lesson";
-
 interface LessonHeaderProps {
   lessonPlan: LessonPlanData;
 }
-
-const LessonHeader = ({ lessonPlan }: LessonHeaderProps) => {
-  return (
-    <div className="relative p-6 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/10 shadow-md">
+const LessonHeader = ({
+  lessonPlan
+}: LessonHeaderProps) => {
+  return <div className="relative p-6 rounded-lg bg-gradient-to-r from-primary/5 to-primary/0 ">
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-2">
           <GraduationCap className="h-7 w-7 text-primary shrink-0 mt-1" />
@@ -31,8 +30,6 @@ const LessonHeader = ({ lessonPlan }: LessonHeaderProps) => {
           </span>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default LessonHeader;
