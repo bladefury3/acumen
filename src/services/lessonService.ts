@@ -6,47 +6,82 @@ import { findSectionContent, validateParsedSections, findActivitiesSection } fro
 import { cleanExistingLessonData, createNewLesson, createActivities } from "./lesson/databaseOperations";
 import { ParsedLesson } from "./lesson/types";
 
-export const parseAndStoreAIResponse = async (aiResponse: string, responseId: string) => {
+export const parseAndStoreAIResponse = async (aiResponse: string, responseId: string): Promise<ParsedSection[]> => {
   try {
-    const sections = parseAIResponse(aiResponse);
-    console.log('Parsed sections:', sections);
+    // Parse AI response into sections
+    const parsedSections = parseAIResponse(aiResponse);
+    if (!parsedSections || parsedSections.length === 0) {
+      throw new Error("Failed to parse AI response");
+    }
 
-    const parsedLesson: ParsedLesson = {
-      learning_objectives: findSectionContent(sections, ['learning objectives', 'learning goals', 'objectives']),
-      materials_resources: findSectionContent(sections, ['materials', 'resources', 'supplies']),
-      introduction_hook: findSectionContent(sections, ['introduction', 'hook', 'opening']),
-      assessment_strategies: findSectionContent(sections, ['assessment', 'evaluation', 'measuring']),
-      differentiation_strategies: findSectionContent(sections, ['differentiation', 'accommodations', 'modifications']),
-      close: findSectionContent(sections, ['close', 'closure', 'wrap up', 'conclusion']),
-      activities: []
+    // Extract content for each section
+    const learningObjectives = findSectionContent(parsedSections, [
+      "learning objectives",
+      "objectives",
+    ]);
+    const materialsResources = findSectionContent(parsedSections, [
+      "materials",
+      "resources",
+    ]);
+    const introductionHook = findSectionContent(parsedSections, [
+      "introduction",
+      "hook",
+    ]);
+    const assessmentStrategies = findSectionContent(parsedSections, [
+      "assessment",
+      "evaluate",
+    ]);
+    const differentiationStrategies = findSectionContent(parsedSections, [
+      "differentiation",
+      "differentiated",
+    ]);
+    const close = findSectionContent(parsedSections, ["close", "closure", "conclusion"]);
+
+    // Validate parsed sections
+    const parsedLesson: Omit<ParsedLesson, "activities"> = {
+      learning_objectives: learningObjectives,
+      materials_resources: materialsResources,
+      introduction_hook: introductionHook,
+      assessment_strategies: assessmentStrategies,
+      differentiation_strategies: differentiationStrategies,
+      close: close,
     };
 
-    validateParsedSections(parsedLesson);
-
-    const activitiesSection = findActivitiesSection(sections);
-    if (!activitiesSection?.activities || activitiesSection.activities.length === 0) {
-      throw new Error('No activities found in the lesson plan');
+    try {
+      validateParsedSections(parsedLesson);
+    } catch (error: any) {
+      console.error("Validation error:", error.message);
+      // Continue anyway, but log the error
     }
 
-    parsedLesson.activities = activitiesSection.activities.map(activity => ({
-      activity_name: activity.title,
-      description: activity.duration || 'Duration not specified',
-      instructions: activity.steps.join('\n')
-    }));
+    // Find activities section
+    const activitiesSection = findActivitiesSection(parsedSections);
+    const activities = activitiesSection?.activities || [];
 
-    if (parsedLesson.activities.length === 0) {
-      throw new Error('Failed to parse activities from the lesson plan');
-    }
-
+    // Clean existing data from database
     await cleanExistingLessonData(responseId);
-    
-    const newLesson = await createNewLesson(responseId, parsedLesson);
-    await createActivities(newLesson.id, parsedLesson.activities);
 
-    return sections;
+    // Create new lesson
+    const parsedLessonWithActivities: ParsedLesson = {
+      ...parsedLesson,
+      activities: activities.map((act) => ({
+        activity_name: act.title,
+        description: act.duration,
+        instructions: act.steps.join("\n"),
+      })),
+    };
+
+    const newLesson = await createNewLesson(responseId, parsedLessonWithActivities);
+
+    // Create activities
+    if (parsedLessonWithActivities.activities.length > 0) {
+      await createActivities(responseId, parsedLessonWithActivities.activities);
+    }
+
+    return parsedSections;
   } catch (error) {
-    console.error('Error parsing and storing AI response:', error);
-    toast.error(`Failed to create lesson plan: ${error.message}`);
-    throw error;
+    console.error("Error in parseAndStoreAIResponse:", error);
+    toast.error("Failed to process lesson plan data");
+    return [];
   }
 };

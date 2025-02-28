@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { LessonPlanData, ParsedSection } from "@/types/lesson";
 import { parseAndStoreAIResponse } from "@/services/lessonService";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import LessonBreadcrumb from "@/components/lesson-plan/LessonBreadcrumb";
 import { groupSections } from "@/utils/sectionUtils";
 import LessonPlanContent from "@/components/lesson-plan/LessonPlanContent";
 import LoadingState from "@/components/lesson-plan/LoadingState";
@@ -22,6 +21,7 @@ const LessonPlanView = () => {
   useEffect(() => {
     const fetchLessonPlan = async () => {
       try {
+        setIsLoading(true);
         const { data, error } = await supabase
           .from('lesson_plans')
           .select('*')
@@ -53,33 +53,18 @@ const LessonPlanView = () => {
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
-  if (isLoading) {
-    return (
-      <DashboardLayout sidebarItems={sidebarItems}>
-        <LoadingState />
-      </DashboardLayout>
-    );
-  }
-
-  if (!lessonPlan) {
-    return (
-      <DashboardLayout sidebarItems={sidebarItems}>
-        <NotFoundState />
-      </DashboardLayout>
-    );
-  }
-
-  const groupedSections = groupSections(parsedSections);
-
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
-      <div className="space-y-8 animate-fade-in pb-16">
-        <LessonBreadcrumb />
+      {isLoading ? (
+        <LoadingState />
+      ) : !lessonPlan ? (
+        <NotFoundState />
+      ) : (
         <LessonPlanContent
           lessonPlan={lessonPlan}
-          groupedSections={groupedSections}
+          groupedSections={groupSections(parsedSections)}
         />
-      </div>
+      )}
     </DashboardLayout>
   );
 };
