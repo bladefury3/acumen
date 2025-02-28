@@ -17,10 +17,7 @@ export const SidebarBrand: React.FC<SidebarBrandProps> = ({
   return <Link to={href}>
       <a className="flex items-center gap-3 p-4 bg-white hover:bg-white transition-colors rounded-lg cursor-pointer px-[4px] py-[4px]">
         <Avatar className="h-10 w-10 bg-muted rounded-md">
-          <AvatarImage src={logoSrc} alt={`${companyName} Logo`} />
-          <AvatarFallback>
-            <span className="text-xl font-bold">{companyName[0]}</span>
-          </AvatarFallback>
+          <AvatarImage src={logoSrc} alt={`${companyName} Logo`} />          
         </Avatar>
         <CardContent className="p-0">
           <h2 className="text-base font-semibold text-primary leading-3">
