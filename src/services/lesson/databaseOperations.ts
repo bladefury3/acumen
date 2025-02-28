@@ -49,22 +49,43 @@ export const cleanExistingLessonData = async (responseId: string) => {
 };
 
 export const createNewLesson = async (responseId: string, parsedLesson: ParsedLesson) => {
-  const { data: newLesson, error: lessonError } = await supabase
-    .from('lessons')
-    .insert({
-      response_id: responseId,
-      learning_objectives: parsedLesson.learning_objectives,
-      materials_resources: parsedLesson.materials_resources,
-      introduction_hook: parsedLesson.introduction_hook,
-      assessment_strategies: parsedLesson.assessment_strategies,
-      differentiation_strategies: parsedLesson.differentiation_strategies,
-      close: parsedLesson.close
-    })
-    .select('id')
-    .single();
+  try {
+    // Check if lesson plan exists
+    const { data: lessonPlanCheck, error: checkError } = await supabase
+      .from('lesson_plans')
+      .select('id')
+      .eq('id', responseId)
+      .single();
+      
+    if (checkError) {
+      console.error('Error checking lesson plan:', checkError);
+      throw new Error(`Lesson plan with ID ${responseId} not found. Cannot create lesson.`);
+    }
+    
+    const { data: newLesson, error: lessonError } = await supabase
+      .from('lessons')
+      .insert({
+        response_id: responseId,
+        learning_objectives: parsedLesson.learning_objectives,
+        materials_resources: parsedLesson.materials_resources,
+        introduction_hook: parsedLesson.introduction_hook,
+        assessment_strategies: parsedLesson.assessment_strategies,
+        differentiation_strategies: parsedLesson.differentiation_strategies,
+        close: parsedLesson.close
+      })
+      .select('id')
+      .single();
 
-  if (lessonError) throw lessonError;
-  return newLesson;
+    if (lessonError) {
+      console.error('Error creating lesson:', lessonError);
+      throw lessonError;
+    }
+    
+    return newLesson;
+  } catch (error) {
+    console.error('Error creating new lesson:', error);
+    throw error;
+  }
 };
 
 // Helper function to clean instruction text
@@ -102,7 +123,7 @@ const cleanInstructionText = (text: string): string => {
 export const createActivities = async (lessonId: string, activities: ParsedLesson['activities']) => {
   for (const activity of activities) {
     try {
-      console.log(`Creating activity: ${activity.activity_name}`);
+      console.log(`Creating activity: ${activity.activity_name} for lesson ID: ${lessonId}`);
       
       const { data: newActivity, error: activityError } = await supabase
         .from('activities_detail')

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ const LessonPlan = () => {
       if (aiError) throw aiError;
       const aiResponse = aiData.response;
 
+      // First create the lesson plan record
       const { data: savedPlan, error: dbError } = await supabase
         .from('lesson_plans')
         .insert({
@@ -83,8 +85,21 @@ const LessonPlan = () => {
         .single();
       
       if (dbError) throw dbError;
+      
+      // Process and store the parsed lesson components
+      try {
+        // This will parse the AI response and store in appropriate lesson tables
+        await import('@/services/lessonService').then(module => {
+          return module.parseAndStoreAIResponse(aiResponse, savedPlan.id);
+        });
+      } catch (parseError) {
+        console.error("Error parsing AI response:", parseError);
+        // Don't throw here, we want to continue even if parsing fails
+        // The user can still view the raw AI response
+        toast.error("There was an issue processing the lesson plan details, but the plan was saved");
+      }
+      
       toast.success("Lesson plan generated successfully!");
-
       navigate(`/lesson-plan/${savedPlan.id}`);
     } catch (error) {
       console.error('Error:', error);
@@ -155,7 +170,11 @@ const LessonPlan = () => {
             <Button variant="outline" type="button" disabled={isLoading}>
               Save Draft
             </Button>
-            <Button type="submit" disabled={isLoading} className="text-gray-50">
+            <Button 
+              type="submit" 
+              disabled={isLoading} 
+              className="bg-[#003C5A] text-[#C3CFF5] hover:bg-[#003C5A]/90 hover:text-[#C3CFF5]"
+            >
               {isLoading ? "Generating..." : "Create Lesson Plan"}
             </Button>
           </div>

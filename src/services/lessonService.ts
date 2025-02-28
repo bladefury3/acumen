@@ -72,9 +72,13 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     console.log(`Cleaned activities: ${parsedLesson.activities.length}`);
     console.log(parsedLesson.activities);
 
+    // First clean up any existing data for this response ID
     await cleanExistingLessonData(responseId);
     
+    // Create the new lesson record first
     const newLesson = await createNewLesson(responseId, parsedLesson);
+    
+    // Then create activities with proper reference to the lesson ID
     await createActivities(newLesson.id, parsedLesson.activities);
 
     return sections;
