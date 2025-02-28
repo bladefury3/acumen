@@ -67,6 +67,25 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
   return newLesson;
 };
 
+// Helper function to clean instruction text
+const cleanInstructionText = (text: string): string => {
+  // Remove phrases like "Instructions:" or "Instructions: "
+  let cleaned = text.replace(/^instructions:?\s*/i, '');
+  
+  // Remove repeated activity title if present
+  cleaned = cleaned.trim();
+  
+  // Remove time in parentheses (e.g., "(10 minutes)")
+  cleaned = cleaned.replace(/\s*\(\d+\s*(?:minute|min|minutes|mins)?\)\s*\.?/i, '');
+  
+  // Ensure the text ends with a period if it doesn't already
+  if (cleaned && !cleaned.endsWith('.')) {
+    cleaned += '.';
+  }
+  
+  return cleaned;
+};
+
 export const createActivities = async (lessonId: string, activities: ParsedLesson['activities']) => {
   for (const activity of activities) {
     const { data: newActivity, error: activityError } = await supabase
@@ -82,11 +101,12 @@ export const createActivities = async (lessonId: string, activities: ParsedLesso
 
     if (activityError) throw activityError;
 
+    // Split instructions and clean each one
     const instructionsToInsert = activity.instructions
       .split('\n')
       .filter(text => text.trim().length > 0)
       .map(instruction_text => ({
-        instruction_text,
+        instruction_text: cleanInstructionText(instruction_text),
         activities_detail_id: newActivity.id
       }));
 
