@@ -33,11 +33,11 @@ const LessonHeader = ({ lessonPlan }: LessonHeaderProps) => {
           </span>
           <span className="flex items-center gap-1">
             <Calendar className="h-4 w-4" />
-            <span>September 15, 2025</span>
+            <span>{lessonPlan.created_at}</span>
           </span>
           <span className="flex items-center gap-1">
             <Tag className="h-4 w-4" />
-            <span>Geometry</span>
+            <span>{lessonPlan.subject}</span>
           </span>
         </div>
       </div>

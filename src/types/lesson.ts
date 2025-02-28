@@ -12,6 +12,7 @@ export interface LessonPlanData {
   activities: string[];
   assessments: string[];
   ai_response: string;
+  created_at: string;
 }
 
 export interface Activity {
