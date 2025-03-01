@@ -127,7 +127,7 @@ const Dashboard = () => {
         </div>
 
         {lessonPlans.length === 0 ? <EmptyState title="No Lesson Plans Yet" description="Create your first lesson plan to get started." action={<Button>
-                <Link to="/lesson-plan/create" className="flex items-center">
+                <Link to="/lesson-plan/create" className="flex items-center text-slate-50 bg-primary-light">
                   <Plus className="mr-2 h-4 w-4" />
                   Create Lesson
                 </Link>
