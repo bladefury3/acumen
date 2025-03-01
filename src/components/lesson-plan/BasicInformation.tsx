@@ -46,7 +46,7 @@ const BasicInformation = ({
         </Label>
         <Textarea
           id="objectives"
-          placeholder="What will students learn?"
+          placeholder="After completing the lesson, the student will be able to..."
           className="min-h-[100px]"
           value={objectives}
           onChange={(e) => onFieldChange("objectives", e.target.value)}
@@ -119,7 +119,7 @@ const BasicInformation = ({
           className="flex gap-4 flex-wrap"
           required
         >
-          {["30", "45", "60", "90"].map((duration) => (
+          {["15","30", "45", "60", "90"].map((duration) => (
             <div key={duration} className="flex items-center space-x-2">
               <RadioGroupItem value={duration} id={`duration-${duration}`} />
               <Label htmlFor={`duration-${duration}`}>{duration} mins</Label>
