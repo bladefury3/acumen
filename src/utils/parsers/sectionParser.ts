@@ -89,7 +89,7 @@ export const findSectionByPatterns = (sections: ParsedSection[], titlePatterns: 
 /**
  * Extract the content from a section matching the title patterns
  */
-export const findSectionContent = (sections: ParsedSection[], titlePatterns: string[]): string => {
+export const getSectionContent = (sections: ParsedSection[], titlePatterns: string[]): string => {
   const matchingSection = findSectionByPatterns(sections, titlePatterns);
   
   return matchingSection?.content.join('\n') || matchingSection?.activities?.map(a => 

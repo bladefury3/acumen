@@ -3,7 +3,7 @@ import { ParsedSection } from "@/types/lesson";
 import { parseAIResponse } from "@/utils/parsers/lessonParser";
 import { toast } from "sonner";
 import { 
-  findSectionContent, 
+  getSectionContent, 
   validateParsedSections, 
   findActivitiesSection 
 } from "@/utils/parsers/sectionParser";
@@ -21,23 +21,33 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     console.log('Parsed sections:', sections);
 
     const parsedLesson: ParsedLesson = {
-      learning_objectives: findSectionContent(sections, ['learning objectives', 'learning goals', 'objectives']),
-      materials_resources: findSectionContent(sections, ['materials', 'resources', 'supplies']),
-      introduction_hook: findSectionContent(sections, ['introduction', 'hook', 'opening']),
-      assessment_strategies: findSectionContent(sections, ['assessment', 'evaluation', 'measuring']),
-      differentiation_strategies: findSectionContent(sections, ['differentiation', 'accommodations', 'modifications']),
-      close: findSectionContent(sections, ['close', 'closure', 'wrap up', 'conclusion']),
+      learning_objectives: getSectionContent(sections, ['learning objectives', 'learning goals', 'objectives']),
+      materials_resources: getSectionContent(sections, ['materials', 'resources', 'supplies']),
+      introduction_hook: getSectionContent(sections, ['introduction', 'hook', 'opening']),
+      assessment_strategies: getSectionContent(sections, ['assessment', 'evaluation', 'measuring']),
+      differentiation_strategies: getSectionContent(sections, ['differentiation', 'accommodations', 'modifications']),
+      close: getSectionContent(sections, ['close', 'closure', 'wrap up', 'conclusion']),
       activities: []
     };
 
     // Validate that we have all required sections
-    const missingFields = validateParsedSections(parsedLesson);
+    const missingFields = validateParsedSections({
+      learning_objectives: parsedLesson.learning_objectives,
+      materials_resources: parsedLesson.materials_resources,
+      introduction_hook: parsedLesson.introduction_hook,
+      assessment_strategies: parsedLesson.assessment_strategies,
+      differentiation_strategies: parsedLesson.differentiation_strategies,
+      close: parsedLesson.close
+    });
+    
     if (missingFields.length > 0) {
       console.warn(`Missing fields in lesson plan: ${missingFields.join(', ')}`);
       // Instead of throwing an error, let's handle missing fields gracefully
       missingFields.forEach(field => {
-        parsedLesson[field.toLowerCase().replace(/[\/\s]/g, '_') as keyof ParsedLesson] = 
-          `Auto-generated ${field} section`;
+        const key = field.toLowerCase().replace(/[\/\s]/g, '_') as keyof ParsedLesson;
+        if (typeof parsedLesson[key] === 'string') {
+          parsedLesson[key] = `Auto-generated ${field} section` as any;
+        }
       });
     }
 
@@ -138,7 +148,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     return sections;
   } catch (error) {
     console.error('Error parsing and storing AI response:', error);
-    toast.error(`Failed to create lesson plan: ${error.message}`);
+    toast.error(`Failed to create lesson plan: ${(error as Error).message}`);
     throw error;
   }
 };

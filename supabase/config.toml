@@ -24,11 +24,9 @@ pop3_port = 54326
 
 [storage]
 enabled = true
-port = 54327
 
 [functions]
 [functions.generate-lesson-plan]
 verify_jwt = false
 [functions.generate-resources]
 verify_jwt = false
-
