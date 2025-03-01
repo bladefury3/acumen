@@ -13,17 +13,14 @@ interface BasicInformationProps {
   subject: string;
   funElements: string;
   duration: string;
-  formattedGradeLevels: string,
   onFieldChange: (field: string, value: string) => void;
 }
-
 
 
 const BasicInformation = ({
   objectives,
   grade,
   subject,
-  formattedGradeLevels,
   funElements,
   duration,
   onFieldChange,
@@ -71,7 +68,7 @@ const BasicInformation = ({
             <SelectValue placeholder="Select grade level" />
           </SelectTrigger>
           <SelectContent>
-            {formattedGradeLevels.map((level) => (
+            {gradeLevels.map((level) => (
               <SelectItem key={level.value} value={level.value}>
                 {level.label}
               </SelectItem>
