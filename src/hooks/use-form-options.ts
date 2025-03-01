@@ -13,12 +13,17 @@ export const useFormOptions = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("grade_levels")
-        .select("value, label")
+        .select("*")
         .order('value', { ascending: true });
       if (error) throw error;
       return data as Option[];
     },
   });
+  
+  const formattedGradeLevels = gradeLevels.map((level) => ({
+    value: level.value,
+    label: level.label
+  }));
 
   const { data: subjects, isLoading: isLoadingSubjects } = useQuery({
     queryKey: ["subjects"],
