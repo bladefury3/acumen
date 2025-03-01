@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.48.1'
 import { Groq } from 'https://esm.sh/groq-sdk@0.4.0';
@@ -44,13 +45,21 @@ serve(async (req) => {
       .from('lesson_plans')
       .select('*')
       .eq('id', lessonPlanId)
-      .single();
+      .maybeSingle();
 
     if (lessonPlanError) {
       console.error('Error fetching lesson plan:', lessonPlanError);
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to fetch lesson plan' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+
+    if (!lessonPlan) {
+      console.error('Lesson plan not found');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Lesson plan not found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
       );
     }
 
@@ -73,12 +82,13 @@ serve(async (req) => {
       .from('lessons')
       .select('*')
       .eq('response_id', lessonPlanId)
-      .limit(1)
-      .single();
+      .limit(1);  // Use limit(1) instead of single()
 
     if (lessonDetailsError) {
       console.error('Error fetching lesson details:', lessonDetailsError);
     }
+
+    const lessonDetail = lessonDetails && lessonDetails.length > 0 ? lessonDetails[0] : null;
 
     // Combine info for the Groq prompt
     const lessonInfo = {
@@ -87,11 +97,11 @@ serve(async (req) => {
       objectives: lessonPlan.objectives,
       duration: lessonPlan.duration,
       curriculum: lessonPlan.curriculum,
-      learningObjectives: lessonDetails?.learning_objectives || '',
-      materialsResources: lessonDetails?.materials_resources || '',
-      introductionHook: lessonDetails?.introduction_hook || '',
-      assessmentStrategies: lessonDetails?.assessment_strategies || '',
-      differentiationStrategies: lessonDetails?.differentiation_strategies || '',
+      learningObjectives: lessonDetail?.learning_objectives || '',
+      materialsResources: lessonDetail?.materials_resources || '',
+      introductionHook: lessonDetail?.introduction_hook || '',
+      assessmentStrategies: lessonDetail?.assessment_strategies || '',
+      differentiationStrategies: lessonDetail?.differentiation_strategies || '',
       activities: lessonPlan.activities?.join(', ') || '',
       aiResponse: lessonPlan.ai_response || '',
     };
@@ -103,15 +113,31 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: `You are an expert educational resource creator...`
+          content: `You are an expert educational resource creator. Create comprehensive teaching resources tailored to the specific lesson provided, including handouts, worksheets, assessment tools, and additional reference materials.`
         },
         {
           role: "user",
           content: `Create comprehensive teaching resources for a ${lessonInfo.grade} ${lessonInfo.subject} lesson with the following details:
           
           LESSON OBJECTIVES: ${lessonInfo.objectives}
-          ...
-          `
+          GRADE LEVEL: ${lessonInfo.grade}
+          SUBJECT: ${lessonInfo.subject}
+          DURATION: ${lessonInfo.duration} minutes
+          CURRICULUM: ${lessonInfo.curriculum}
+          
+          LEARNING OBJECTIVES: ${lessonInfo.learningObjectives}
+          MATERIALS/RESOURCES NEEDED: ${lessonInfo.materialsResources}
+          INTRODUCTION/HOOK: ${lessonInfo.introductionHook}
+          ASSESSMENT STRATEGIES: ${lessonInfo.assessmentStrategies}
+          DIFFERENTIATION STRATEGIES: ${lessonInfo.differentiationStrategies}
+          
+          Please create the following resources in markdown format:
+          1. A student worksheet or handout related to the lesson
+          2. An assessment tool (quiz, rubric, or checklist)
+          3. Additional teacher reference materials or extension activities
+          4. Recommendations for supplementary resources (books, websites, videos)
+          
+          Format your response clearly with markdown headings and sections.`
         }
       ],
       model: "llama-3.3-70b-versatile",
