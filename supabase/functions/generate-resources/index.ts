@@ -73,7 +73,8 @@ serve(async (req) => {
       .from('lessons')
       .select('*')
       .eq('response_id', lessonPlanId)
-      .maybeSingle();
+      .limit(1)
+      .single();
 
     if (lessonDetailsError) {
       console.error('Error fetching lesson details:', lessonDetailsError);
