@@ -99,21 +99,21 @@ const ActivityCard = ({ activity, activityId }: ActivityCardProps) => {
               {activityId && instructions.length > 0 ? (
                 instructions.map((instruction) => (
                   <li key={instruction.id} className="leading-relaxed">
-                    <ReactMarkdown 
-                      className="prose prose-sm max-w-none"
-                    >
-                      {instruction.instruction_text}
-                    </ReactMarkdown>
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown>
+                        {instruction.instruction_text}
+                      </ReactMarkdown>
+                    </div>
                   </li>
                 ))
               ) : (
                 activity.steps.map((step, stepIdx) => (
                   <li key={stepIdx} className="leading-relaxed">
-                    <ReactMarkdown 
-                      className="prose prose-sm max-w-none"
-                    >
-                      {step}
-                    </ReactMarkdown>
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown>
+                        {step}
+                      </ReactMarkdown>
+                    </div>
                   </li>
                 ))
               )}

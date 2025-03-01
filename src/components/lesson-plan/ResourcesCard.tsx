@@ -1,9 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Loader2, Copy, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
 interface ResourcesCardProps {
   lessonPlanId: string;
@@ -19,6 +21,7 @@ const ResourcesCard = ({
   const [content, setContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchResources = async () => {
@@ -73,6 +76,29 @@ const ResourcesCard = ({
     }
   }, [lessonPlanId, resourcesId, onLoadingChange]);
 
+  const handleCopyToClipboard = () => {
+    if (content) {
+      navigator.clipboard.writeText(content)
+        .then(() => toast.success("Resources copied to clipboard"))
+        .catch(err => toast.error("Failed to copy: " + err));
+    }
+  };
+
+  const handleDownload = () => {
+    if (content) {
+      const blob = new Blob([content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lesson-resources.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Resources downloaded");
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="w-full p-8 flex justify-center items-center">
@@ -102,6 +128,26 @@ const ResourcesCard = ({
           <ReactMarkdown>{content}</ReactMarkdown>
         </div>
       </CardContent>
+      <CardFooter className="px-6 py-3 bg-muted/20 flex justify-end gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleCopyToClipboard}
+          className="flex items-center gap-1"
+        >
+          <Copy className="h-4 w-4" />
+          Copy
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleDownload}
+          className="flex items-center gap-1"
+        >
+          <Download className="h-4 w-4" />
+          Download
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

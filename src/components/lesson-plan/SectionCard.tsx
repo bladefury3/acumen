@@ -48,9 +48,11 @@ const SectionCard = ({
                   key={idx} 
                   className="text-sm leading-relaxed text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <ReactMarkdown className="prose prose-sm max-w-none inline">
-                    {item}
-                  </ReactMarkdown>
+                  <div className="prose prose-sm max-w-none inline">
+                    <ReactMarkdown>
+                      {item}
+                    </ReactMarkdown>
+                  </div>
                 </li>
               ))}
             </ul>
