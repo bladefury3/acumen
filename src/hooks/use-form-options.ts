@@ -14,7 +14,7 @@ export const useFormOptions = () => {
       const { data, error } = await supabase
         .from("grade_levels")
         .select("value, label")
-        .order("value");
+        .order('value', { ascending: true });
       if (error) throw error;
       return data as Option[];
     },
