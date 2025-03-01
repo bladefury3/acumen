@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -119,7 +118,7 @@ const Dashboard = () => {
               Manage and organize your lesson plans.
             </p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-500 text-slate-50">
+          <Button className="text-slate-50 bg-primary-light">
             <Link to="/lesson-plan/create" className="flex items-center">
               <Plus className="mr-2 h-4 w-4" />
               Create Lesson
@@ -159,16 +158,9 @@ const Dashboard = () => {
 
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {groupedLessonPlans.map(([_, plans]) => 
-                  plans.map((plan) => {
-                    const subjectColor = subjectColors[plan.subject] || subjectColors.default;
-                    
-                    return (
-                      <Link
-                        key={plan.id}
-                        to={`/lesson-plan/${plan.id}`}
-                        className="block p-4 space-y-2 rounded-lg border bg-white hover:shadow-md transition-shadow hover:no-underline"
-                      >
+                {groupedLessonPlans.map(([_, plans]) => plans.map(plan => {
+              const subjectColor = subjectColors[plan.subject] || subjectColors.default;
+              return <Link key={plan.id} to={`/lesson-plan/${plan.id}`} className="block p-4 space-y-2 rounded-lg border bg-white hover:shadow-md transition-shadow hover:no-underline">
                         <div className="flex justify-between items-start">
                           <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${subjectColor}`}>
                             {plan.duration} minutes
@@ -192,10 +184,8 @@ const Dashboard = () => {
                             Grade {plan.grade}
                           </span>
                         </div>
-                      </Link>
-                    );
-                  })
-                )}
+                      </Link>;
+            }))}
               </div>
             </div>
           </>}
