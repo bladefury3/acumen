@@ -10,6 +10,7 @@ import {
 import { Activity, Instruction } from "@/types/lesson";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 
 interface ActivityCardProps {
   activity: Activity;
@@ -94,17 +95,25 @@ const ActivityCard = ({ activity, activityId }: ActivityCardProps) => {
           {isLoading ? (
             <div className="text-sm text-muted-foreground">Loading instructions...</div>
           ) : (
-            <ul className="list-decimal pl-4 space-y-2 text-sm">
+            <ul className="list-disc pl-4 space-y-2 text-sm">
               {activityId && instructions.length > 0 ? (
                 instructions.map((instruction) => (
                   <li key={instruction.id} className="leading-relaxed">
-                    {instruction.instruction_text}
+                    <ReactMarkdown 
+                      className="prose prose-sm max-w-none"
+                    >
+                      {instruction.instruction_text}
+                    </ReactMarkdown>
                   </li>
                 ))
               ) : (
                 activity.steps.map((step, stepIdx) => (
                   <li key={stepIdx} className="leading-relaxed">
-                    {step}
+                    <ReactMarkdown 
+                      className="prose prose-sm max-w-none"
+                    >
+                      {step}
+                    </ReactMarkdown>
                   </li>
                 ))
               )}

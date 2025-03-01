@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ParsedSection } from "@/types/lesson";
 import ActivityCard from "./ActivityCard";
 import { BookOpen, Target, Boxes, Brain, PenTool, CheckCircle, LayoutGrid } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 interface SectionCardProps {
   section: ParsedSection;
@@ -47,7 +48,9 @@ const SectionCard = ({
                   key={idx} 
                   className="text-sm leading-relaxed text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {item}
+                  <ReactMarkdown className="prose prose-sm max-w-none inline">
+                    {item}
+                  </ReactMarkdown>
                 </li>
               ))}
             </ul>
