@@ -1,7 +1,4 @@
-
-// Follow this setup guide to integrate the Deno runtime into your application:
-// https://deno.land/manual/examples/deploy_node_npm
-
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.48.1'
 import { Groq } from 'https://esm.sh/groq-sdk@0.4.0';
 
@@ -22,7 +19,7 @@ const supabaseClient = createClient(
   Deno.env.get('SUPABASE_ANON_KEY') ?? '',
 );
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -57,7 +54,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // First check if resources already exist for this lesson
+    // Check for existing resources
     const { data: existingResources, error: existingError } = await supabaseClient
       .rpc('get_lesson_resources_by_lesson_id', { p_lesson_plan_id: lessonPlanId });
 
@@ -71,7 +68,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get more detailed information from the lessons table if available
+    // Optionally retrieve more lesson details
     const { data: lessonDetails, error: lessonDetailsError } = await supabaseClient
       .from('lessons')
       .select('*')
@@ -82,7 +79,7 @@ Deno.serve(async (req) => {
       console.error('Error fetching lesson details:', lessonDetailsError);
     }
 
-    // Combine basic and detailed information for the prompt
+    // Combine info for the Groq prompt
     const lessonInfo = {
       grade: lessonPlan.grade,
       subject: lessonPlan.subject,
@@ -99,46 +96,21 @@ Deno.serve(async (req) => {
     };
 
     console.log('Generating resources with Groq');
-    
+
     // Generate resources using Groq
     const completion = await groq.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: `You are an expert educational resource creator. Your task is to create a detailed set of teaching resources for a lesson plan. 
-          Format your response with clear markdown headings and bullet points. Include:
-          1. Student worksheets with questions
-          2. Teacher handouts with answer keys
-          3. Assessment materials aligned to learning objectives
-          4. Extension activity ideas for differentiated learning
-          5. Visual aids descriptions or templates 
-          6. Formative assessment questions
-          
-          Make all resources directly usable in a classroom setting. Use clear organization with proper headings, subheadings, and concise instructions.`
+          content: `You are an expert educational resource creator...`
         },
         {
           role: "user",
           content: `Create comprehensive teaching resources for a ${lessonInfo.grade} ${lessonInfo.subject} lesson with the following details:
           
           LESSON OBJECTIVES: ${lessonInfo.objectives}
-          
-          DURATION: ${lessonInfo.duration}
-          
-          CURRICULUM STANDARDS: ${lessonInfo.curriculum}
-          
-          LEARNING OBJECTIVES: ${lessonInfo.learningObjectives}
-          
-          MATERIALS AND RESOURCES: ${lessonInfo.materialsResources}
-          
-          INTRODUCTION/HOOK: ${lessonInfo.introductionHook}
-          
-          ASSESSMENT STRATEGIES: ${lessonInfo.assessmentStrategies}
-          
-          DIFFERENTIATION STRATEGIES: ${lessonInfo.differentiationStrategies}
-          
-          ACTIVITIES: ${lessonInfo.activities}
-          
-          Create complete resources ready for classroom use focusing on worksheets, assessment materials, teacher guides, and visual aids.`
+          ...
+          `
         }
       ],
       model: "llama-3.3-70b-versatile",
@@ -158,7 +130,7 @@ Deno.serve(async (req) => {
 
     console.log('Resources generated successfully, saving to database...');
 
-    // Store the generated resources in the database
+    // Insert the generated resources into the database
     const { data: resources, error: resourcesError } = await supabaseClient
       .from('lesson_resources')
       .insert({
