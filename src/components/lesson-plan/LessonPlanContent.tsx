@@ -74,7 +74,9 @@ const LessonPlanContent = ({
       
       {resourcesGenerated && (
         <div className="mt-8">
-          <h3 className="text-lg font-medium mb-4">Additional Resources</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium">Additional Resources</h3>
+          </div>
           <ResourcesCard 
             lessonPlanId={lessonPlan.id} 
             resourcesId={currentResourcesId} 
