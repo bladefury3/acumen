@@ -8,17 +8,29 @@ export interface Option {
 }
 
 export const useFormOptions = () => {
-  const { data: gradeLevels, isLoading: isLoadingGrades } = useQuery({
-    queryKey: ["gradeLevels"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("grade_levels")
-        .select("value, label")
-        .order("value");
-      if (error) throw error;
-      return data as Option[];
-    },
-  });
+  const getSortedGradeLevels = async () => {
+    const { data: gradeLevels, error } = await supabase
+      .from('grade_levels')
+      .select('*')
+      .order('value', { ascending: true });
+  
+    if (error) {
+      console.error('Error fetching grade levels:', error);
+      return [];
+    }
+  
+    // Custom Sorting Logic
+    const sortedGradeLevels = gradeLevels.sort((a, b) => {
+      // Move "Kindergarten" (K) to the top
+      if (a.value === 'k' || a.value === 'K') return -1;
+      if (b.value === 'k' || b.value === 'K') return 1;
+  
+      // Convert strings to numbers and sort numerically
+      return parseInt(a.value) - parseInt(b.value);
+    });
+  
+    return sortedGradeLevels as Option[];;
+  };
 
   const { data: subjects, isLoading: isLoadingSubjects } = useQuery({
     queryKey: ["subjects"],
