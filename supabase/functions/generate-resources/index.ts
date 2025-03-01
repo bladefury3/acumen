@@ -254,6 +254,9 @@ serve(async (req: Request) => {
 
     // Create prompt for resource generation
     const prompt = `
+      Act as a expert in creating teaching resources.
+
+      First, review this following lesson plan
       Create teaching resources for the following lesson:
       
       Grade level: ${lessonPlan[0].grade}
@@ -275,12 +278,8 @@ serve(async (req: Request) => {
       - Assessment strategies: ${lessonDetails[0].assessment_strategies}
       - Differentiation strategies: ${lessonDetails[0].differentiation_strategies}
       
-      Please create the following:
-      1. At least 2 printable worksheets or handouts
-      2. An assessment rubric
-      3. Additional activity ideas
-      4. A list of discussion questions
-      5. Suggested further reading or resources
+      SECOND, from the lesson plan above, identify resources which you can create in text format. One at a time, generate those resources if they are text based. 
+      If it's an image, suggest where the teacher can find it or provide suggestions. 
       
       Format each section with clear markdown headings.
     `.trim()
