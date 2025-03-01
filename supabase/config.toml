@@ -31,3 +31,4 @@ port = 54327
 verify_jwt = false
 [functions.generate-resources]
 verify_jwt = false
+

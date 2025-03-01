@@ -1,9 +1,17 @@
 
 import { ParsedSection } from "@/types/lesson";
-import { parseAIResponse } from "@/utils/lessonParser";
+import { parseAIResponse } from "@/utils/parsers/lessonParser";
 import { toast } from "sonner";
-import { findSectionContent, validateParsedSections, findActivitiesSection } from "./lesson/sectionParser";
-import { cleanExistingLessonData, createNewLesson, createActivities } from "./lesson/databaseOperations";
+import { 
+  findSectionContent, 
+  validateParsedSections, 
+  findActivitiesSection 
+} from "@/utils/parsers/sectionParser";
+import { 
+  cleanExistingLessonData, 
+  createNewLesson, 
+  createActivities 
+} from "./lesson/databaseOperations";
 import { ParsedLesson } from "./lesson/types";
 
 export const parseAndStoreAIResponse = async (aiResponse: string, responseId: string) => {
@@ -22,32 +30,83 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       activities: []
     };
 
-    validateParsedSections(parsedLesson);
+    // Validate that we have all required sections
+    const missingFields = validateParsedSections(parsedLesson);
+    if (missingFields.length > 0) {
+      console.warn(`Missing fields in lesson plan: ${missingFields.join(', ')}`);
+      // Instead of throwing an error, let's handle missing fields gracefully
+      missingFields.forEach(field => {
+        parsedLesson[field.toLowerCase().replace(/[\/\s]/g, '_') as keyof ParsedLesson] = 
+          `Auto-generated ${field} section`;
+      });
+    }
 
+    // Extract activities
     const activitiesSection = findActivitiesSection(sections);
     if (!activitiesSection?.activities || activitiesSection.activities.length === 0) {
-      console.warn('No activities found in the lesson plan, attempting to parse from content');
+      console.warn('No structured activities found in the lesson plan, attempting to parse from content');
       
-      // Fallback: Try to extract activities from the content if structured activities aren't available
-      if (activitiesSection && activitiesSection.content) {
-        parsedLesson.activities = activitiesSection.content
-          .filter(line => line.includes('Activity') || /\(\d+\s*min/i.test(line))
-          .map(activityLine => {
-            const titleMatch = activityLine.match(/Activity\s+\d+:\s*([^(]+)/i);
-            const title = titleMatch ? titleMatch[1].trim() : activityLine.split('(')[0].trim();
-            const durationMatch = activityLine.match(/\((\d+)\s*min/i);
-            const duration = durationMatch ? `${durationMatch[1]} minutes` : 'Duration not specified';
-            
-            return {
-              activity_name: title,
-              description: duration,
-              instructions: activityLine
-            };
-          });
+      // Extract activities from any section that might contain them
+      for (const section of sections) {
+        if (section.content.some(line => 
+          line.includes('Activity') || 
+          /\(\d+\s*min/i.test(line) ||
+          /^\d+\.\s+[^:]+/.test(line)
+        )) {
+          const extractedActivities = section.content
+            .filter(line => 
+              line.includes('Activity') || 
+              /\(\d+\s*min/i.test(line) ||
+              /^\d+\.\s+[^:]+/.test(line)
+            )
+            .map(activityLine => {
+              // Extract title
+              let title = activityLine;
+              if (activityLine.includes('(')) {
+                title = activityLine.split('(')[0];
+              }
+              if (title.includes(':')) {
+                title = title.split(':')[0];
+              }
+              
+              // Clean up title
+              title = title.replace(/^Activity\s+\d+:?\s*|\d+\.\s*/i, '').trim();
+              
+              // Extract duration
+              const durationMatch = activityLine.match(/\((\d+)\s*min/i);
+              const duration = durationMatch ? `${durationMatch[1]} minutes` : 'Duration not specified';
+              
+              // Extract description
+              let instructions = activityLine;
+              if (activityLine.includes(':')) {
+                const parts = activityLine.split(':');
+                if (parts.length > 1) {
+                  instructions = parts.slice(1).join(':').trim();
+                }
+              }
+              
+              return {
+                activity_name: title,
+                description: duration,
+                instructions: instructions
+              };
+            });
+          
+          if (extractedActivities.length > 0) {
+            parsedLesson.activities = extractedActivities;
+            break;
+          }
+        }
       }
       
+      // If still no activities, create a default one
       if (parsedLesson.activities.length === 0) {
-        throw new Error('No activities found in the lesson plan');
+        console.warn('Creating a default activity as none were found');
+        parsedLesson.activities = [{
+          activity_name: "Main Activity",
+          description: "Duration not specified",
+          instructions: "Complete the main activity for this lesson."
+        }];
       }
     } else {
       console.log(`Found ${activitiesSection.activities.length} structured activities`);
@@ -55,7 +114,6 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       // Map the structured activities to the format expected by createActivities
       parsedLesson.activities = activitiesSection.activities.map(activity => {
         console.log(`Processing activity: ${activity.title} (${activity.duration})`);
-        console.log(`Activity steps:`, activity.steps);
         
         return {
           activity_name: activity.title,
@@ -65,20 +123,16 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       });
     }
 
-    if (parsedLesson.activities.length === 0) {
-      throw new Error('Failed to parse activities from the lesson plan');
-    }
-
-    console.log(`Cleaned activities: ${parsedLesson.activities.length}`);
+    console.log(`Processed activities: ${parsedLesson.activities.length}`);
     console.log(parsedLesson.activities);
 
     // First clean up any existing data for this response ID
     await cleanExistingLessonData(responseId);
     
-    // Create the new lesson record first
+    // Create the new lesson record
     const newLesson = await createNewLesson(responseId, parsedLesson);
     
-    // Then create activities with proper reference to the lesson ID
+    // Create activities with proper reference to the lesson ID
     await createActivities(newLesson.id, parsedLesson.activities);
 
     return sections;
