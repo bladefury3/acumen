@@ -1,7 +1,8 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
-import { Configuration, OpenAIApi } from 'https://esm.sh/openai@3.3.0'
+import "https://deno.land/x/xhr@0.1.0/mod.ts" // So "fetch" works in Deno deploy
+
+const groqApiKey = Deno.env.get('GROQ_API_KEY')
 
 // Set up CORS headers
 const corsHeaders = {
@@ -10,7 +11,7 @@ const corsHeaders = {
 }
 
 // Handle preflight OPTIONS request
-const handleOptions = () => {
+function handleOptions() {
   return new Response(null, {
     headers: {
       ...corsHeaders,
@@ -19,32 +20,64 @@ const handleOptions = () => {
   })
 }
 
+/**
+ * Helper function to call Groq API
+ */
+async function makeGroqRequest(messages: any, model: string) {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${groqApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: messages,
+    }),
+  })
+
+  return response
+}
+
 const createResourcesFromPrompt = async (prompt: string, lessonPlanId: string, client: any) => {
   console.log('Creating resources from prompt...')
 
+  if (!groqApiKey) {
+    throw new Error('Groq API key is not configured')
+  }
+
+  // Prepare the system + user messages
+  const messages = [
+    {
+      role: 'system',
+      content: `You are an experienced educator who creates supplementary teaching resources.
+Format your response using markdown. Include teaching aids, worksheets, assessment tools, and additional exercises.`,
+    },
+    {
+      role: 'user',
+      content: prompt,
+    },
+  ]
+
   try {
-    // Use OpenAI API key from environment variable
-    const configuration = new Configuration({
-      apiKey: Deno.env.get('OPENAI_API_KEY'),
-    })
-    const openai = new OpenAIApi(configuration)
+    // Attempt with a primary model first
+    console.log('Requesting Groq with primary model...')
+    let response = await makeGroqRequest(messages, 'llama-3.3-70b-versatile')
 
-    const completion = await openai.createChatCompletion({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: `You are an experienced educator who creates supplementary teaching resources. 
-          Format your response using markdown. Include teaching aids, worksheets, assessment tools, and additional exercises.`,
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    })
+    // If the primary model fails, attempt a fallback model
+    if (!response.ok) {
+      console.log('Primary model failed, trying backup model...')
+      response = await makeGroqRequest(messages, 'deepseek-r1-distill-llama-70b')
+    }
 
-    const resourcesContent = completion.data.choices[0]?.message?.content || 'Failed to generate resources.'
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('Groq API Error:', errorData)
+      throw new Error(errorData.error?.message || 'Failed to generate resources.')
+    }
+
+    const data = await response.json()
+    const resourcesContent = data.choices?.[0]?.message?.content || 'Failed to generate resources.'
     console.log('Successfully generated content, saving to database...')
 
     // Insert the resources into the database
@@ -76,6 +109,7 @@ const createResourcesFromPrompt = async (prompt: string, lessonPlanId: string, c
 
     console.log('Resources saved successfully:', createdResource)
     return createdResource?.[0] || resourcesData
+
   } catch (error) {
     console.error('Error generating resources:', error)
     throw error
@@ -178,20 +212,19 @@ serve(async (req: Request) => {
     }
     
     // If no lesson details found, try again with a short delay
-    // This helps with race conditions between lesson creation and resource generation
     if (!lessonDetails || lessonDetails.length === 0) {
       console.log('Lesson details not found, retrying after delay...')
-      
+
       // Wait for 3 seconds
       await new Promise(resolve => setTimeout(resolve, 3000))
-      
+
       // Retry fetch
       const { data: retryLessonDetails, error: retryError } = await supabaseClient
         .from('lessons')
         .select('*')
         .eq('response_id', lessonPlanId)
         .limit(1)
-        
+
       if (retryError || !retryLessonDetails || retryLessonDetails.length === 0) {
         console.error('Error on retry fetching lesson details:', retryError)
         return new Response(
@@ -204,7 +237,7 @@ serve(async (req: Request) => {
           }
         )
       }
-      
+
       // Use the retry results
       lessonDetails[0] = retryLessonDetails[0]
     }
@@ -234,9 +267,11 @@ serve(async (req: Request) => {
       - Learning objectives: ${lessonDetails[0].learning_objectives}
       - Materials and resources: ${lessonDetails[0].materials_resources}
       - Introduction/hook: ${lessonDetails[0].introduction_hook}
-      ${activities && activities.length > 0 
-        ? `- Activities: ${activities.map(a => `${a.activity_name} (${a.description})`).join(', ')}` 
-        : ''}
+      ${
+        activities && activities.length > 0 
+          ? `- Activities: ${activities.map(a => `${a.activity_name} (${a.description})`).join(', ')}`
+          : ''
+      }
       - Assessment strategies: ${lessonDetails[0].assessment_strategies}
       - Differentiation strategies: ${lessonDetails[0].differentiation_strategies}
       
@@ -248,7 +283,7 @@ serve(async (req: Request) => {
       5. Suggested further reading or resources
       
       Format each section with clear markdown headings.
-    `
+    `.trim()
 
     // Generate resources
     const resources = await createResourcesFromPrompt(prompt, lessonPlanId, supabaseClient)
