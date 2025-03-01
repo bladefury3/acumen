@@ -280,6 +280,16 @@ serve(async (req: Request) => {
       
       SECOND, from the lesson plan above, identify resources which you can create in text format. One at a time, generate those resources if they are text based. 
       If it's an image, suggest where the teacher can find it or provide suggestions. 
+
+      For the Output only give me 
+      ##<resource-count> <Resource-Title>
+      <add resources>
+      ....
+
+      ## Suggested Images
+      #### <Resource name>
+      ***Possible Places to find***: <places-to-find>
+
       
       Format each section with clear markdown headings.
     `.trim()
