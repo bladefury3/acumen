@@ -44,9 +44,11 @@ const SectionCard = ({
       <CardContent className="space-y-4 pt-2">
         <div className="prose prose-sm max-w-none">
           {hasMarkdownContent ? (
-            <ReactMarkdown className="markdown">
-              {content[0]}
-            </ReactMarkdown>
+            <div className="markdown">
+              <ReactMarkdown>
+                {content[0]}
+              </ReactMarkdown>
+            </div>
           ) : (
             <ul className="list-disc pl-4 space-y-2 marker:text-[#003C5A]">
               {content.map((item, idx) => (
@@ -54,9 +56,11 @@ const SectionCard = ({
                   key={idx} 
                   className="text-sm leading-relaxed text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <ReactMarkdown className="prose prose-sm max-w-none inline">
-                    {item}
-                  </ReactMarkdown>
+                  <div className="prose prose-sm max-w-none inline">
+                    <ReactMarkdown>
+                      {item}
+                    </ReactMarkdown>
+                  </div>
                 </li>
               ))}
             </ul>

@@ -34,4 +34,5 @@ export interface ParsedSection {
   content: string[];
   markdownContent?: string; // Original markdown content
   generated?: boolean;
+  activities?: Activity[]; // Added for compatibility
 }

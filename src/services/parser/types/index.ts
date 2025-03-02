@@ -10,6 +10,11 @@ export interface Section {
   content: string[];
   markdownContent?: string; // Added markdown content
   rawContent?: string;
+  activities?: Array<{
+    title: string;
+    duration: string;
+    steps: string[];
+  }>;
 }
 
 // Structure for the complete parsed lesson
@@ -25,6 +30,11 @@ export interface ExtractedSection {
   markdownContent?: string; // Added markdown content
   startIndex: number;
   endIndex: number;
+  activities?: Array<{
+    title: string;
+    duration: string;
+    steps: string[];
+  }>;
 }
 
 // Error types for parser operations

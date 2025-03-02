@@ -17,4 +17,9 @@ export interface Section {
   title: string;
   content: string[];
   markdownContent?: string;
+  activities?: Array<{
+    title: string;
+    duration: string;
+    steps: string[];
+  }>;
 }
