@@ -25,9 +25,11 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="prose prose-sm max-w-none p-4 bg-gray-50 rounded-md border border-gray-200 text-sm leading-relaxed">
-        <ReactMarkdown className="activity-markdown">
-          {formattedContent}
-        </ReactMarkdown>
+        <div className="activity-markdown">
+          <ReactMarkdown>
+            {formattedContent}
+          </ReactMarkdown>
+        </div>
       </CardContent>
     </Card>
   );
