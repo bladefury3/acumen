@@ -16,7 +16,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   // If content is a single string, we'll render it as markdown directly
   const hasMarkdownContent = safeContent.length === 1 && (safeContent[0].includes('#') || safeContent[0].includes('*') || safeContent[0].includes('_') || safeContent[0].includes('-'));
   return <Card className="h-full transition-all duration-300 hover:shadow-lg animate-fade-in">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 group whitespace-pre-wrap text-sm text-muted-foreground hover:text-foreground transition-colors">
+      <CardHeader className="whitespace-pre-wrap text-sm text-muted-foreground hover:text-foreground transition-colors">
         <div className="flex items-center gap-2">
           <div className="transition-transform duration-200 group-hover:scale-110">
             <LayoutGrid className="h-5 w-5 text-[#003C5A]" />
