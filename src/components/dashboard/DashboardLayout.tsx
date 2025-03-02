@@ -1,25 +1,41 @@
+
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import { SidebarBrand } from "@/components/ui/sidebar-brand";
 import { Sidebar, SidebarProvider, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger, SidebarHeader } from "@/components/ui/sidebar";
 import { User, ChevronsUpDown, Calendar, Home, Inbox, Search, Settings } from "lucide-react";
+
 interface SidebarItem {
   label: string;
   href: string;
   icon: LucideIcon;
 }
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
   sidebarItems: SidebarItem[];
   sidebarAction?: React.ReactNode;
 }
+
 const DashboardLayout = ({
   children,
-  sidebarItems,
+  sidebarItems = [
+    {
+      label: "Dashboard",
+      href: "/dashboard",
+      icon: Home,
+    },
+    {
+      label: "Settings",
+      href: "/dashboard/settings",
+      icon: Settings,
+    }
+  ],
   sidebarAction
 }: DashboardLayoutProps) => {
   const location = useLocation();
+  
   return <SidebarProvider>
     <Sidebar>
       <SidebarHeader>
@@ -34,11 +50,11 @@ const DashboardLayout = ({
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {sidebarItems.map(sidebarItems => <SidebarMenuItem key={sidebarItems.label}>
-                  <SidebarMenuButton asChild tooltip={sidebarItems.label}>
-                    <a href={sidebarItems.href} className="hover:bg-accent">
-                      <sidebarItems.icon />
-                      <span>{sidebarItems.label}</span>
+              {sidebarItems.map(sidebarItem => <SidebarMenuItem key={sidebarItem.label}>
+                  <SidebarMenuButton asChild tooltip={sidebarItem.label}>
+                    <a href={sidebarItem.href} className="hover:bg-accent">
+                      <sidebarItem.icon />
+                      <span>{sidebarItem.label}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>)}
@@ -73,4 +89,5 @@ const DashboardLayout = ({
     </main>
   </SidebarProvider>;
 };
+
 export default DashboardLayout;
