@@ -11,13 +11,7 @@ import ResourcesCard from "./ResourcesCard";
 
 interface LessonPlanContentProps {
   lessonPlan: LessonPlanData;
-  groupedSections: {
-    topRow: ParsedSection[];
-    introduction?: ParsedSection;
-    activities?: ParsedSection;
-    assessmentRow: ParsedSection[];
-    close?: ParsedSection;
-  };
+  sections: ParsedSection[];
   resourcesId?: string;
   hasResources?: boolean;
   onResourcesGenerated?: (id: string) => void;
@@ -25,7 +19,7 @@ interface LessonPlanContentProps {
 
 const LessonPlanContent = ({
   lessonPlan,
-  groupedSections,
+  sections,
   resourcesId,
   hasResources = false,
   onResourcesGenerated = () => {},
@@ -33,15 +27,6 @@ const LessonPlanContent = ({
   const [resourcesGenerated, setResourcesGenerated] = useState(hasResources);
   const [isLoadingResources, setIsLoadingResources] = useState(false);
   const [currentResourcesId, setCurrentResourcesId] = useState<string | undefined>(resourcesId);
-
-  // Convert grouped sections back to array for PDF
-  const allSections = [
-    ...groupedSections.topRow,
-    groupedSections.introduction,
-    groupedSections.activities,
-    ...groupedSections.assessmentRow,
-    groupedSections.close,
-  ].filter((section): section is ParsedSection => section !== undefined);
 
   const handleResourcesGenerated = (id: string) => {
     setResourcesGenerated(true);
@@ -54,14 +39,14 @@ const LessonPlanContent = ({
   return (
     <div className="space-y-8 animate-fade-in pb-16">
       <LessonHeader lessonPlan={lessonPlan} />
-      <LessonSections groupedSections={groupedSections} />
+      <LessonSections lessonId={lessonPlan.id} />
       <Separator className="my-8" />
       
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
           <DownloadLessonPDF
             lessonTitle={`${lessonPlan.grade} ${lessonPlan.subject} Lesson Plan`}
-            sections={allSections}
+            sections={sections}
           />
           <GenerateResourcesButton 
             lessonPlanId={lessonPlan.id}

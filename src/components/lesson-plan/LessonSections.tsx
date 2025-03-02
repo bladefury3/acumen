@@ -1,12 +1,14 @@
 
 import React, { useEffect, useState } from 'react';
-import { Activity } from '@/types/lesson';
 import SectionCard from './SectionCard';
 import ActivityCard from './ActivityCard';
 import { supabase } from '@/integrations/supabase/client';
-import { parseActivities } from '@/utils/parsers/activityParser';
 
-const LessonSections = ({ lessonId }: { lessonId: string }) => {
+interface LessonSectionsProps {
+  lessonId: string;
+}
+
+const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
   const [lessonData, setLessonData] = useState<any>(null);
   const [activitiesContent, setActivitiesContent] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
@@ -52,17 +54,17 @@ const LessonSections = ({ lessonId }: { lessonId: string }) => {
     <div className="space-y-8">
       <SectionCard
         title="Learning Objectives"
-        content={lessonData.learning_objectives}
+        content={lessonData.learning_objectives ? lessonData.learning_objectives.split('\n').filter((line: string) => line.trim().length > 0) : []}
       />
       
       <SectionCard
         title="Materials & Resources"
-        content={lessonData.materials_resources}
+        content={lessonData.materials_resources ? lessonData.materials_resources.split('\n').filter((line: string) => line.trim().length > 0) : []}
       />
       
       <SectionCard
         title="Introduction & Hook"
-        content={lessonData.introduction_hook}
+        content={lessonData.introduction_hook ? lessonData.introduction_hook.split('\n').filter((line: string) => line.trim().length > 0) : []}
       />
       
       <ActivityCard 
@@ -72,17 +74,17 @@ const LessonSections = ({ lessonId }: { lessonId: string }) => {
       
       <SectionCard
         title="Assessment Strategies"
-        content={lessonData.assessment_strategies}
+        content={lessonData.assessment_strategies ? lessonData.assessment_strategies.split('\n').filter((line: string) => line.trim().length > 0) : []}
       />
       
       <SectionCard
         title="Differentiation Strategies"
-        content={lessonData.differentiation_strategies}
+        content={lessonData.differentiation_strategies ? lessonData.differentiation_strategies.split('\n').filter((line: string) => line.trim().length > 0) : []}
       />
       
       <SectionCard
         title="Close"
-        content={lessonData.close}
+        content={lessonData.close ? lessonData.close.split('\n').filter((line: string) => line.trim().length > 0) : []}
       />
     </div>
   );

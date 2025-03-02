@@ -8,7 +8,6 @@ import { LessonPlanData, ParsedSection } from "@/types/lesson";
 import { parseAndStoreAIResponse } from "@/services/lessonService";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import LessonBreadcrumb from "@/components/lesson-plan/LessonBreadcrumb";
-import { groupSections } from "@/utils/sectionUtils";
 import LessonPlanContent from "@/components/lesson-plan/LessonPlanContent";
 import LoadingState from "@/components/lesson-plan/LoadingState";
 import NotFoundState from "@/components/lesson-plan/NotFoundState";
@@ -82,8 +81,6 @@ const LessonPlanView = () => {
     );
   }
 
-  const groupedSections = groupSections(parsedSections);
-
   const handleResourcesGenerated = (id: string) => {
     setResourcesId(id);
     setHasResources(true);
@@ -95,7 +92,7 @@ const LessonPlanView = () => {
         <LessonBreadcrumb />
         <LessonPlanContent
           lessonPlan={lessonPlan}
-          groupedSections={groupedSections}
+          sections={parsedSections}
           resourcesId={resourcesId}
           hasResources={hasResources}
           onResourcesGenerated={handleResourcesGenerated}

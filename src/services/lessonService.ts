@@ -18,7 +18,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     const sections = parseAIResponse(aiResponse);
     console.log('Parsed sections:', sections);
 
-    const parsedLesson: ParsedLesson = {
+    const parsedLesson: Record<string, string> = {
       learning_objectives: getSectionContent(sections, ['learning objectives', 'learning goals', 'objectives']),
       materials_resources: getSectionContent(sections, ['materials', 'resources', 'supplies']),
       introduction_hook: getSectionContent(sections, ['introduction', 'hook', 'opening']),
@@ -34,10 +34,8 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     if (missingFields.length > 0) {
       console.warn(`Missing fields in lesson plan: ${missingFields.join(', ')}`);
       missingFields.forEach(field => {
-        const key = field.toLowerCase().replace(/[\/\s]/g, '_') as keyof ParsedLesson;
-        if (typeof parsedLesson[key] === 'string') {
-          parsedLesson[key] = `Auto-generated ${field} section` as any;
-        }
+        const key = field.toLowerCase().replace(/[\/\s]/g, '_');
+        parsedLesson[key] = `Auto-generated ${field} section`;
       });
     }
 

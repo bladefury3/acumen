@@ -2,11 +2,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Activity } from '@/types/lesson';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import ReactMarkdown from 'react-markdown';
 
-interface ActivityCardProps {
+export interface ActivityCardProps {
   title: string;
   content: string;
 }
