@@ -117,14 +117,13 @@ export const createActivities = async (lessonId: string, activities: ParsedLesso
     try {
       console.log(`Creating activity: ${activity.activity_name} for lesson ID: ${lessonId}`);
       
-      // Create the activity detail record - use description since that's the column name in the database type
-      // even though it's been renamed to duration in the actual database
+      // Create the activity detail record
       const { data: newActivity, error: activityError } = await supabase
         .from('activities_detail')
         .insert({
           lesson_id: lessonId,
           activity_name: activity.activity_name,
-          description: activity.duration || '0 minutes', // Use description here as that's what TypeScript expects
+          description: activity.duration || '0 minutes', // Still using description here as that's what the database expects
           instructions: "" // Adding this empty field to satisfy TypeScript until types are updated
         })
         .select('id')
