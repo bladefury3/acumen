@@ -20,6 +20,7 @@ const LessonPlanView = () => {
   const [parsedSections, setParsedSections] = useState<ParsedSection[]>([]);
   const [hasResources, setHasResources] = useState(false);
   const [resourcesId, setResourcesId] = useState<string | undefined>(undefined);
+  const [lessonId, setLessonId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const fetchLessonPlan = async () => {
@@ -36,6 +37,19 @@ const LessonPlanView = () => {
         if (data.ai_response) {
           const sections = await parseAndStoreAIResponse(data.ai_response, data.id);
           setParsedSections(sections);
+          
+          // Get the lesson ID
+          const { data: lessonData, error: lessonError } = await supabase
+            .from('lessons')
+            .select('id')
+            .eq('response_id', data.id)
+            .single();
+            
+          if (lessonError) {
+            console.error("Error fetching lesson ID:", lessonError);
+          } else if (lessonData) {
+            setLessonId(lessonData.id);
+          }
         }
         
         // Check if resources exist using RPC function
@@ -99,6 +113,7 @@ const LessonPlanView = () => {
           resourcesId={resourcesId}
           hasResources={hasResources}
           onResourcesGenerated={handleResourcesGenerated}
+          lessonId={lessonId}
         />
       </div>
     </DashboardLayout>
