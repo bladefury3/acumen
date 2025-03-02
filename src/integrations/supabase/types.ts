@@ -295,7 +295,6 @@ export type Database = {
       }
       lessons: {
         Row: {
-          activities: string | null
           assessment_strategies: string
           close: string
           created_at: string
@@ -308,7 +307,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          activities?: string | null
           assessment_strategies: string
           close: string
           created_at?: string
@@ -321,7 +319,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          activities?: string | null
           assessment_strategies?: string
           close?: string
           created_at?: string

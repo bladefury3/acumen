@@ -1,6 +1,4 @@
 
-import { Json } from "@/integrations/supabase/types";
-
 export interface LessonPlanData {
   id: string;
   objectives: string;
@@ -21,7 +19,6 @@ export interface Activity {
   title: string;
   duration: string;
   steps: string[];
-  [key: string]: any; // Add index signature for Supabase JSON compatibility
 }
 
 export interface Instruction {

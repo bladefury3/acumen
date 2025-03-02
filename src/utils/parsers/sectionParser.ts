@@ -105,7 +105,6 @@ export const validateParsedSections = (parsedLesson: Record<string, string>): st
     'learning_objectives',
     'materials_resources',
     'introduction_hook',
-    'activities',
     'assessment_strategies',
     'differentiation_strategies',
     'close'
@@ -115,7 +114,6 @@ export const validateParsedSections = (parsedLesson: Record<string, string>): st
     'learning_objectives': 'Learning Objectives',
     'materials_resources': 'Materials/Resources',
     'introduction_hook': 'Introduction/Hook',
-    'activities': 'Activities',
     'assessment_strategies': 'Assessment Strategies',
     'differentiation_strategies': 'Differentiation Strategies',
     'close': 'Close/Closure'

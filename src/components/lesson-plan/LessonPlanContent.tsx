@@ -21,7 +21,6 @@ interface LessonPlanContentProps {
   resourcesId?: string;
   hasResources?: boolean;
   onResourcesGenerated?: (id: string) => void;
-  lessonId?: string;
 }
 
 const LessonPlanContent = ({
@@ -30,7 +29,6 @@ const LessonPlanContent = ({
   resourcesId,
   hasResources = false,
   onResourcesGenerated = () => {},
-  lessonId
 }: LessonPlanContentProps) => {
   const [resourcesGenerated, setResourcesGenerated] = useState(hasResources);
   const [isLoadingResources, setIsLoadingResources] = useState(false);
@@ -56,7 +54,7 @@ const LessonPlanContent = ({
   return (
     <div className="space-y-8 animate-fade-in pb-16">
       <LessonHeader lessonPlan={lessonPlan} />
-      <LessonSections groupedSections={groupedSections} lessonId={lessonId} />
+      <LessonSections groupedSections={groupedSections} />
       <Separator className="my-8" />
       
       <div className="flex justify-between items-center">
