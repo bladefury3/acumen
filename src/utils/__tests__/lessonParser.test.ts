@@ -1,5 +1,5 @@
-
 import { parseAIResponse, cleanMarkdown } from "../lessonParser";
+import { extractActivitiesWithFallbacks } from "../parsers/activityParser";
 
 describe('Lesson Parser Functions', () => {
   describe('cleanMarkdown', () => {
@@ -52,6 +52,92 @@ describe('Lesson Parser Functions', () => {
       
       expect(activities[0].steps).toContain('Have students work in groups to find factual evidence.');
       expect(activities[0].steps).toContain('Emphasize the use of credible sources.');
+    });
+  });
+
+  describe('extractActivitiesWithFallbacks', () => {
+    it('handles explicit step format with explicit duration labels', () => {
+      const content = `### 4. Main Activities
+#### Activity 1: Introduction to Integer Exponents (15 minutes)
+##### Duration: 15 minutes
+1. **Step 1**: Define what integer exponents are and provide examples on the board, such as 2^3 = 8.
+2. **Step 2**: Explain the rules for simplifying expressions with integer exponents, including the product of powers rule, the power of a power rule, and the power of a product rule.
+3. **Step 3**: Provide examples for each rule and have students work in pairs to simplify given expressions.
+
+#### Activity 2: Practice with Integer Exponents (15 minutes)
+##### Duration: 15 minutes
+1. **Step 1**: Distribute a worksheet with practice problems related to integer exponents.
+2. **Step 2**: Have students work individually to solve the problems.
+3. **Step 3**: Circulate around the room to assist students as needed and encourage peer-to-peer help.`;
+
+      const lines = content.split('\n').map(line => line.trim()).filter(line => line);
+      const activities = extractActivitiesWithFallbacks(lines);
+      
+      expect(activities.length).toBe(2);
+      
+      // Check first activity
+      expect(activities[0].title).toBe('Introduction to Integer Exponents');
+      expect(activities[0].duration).toBe('15 minutes');
+      expect(activities[0].steps.length).toBe(3);
+      expect(activities[0].steps[0]).toContain('Define what integer exponents are');
+      
+      // Check second activity
+      expect(activities[1].title).toBe('Practice with Integer Exponents');
+      expect(activities[1].duration).toBe('15 minutes');
+      expect(activities[1].steps.length).toBe(3);
+      expect(activities[1].steps[0]).toContain('Distribute a worksheet');
+    });
+    
+    it('handles the full response with explicit duration and numbered steps', () => {
+      const content = `### 4. Main Activities
+#### Activity 1: Introduction to Integer Exponents (15 minutes)
+##### Duration: 15 minutes
+1. **Step 1**: Define what integer exponents are and provide examples on the board, such as 2^3 = 8.
+2. **Step 2**: Explain the rules for simplifying expressions with integer exponents, including the product of powers rule, the power of a power rule, and the power of a product rule.
+3. **Step 3**: Provide examples for each rule and have students work in pairs to simplify given expressions.
+
+#### Activity 2: Practice with Integer Exponents (15 minutes)
+##### Duration: 15 minutes
+1. **Step 1**: Distribute a worksheet with practice problems related to integer exponents.
+2. **Step 2**: Have students work individually to solve the problems.
+3. **Step 3**: Circulate around the room to assist students as needed and encourage peer-to-peer help.
+
+#### Activity 3: Introduction to Scientific Notation (15 minutes)
+##### Duration: 15 minutes
+1. **Step 1**: Introduce the concept of scientific notation, explaining that it's a way to express very large or very small numbers in a more compact form.
+2. **Step 2**: Use examples to show how to convert numbers from standard form to scientific notation and vice versa.
+3. **Step 3**: Discuss the importance of scientific notation in real-world applications, such as science and engineering.
+
+#### Activity 4: Applying Scientific Notation (10 minutes)
+##### Duration: 10 minutes
+1. **Step 1**: Provide a scenario where scientific notation is necessary, such as calculating the distance between two planets.
+2. **Step 2**: Have students work in groups to solve the problem, applying what they've learned about scientific notation.
+3. **Step 3**: Allow time for groups to share their solutions and discuss any common challenges.`;
+
+      const lines = content.split('\n').map(line => line.trim()).filter(line => line);
+      const activities = extractActivitiesWithFallbacks(lines);
+      
+      expect(activities.length).toBe(4);
+      
+      // Check first activity
+      expect(activities[0].title).toBe('Introduction to Integer Exponents');
+      expect(activities[0].duration).toBe('15 minutes');
+      expect(activities[0].steps.length).toBe(3);
+      
+      // Check second activity
+      expect(activities[1].title).toBe('Practice with Integer Exponents');
+      expect(activities[1].duration).toBe('15 minutes');
+      expect(activities[1].steps.length).toBe(3);
+      
+      // Check third activity
+      expect(activities[2].title).toBe('Introduction to Scientific Notation');
+      expect(activities[2].duration).toBe('15 minutes');
+      expect(activities[2].steps.length).toBe(3);
+      
+      // Check fourth activity
+      expect(activities[3].title).toBe('Applying Scientific Notation');
+      expect(activities[3].duration).toBe('10 minutes');
+      expect(activities[3].steps.length).toBe(3);
     });
   });
 
