@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import SectionCard from './SectionCard';
 import { supabase } from '@/integrations/supabase/client';
 import { SECTION_DISPLAY_NAMES } from '@/services/parser/constants/sections';
@@ -19,6 +19,9 @@ interface LessonData {
   response_id: string;
 }
 
+// Lazy load ActivityCard to optimize performance
+const ActivityCard = lazy(() => import('./ActivityCard'));
+
 const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
   const [lessonData, setLessonData] = useState<LessonData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -28,15 +31,15 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
     const fetchLessonData = async () => {
       try {
         setLoading(true);
-        
+
         const { data, error } = await supabase
           .from('lessons')
           .select('*')
           .eq('response_id', lessonId)
           .single();
-        
+
         if (error) throw error;
-        
+
         console.log('Fetched lesson data:', data);
         setLessonData(data);
       } catch (err) {
@@ -46,7 +49,7 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
         setLoading(false);
       }
     };
-    
+
     if (lessonId) {
       fetchLessonData();
     }
@@ -59,36 +62,36 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
   // Helper function to process markdown content
   const processContent = (content: string): string[] => {
     if (!content) return [];
-    
+
     // Check if content is already in markdown format
-    const hasMarkdownFormatting = 
-      content.includes('#') || 
-      content.includes('*') || 
+    const hasMarkdownFormatting =
+      content.includes('#') ||
+      content.includes('*') ||
       content.includes('_') ||
       content.includes('```');
-    
+
     // If it has markdown formatting, return it as a single item
     if (hasMarkdownFormatting) {
       return [content];
     }
-    
+
     // Otherwise split by newlines and filter empty lines
     const lines = content.split('\n').filter(line => line.trim().length > 0);
-    
+
     // If we got no lines but have content, it might be all in one line
     if (lines.length === 0 && content.trim().length > 0) {
       // Try to split by bullet points or numbers at the beginning of text
       const bulletItems = content.split(/(?:^|\n)(?:\-|\*|\d+\.)\s+/g)
         .filter(item => item.trim().length > 0);
-      
+
       if (bulletItems.length > 0) {
         return bulletItems.map(item => `- ${item.trim()}`);
       }
-      
+
       // If still no items, just return the content as a single item
       return [content.trim()];
     }
-    
+
     return lines;
   };
 
@@ -107,26 +110,22 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
     <div className="space-y-8">
       {sectionOrder.map(sectionType => {
         // Get display name from our constants
-        const displayName = SECTION_DISPLAY_NAMES[sectionType] || 
+        const displayName = SECTION_DISPLAY_NAMES[sectionType] ||
           sectionType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        
+
         // Format content
         const content = processContent(lessonData[sectionType as keyof LessonData] as string);
-        
+
         // Only render if we have content
         if (!content || content.length === 0) return null;
-        
-        // Use ActivityCard for activities section, SectionCard for others
-        const CardComponent = sectionType === 'activities' 
-          ? require('./ActivityCard').default 
-          : SectionCard;
-        
+
+        // Choose the correct component
+        const CardComponent = sectionType === 'activities' ? ActivityCard : SectionCard;
+
         return (
-          <CardComponent
-            key={sectionType}
-            title={displayName}
-            content={content}
-          />
+          <Suspense key={sectionType} fallback={<div>Loading...</div>}>
+            <CardComponent title={displayName} content={content} />
+          </Suspense>
         );
       })}
     </div>
