@@ -42,6 +42,8 @@ export const cleanExistingLessonData = async (responseId: string) => {
       .from('lessons')
       .delete()
       .eq('response_id', responseId);
+      
+    console.log(`Successfully cleaned existing data for response ID: ${responseId}`);
   } catch (error) {
     console.error('Error cleaning up existing data:', error);
     throw new Error('Failed to clean up existing data before saving new lesson plan');
@@ -62,17 +64,28 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
       throw new Error(`Lesson plan with ID ${responseId} not found. Cannot create lesson.`);
     }
     
+    // Ensure we're not storing empty strings
+    const sanitizedLesson = Object.entries(parsedLesson).reduce((acc, [key, value]) => {
+      // If value is empty string or just whitespace, store a dash
+      acc[key as keyof ParsedLesson] = (!value || value.trim() === '') 
+        ? '-' 
+        : value;
+      return acc;
+    }, {} as Record<keyof ParsedLesson, string>);
+    
+    console.log('Inserting lesson with data:', sanitizedLesson);
+    
     const { data: newLesson, error: lessonError } = await supabase
       .from('lessons')
       .insert({
         response_id: responseId,
-        learning_objectives: parsedLesson.learning_objectives,
-        materials_resources: parsedLesson.materials_resources,
-        introduction_hook: parsedLesson.introduction_hook,
-        assessment_strategies: parsedLesson.assessment_strategies,
-        differentiation_strategies: parsedLesson.differentiation_strategies,
-        close: parsedLesson.close,
-        activities: parsedLesson.activities // Store activities as string
+        learning_objectives: sanitizedLesson.learning_objectives,
+        materials_resources: sanitizedLesson.materials_resources,
+        introduction_hook: sanitizedLesson.introduction_hook,
+        assessment_strategies: sanitizedLesson.assessment_strategies,
+        differentiation_strategies: sanitizedLesson.differentiation_strategies,
+        close: sanitizedLesson.close,
+        activities: sanitizedLesson.activities || '-' // Ensure activities is never null
       })
       .select('id')
       .single();
@@ -82,6 +95,7 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
       throw lessonError;
     }
     
+    console.log('Successfully created lesson with ID:', newLesson?.id);
     return newLesson;
   } catch (error) {
     console.error('Error creating new lesson:', error);
@@ -139,7 +153,7 @@ export const migrateActivitiesToLessons = async () => {
     // Process each lesson
     for (const lesson of lessons || []) {
       // Skip lessons that already have activities data
-      if (lesson.activities) {
+      if (lesson.activities && lesson.activities !== '-') {
         console.log(`Lesson ${lesson.id} already has activities data, skipping...`);
         continue;
       }

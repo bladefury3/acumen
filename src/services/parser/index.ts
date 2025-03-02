@@ -28,6 +28,7 @@ export function parseAIResponse(aiResponse: string): ParsedLessonContent {
 
     // Convert to normalized sections with standard types
     const normalizedSections = normalizeSections(extractedSections);
+    console.log("Normalized sections:", normalizedSections);
     
     // Convert to our standard Section format, preserving markdown
     const sections: Section[] = normalizedSections.map(section => ({
@@ -92,9 +93,43 @@ export function getSectionContentAsString(sections: Section[], type: string): st
 export function createLessonObject(sections: Section[]): Record<string, string> {
   const lessonData: Record<string, string> = {};
   
-  // Map each section type to its markdown content
+  // Standard mapping of section types to database fields
+  const mappings: Record<string, string> = {
+    "learning_objectives": "learning_objectives",
+    "materials_resources": "materials_resources",
+    "introduction_hook": "introduction_hook",
+    "assessment_strategies": "assessment_strategies",
+    "differentiation_strategies": "differentiation_strategies",
+    "close": "close",
+    "activities": "activities"
+  };
+  
+  // Initialize all fields with empty strings
+  for (const field of Object.values(mappings)) {
+    lessonData[field] = '';
+  }
+  
+  // Map each section type to its database field
   for (const section of sections) {
-    lessonData[section.type] = section.markdownContent || section.content.join('\n');
+    const fieldName = mappings[section.type];
+    if (fieldName) {
+      lessonData[fieldName] = section.markdownContent || section.content.join('\n');
+    } else if (section.type === "main_activities") {
+      // Special case for main activities - map to activities field
+      lessonData["activities"] = section.markdownContent || section.content.join('\n');
+    }
+  }
+  
+  // Special handling for the "activities" section if it doesn't have content yet
+  if (!lessonData["activities"] || lessonData["activities"].trim() === '') {
+    // Try to find a section with a title containing "activities"
+    const activitiesSection = sections.find(s => 
+      s.title.toLowerCase().includes('activities') || 
+      s.type.toLowerCase().includes('activities'));
+      
+    if (activitiesSection) {
+      lessonData["activities"] = activitiesSection.markdownContent || activitiesSection.content.join('\n');
+    }
   }
   
   return lessonData;

@@ -32,6 +32,8 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     
     // Create the new lesson record with the parsed data
     await createNewLesson(responseId, parsedLesson as unknown as ParsedLesson);
+    
+    toast.success("Lesson plan created successfully");
   } catch (error) {
     console.error('Error parsing and storing AI response:', error);
     toast.error(`Failed to create lesson plan: ${(error as Error).message}`);

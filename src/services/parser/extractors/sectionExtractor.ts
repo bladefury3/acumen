@@ -40,7 +40,7 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
     );
   }
 
-  // Enhanced section regex to catch more formats
+  // Enhanced section regex to catch more formats including numbered sections and bold sections
   const sectionRegex = /(?:#{1,4}\s*|(?:\d+\.\s+)|(?:\*\*\d+\.\s*)|(?:\*\*[^*]+\*\*:\s*))([^\n]+)(?:\n|$)/g;
   const sectionMatches = [...aiResponse.matchAll(sectionRegex)];
   
@@ -79,7 +79,7 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
       const line = lines[i].trim();
       if (!line) continue;
       
-      // Enhanced pattern matching for section titles
+      // Enhanced pattern matching for section titles - looking for capitalized words followed by colon
       if (line.match(/^[A-Z][\w\s]+:$/) || 
           line.match(/^[A-Z][\w\s]+\s*$/) || 
           line.match(/^\d+\.\s+[A-Z]/) ||
@@ -115,6 +115,38 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
       currentSection.content = currentContent;
       currentSection.markdownContent = markdownContent;
       sections.push(currentSection);
+    }
+  }
+  
+  // If we still couldn't find any sections, try one more approach
+  if (sections.length === 0) {
+    // Look for patterns like "Learning Objectives:", "Materials and Resources:", etc.
+    const commonSectionTitles = [
+      "Learning Objectives",
+      "Materials and Resources",
+      "Introduction/Hook",
+      "Main Activities",
+      "Activities",
+      "Assessment Strategies",
+      "Differentiation Strategies",
+      "Closure",
+      "Close"
+    ];
+    
+    for (const title of commonSectionTitles) {
+      const titlePattern = new RegExp(`(?:${title}:|${title}\\s*\\(.*?\\):)\\s*([\\s\\S]*?)(?=(?:${commonSectionTitles.join('|')}):|\$)`, 'i');
+      const match = aiResponse.match(titlePattern);
+      
+      if (match && match[1] && match[1].trim()) {
+        const content = match[1].trim();
+        sections.push({
+          title,
+          content: findSectionContent(content),
+          markdownContent: content,
+          startIndex: match.index || 0,
+          endIndex: (match.index || 0) + match[0].length
+        });
+      }
     }
   }
   
