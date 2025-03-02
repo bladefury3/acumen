@@ -59,7 +59,27 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
 
   // Helper function to split content by newlines and filter empty lines
   const formatContentToArray = (content: string): string[] => {
-    return content ? content.split('\n').filter(line => line.trim().length > 0) : [];
+    if (!content) return [];
+    
+    // First try splitting by newlines
+    const lines = content.split('\n').filter(line => line.trim().length > 0);
+    
+    // If we got no lines but have content, it might be all in one line
+    // Try to split by bullets or numbered items
+    if (lines.length === 0 && content.trim().length > 0) {
+      // Try to split by bullet points or numbers at the beginning of text
+      const bulletItems = content.split(/(?:^|\n)(?:\-|\*|\d+\.)\s+/g)
+        .filter(item => item.trim().length > 0);
+      
+      if (bulletItems.length > 0) {
+        return bulletItems.map(item => `- ${item.trim()}`);
+      }
+      
+      // If still no items, just return the content as a single item
+      return [content.trim()];
+    }
+    
+    return lines;
   };
 
   return (

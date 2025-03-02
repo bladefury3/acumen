@@ -40,32 +40,79 @@ export const cleanMarkdown = (text: string): string => {
 };
 
 /**
- * Extracts sections from AI response based on markdown headers or numbered format (X. Section Title)
+ * Extracts sections from AI response based on markdown headers or numbered format
  */
 export const extractSections = (aiResponse: string): ParsedSection[] => {
-  // Split the AI response into sections using both markdown headers and numbered formats
-  // This regex handles both "### Section Title" and "X. Section Title" formats
-  const sectionRegex = /(?:###\s*|(?:\d+\.)\s+)([^\n]+)(?:\n|$)/g;
+  // First try to extract sections with markdown headers or numbered formats like "1. Section Title"
+  const sectionRegex = /(?:#{1,4}\s*|(?:\d+\.)\s+)([^\n]+)(?:\n|$)/g;
   const sectionMatches = [...aiResponse.matchAll(sectionRegex)];
   
-  console.log("Section matches:", sectionMatches.length);
+  console.log("Section matches found:", sectionMatches.length);
   
   const sections: ParsedSection[] = [];
   
-  for (let i = 0; i < sectionMatches.length; i++) {
-    const match = sectionMatches[i];
-    const sectionTitle = match[1].trim();
-    const startIndex = match.index! + match[0].length;
-    const endIndex = i < sectionMatches.length - 1 
-      ? sectionMatches[i + 1].index 
-      : aiResponse.length;
+  // If we found sections, process them
+  if (sectionMatches.length > 0) {
+    for (let i = 0; i < sectionMatches.length; i++) {
+      const match = sectionMatches[i];
+      const sectionTitle = match[1].trim();
+      const startIndex = match.index! + match[0].length;
+      const endIndex = i < sectionMatches.length - 1 
+        ? sectionMatches[i + 1].index 
+        : aiResponse.length;
+      
+      const sectionContent = aiResponse.slice(startIndex, endIndex).trim();
+      const contentLines = sectionContent
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+      
+      // Skip empty sections
+      if (contentLines.length === 0) continue;
+      
+      // Create the section
+      sections.push({
+        title: identifySectionType(sectionTitle),
+        content: contentLines,
+        generated: false
+      });
+    }
+  } else {
+    // Fallback: try to find sections by looking for titles followed by content
+    const lines = aiResponse.split('\n').map(line => line.trim());
+    let currentSection: ParsedSection | null = null;
+    let currentContent: string[] = [];
     
-    const sectionContent = aiResponse.slice(startIndex, endIndex).trim();
+    for (const line of lines) {
+      if (line.length === 0) continue;
+      
+      // Check if this line looks like a section title
+      if (line.match(/^[A-Z][\w\s]+:$/) || line.match(/^[A-Z][\w\s]+\s*$/) || line.match(/^\d+\.\s+[A-Z]/)) {
+        // If we have a current section, add it to our sections
+        if (currentSection && currentContent.length > 0) {
+          currentSection.content = currentContent;
+          sections.push(currentSection);
+        }
+        
+        // Start a new section
+        const title = line.replace(/^(\d+\.\s+|\s*:|\s*)/, '').trim();
+        currentSection = {
+          title: identifySectionType(title),
+          content: [],
+          generated: false
+        };
+        currentContent = [];
+      } else if (currentSection) {
+        // Add this line to the current section content
+        currentContent.push(line);
+      }
+    }
     
-    sections.push({
-      title: identifySectionType(sectionTitle),
-      content: sectionContent.split('\n').map(line => line.trim()).filter(line => line.length > 0),
-    });
+    // Don't forget to add the last section
+    if (currentSection && currentContent.length > 0) {
+      currentSection.content = currentContent;
+      sections.push(currentSection);
+    }
   }
   
   return sections;
@@ -87,7 +134,8 @@ export const findSectionByPatterns = (sections: ParsedSection[], titlePatterns: 
  */
 export const getSectionContent = (sections: ParsedSection[], titlePatterns: string[]): string => {
   const matchingSection = findSectionByPatterns(sections, titlePatterns);
-  return matchingSection?.content.join('\n') || '';
+  if (!matchingSection) return '';
+  return matchingSection.content.join('\n');
 };
 
 /**
@@ -115,6 +163,6 @@ export const validateParsedSections = (parsedLesson: Record<string, string>): st
   };
   
   return requiredFields
-    .filter(field => !parsedLesson[field])
+    .filter(field => !parsedLesson[field] || parsedLesson[field].trim() === '')
     .map(field => fieldLabels[field as keyof typeof fieldLabels]);
 };

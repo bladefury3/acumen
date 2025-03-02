@@ -34,10 +34,39 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     
     if (missingFields.length > 0) {
       console.warn(`Missing fields in lesson plan: ${missingFields.join(', ')}`);
-      missingFields.forEach(field => {
-        const key = field.toLowerCase().replace(/[\/\s]/g, '_');
-        parsedLesson[key] = `Auto-generated ${field} section`;
-      });
+      
+      // Instead of auto-generating placeholder text, try harder to find the content
+      // in the AI response for any missing fields
+      const aiResponseLines = aiResponse.split('\n');
+      
+      for (const field of missingFields) {
+        const fieldKey = field.toLowerCase().replace(/[\/\s]/g, '_');
+        
+        // Look for this field in the raw response more aggressively
+        const fieldRegex = new RegExp(`${field.replace(/[\/\s]/g, '.*')}[:\\s]`, 'i');
+        const lineIndex = aiResponseLines.findIndex(line => fieldRegex.test(line));
+        
+        if (lineIndex >= 0) {
+          // Found a matching line, grab content until the next section
+          let content = '';
+          let i = lineIndex + 1;
+          
+          while (i < aiResponseLines.length && 
+                 !aiResponseLines[i].match(/^#+\s|^\d+\.\s[A-Z]/) && 
+                 !missingFields.some(f => aiResponseLines[i].includes(f))) {
+            content += aiResponseLines[i] + '\n';
+            i++;
+          }
+          
+          if (content.trim()) {
+            parsedLesson[fieldKey] = content.trim();
+            continue;
+          }
+        }
+        
+        // If we still couldn't find anything, use a placeholder but with more information
+        parsedLesson[fieldKey] = `This section was not found in the original lesson plan.`;
+      }
     }
 
     console.log(`Processed lesson data:`, parsedLesson);

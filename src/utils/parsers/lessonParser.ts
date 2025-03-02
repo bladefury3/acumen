@@ -21,6 +21,8 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
     console.log("Raw sections extracted:", rawSections);
 
     if (rawSections.length === 0) {
+      console.error("No valid sections found in AI response");
+      console.log("Original AI response:", aiResponse);
       throw new Error("No valid sections found in AI response");
     }
 
@@ -35,45 +37,17 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
       "Close",
     ]);
     const foundSections = new Set<string>();
-    const sections: ParsedSection[] = [];
-
-    // Process each extracted section
-    for (const rawSection of rawSections) {
-      const sectionTitle = identifySectionType(rawSection.title);
-      const contentLines = (typeof rawSection.content === "string" ? rawSection.content : "")
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0);
-
-      // Default section processing
-      sections.push({
-        title: sectionTitle,
-        content: contentLines,
-        generated: false,
-      });
-      foundSections.add(sectionTitle);
+    
+    // First pass - identify which required sections we already have
+    for (const section of rawSections) {
+      foundSections.add(section.title);
     }
 
-    // Check for missing required sections
-    const missingSections = Array.from(requiredSections).filter(
-      (section) => !foundSections.has(section)
-    );
+    // Log found and missing sections for debugging
+    console.log("Found sections:", Array.from(foundSections));
+    console.log("Missing sections:", Array.from(requiredSections).filter(s => !foundSections.has(s)));
 
-    if (missingSections.length > 0) {
-      console.warn(`Missing sections: ${missingSections.join(", ")}`);
-
-      // If there are still missing sections, try to generate them from the content
-      for (const missingSection of missingSections) {
-        console.log(`Generating missing section: ${missingSection}`);
-        sections.push({
-          title: missingSection,
-          content: [`Auto-generated ${missingSection.toLowerCase()} section`],
-          generated: true,
-        });
-      }
-    }
-
-    return sections;
+    return rawSections;
   } catch (error) {
     console.error("Error parsing AI response:", error);
     throw new Error(`Failed to parse AI response: ${(error as Error).message}`);
