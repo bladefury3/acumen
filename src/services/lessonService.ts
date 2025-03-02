@@ -36,14 +36,28 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
         if (startIdx !== undefined) {
           // Find the next section header after activities
           const restOfContent = aiResponse.substring(startIdx);
-          const nextSectionMatch = restOfContent.match(/#{1,4}\s*\d*\.*\s*[A-Za-z]/);
+          // Look specifically for the next section header that's NOT part of the activities
+          const nextSectionMatch = restOfContent.match(/#{1,4}\s*\d*\.*\s*(Assessment|Differentiation|Close|Closure|Wrap|Conclusion)/i);
           
           if (nextSectionMatch && nextSectionMatch.index) {
             // Extract the content between the activities header and the next section
             rawActivitiesContent = restOfContent.substring(0, nextSectionMatch.index).trim();
           } else {
-            // If no next section found, take the rest of the content
-            rawActivitiesContent = restOfContent.trim();
+            // If no next section found, take a more cautious approach - look for any markdown header
+            const anyNextSection = restOfContent.match(/#{1,4}\s*\d*\.*\s*[A-Za-z]/);
+            if (anyNextSection && anyNextSection.index && anyNextSection.index > 50) { // Ensure it's not just matching itself
+              rawActivitiesContent = restOfContent.substring(0, anyNextSection.index).trim();
+            } else {
+              // If still no clear next section, just take a reasonable chunk (e.g., 1000 chars)
+              // and then try to find a good cut-off point like a blank line
+              let potentialContent = restOfContent.substring(0, Math.min(2000, restOfContent.length));
+              const lastBlankLine = potentialContent.lastIndexOf('\n\n');
+              if (lastBlankLine > 100) { // Make sure we have enough content
+                rawActivitiesContent = potentialContent.substring(0, lastBlankLine).trim();
+              } else {
+                rawActivitiesContent = potentialContent.trim();
+              }
+            }
           }
           break;
         }
@@ -57,6 +71,8 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
         rawActivitiesContent = activitySection.content.join('\n');
       }
     }
+
+    console.log('Extracted activities content:', rawActivitiesContent);
 
     // Create a typed object for lesson data
     const parsedLesson: Record<string, string> = {
