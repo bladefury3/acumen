@@ -57,6 +57,8 @@ export const testParserWithExample = () => {
   try {
     console.log("Testing parser with the example AI response...");
     const parsed = parseAIResponse(aiResponseExample);
+    
+    // Access the sections array from the result
     const sections = parsed.sections || [];
     
     console.log(`Successfully parsed ${sections.length} sections:`);
