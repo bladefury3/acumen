@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import { FileText, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LessonPlanData } from "@/types/lesson";
+import { LessonPlanData, ParsedSection } from "@/types/lesson";
 import { parseAndStoreAIResponse } from "@/services/lessonService";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import LessonBreadcrumb from "@/components/lesson-plan/LessonBreadcrumb";
@@ -19,6 +19,7 @@ const LessonPlanView = () => {
   const [lessonExists, setLessonExists] = useState(false);
   const [hasResources, setHasResources] = useState(false);
   const [resourcesId, setResourcesId] = useState<string | undefined>(undefined);
+  const [sections, setSections] = useState<ParsedSection[]>([]);
 
   useEffect(() => {
     const fetchLessonPlan = async () => {
@@ -48,7 +49,8 @@ const LessonPlanView = () => {
         } else if (lessonPlanData.ai_response) {
           // If there's no lesson but we have an AI response, parse and store it
           try {
-            await parseAndStoreAIResponse(lessonPlanData.ai_response, lessonPlanData.id);
+            const parsedSections = await parseAndStoreAIResponse(lessonPlanData.ai_response, lessonPlanData.id);
+            setSections(parsedSections || []);
             setLessonExists(true);
           } catch (parseError) {
             console.error("Error parsing AI response:", parseError);
@@ -111,7 +113,7 @@ const LessonPlanView = () => {
         <LessonBreadcrumb />
         <LessonPlanContent
           lessonPlan={lessonPlan}
-          lessonId={lessonPlan.id}
+          sections={sections}
           resourcesId={resourcesId}
           hasResources={hasResources}
           onResourcesGenerated={handleResourcesGenerated}
