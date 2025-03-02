@@ -62,7 +62,7 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
 
   // Enhanced content processing to handle different markdown formats
   const processContent = (content: string): string[] => {
-    if (!content) return [];
+    if (!content || content.trim() === '') return [];
 
     // Improved check for markdown content
     const hasMarkdownFormatting =
@@ -70,25 +70,69 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
       content.includes('*') ||
       content.includes('_') ||
       content.includes('```') ||
-      content.includes('- ');
+      content.includes('- ') ||
+      content.includes('• ') ||
+      content.includes('1.') ||
+      content.includes(':');
 
     // If it has markdown formatting, properly format as markdown
     if (hasMarkdownFormatting) {
       // Check if it's a list of bullet points or paragraphs
-      if (content.includes('- ') || content.includes('* ')) {
-        // Return as markdown list directly
+      if (content.includes('- ') || content.includes('* ') || content.includes('• ') || content.includes('1.')) {
+        // Extract individual items if it's a standard list
+        const listItems = content.split(/\n(?=[-*•\d])/g)
+          .filter(item => item.trim().length > 0)
+          .map(item => item.trim());
+
+        if (listItems.length > 1) {
+          return listItems;
+        }
+        
+        // Try to extract numbered lists (e.g., "1. Item")
+        const numberedItems = content.split(/\n(?=\d+\.)/g)
+          .filter(item => item.trim().length > 0)
+          .map(item => item.trim());
+          
+        if (numberedItems.length > 1) {
+          return numberedItems;
+        }
+        
+        // If we can't parse as a list, return as markdown
         return [content];
       }
       
       // Check for section headers inside markdown
-      if (content.includes('**Part') || content.includes('## Part')) {
+      if (content.includes('**Part') || content.includes('## Part') || 
+          content.includes('###') || content.includes('**1.')) {
         return [content];
       }
       
-      // Split by paragraphs for better readability
-      const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-      if (paragraphs.length > 1) {
-        return [content]; // Return as full markdown if we have multiple paragraphs
+      // Check for lines with headings or emphasized text
+      if (content.includes('**') || content.includes('##')) {
+        // Split by paragraphs for better readability
+        const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+        if (paragraphs.length > 1) {
+          return [content]; // Return as full markdown if we have multiple paragraphs
+        }
+      }
+      
+      // Split by newlines and filter empty lines, looking for potential sentence breaks
+      const lines = content.split('\n').filter(line => line.trim().length > 0);
+      
+      if (lines.length > 1) {
+        // Check if lines look like a list
+        const looksLikeList = lines.some(line => 
+          line.trim().startsWith('-') || 
+          line.trim().startsWith('*') || 
+          /^\d+\./.test(line.trim())
+        );
+        
+        if (looksLikeList) {
+          return lines;
+        } else {
+          // Combine lines back to a single markdown block
+          return [content];
+        }
       }
       
       return [content];
@@ -141,7 +185,9 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
         const content = processContent(lessonData[sectionType as keyof LessonData] as string);
 
         // Only render if we have content
-        if (!content || content.length === 0) return null;
+        if (!content || content.length === 0 || (content.length === 1 && content[0].trim() === '')) {
+          return null;
+        }
 
         // Choose the correct component
         const CardComponent = sectionType === 'activities' ? ActivityCard : SectionCard;

@@ -14,25 +14,33 @@ const SectionCard = ({
 }: SectionCardProps) => {
   const getSectionIcon = (title: string) => {
     const iconMap: Record<string, React.ReactNode> = {
-      "Learning Objectives": <Target className="h-5 w-5 text-primary" />,
-      "Materials & Resources": <Boxes className="h-5 w-5 text-primary" />,
-      "Introduction & Hook": <BookOpen className="h-5 w-5 text-primary" />,
-      "Activities": <LayoutGrid className="h-5 w-5 text-primary" />,
-      "Assessment Strategies": <PenTool className="h-5 w-5 text-primary" />,
-      "Differentiation Strategies": <Brain className="h-5 w-5 text-primary" />,
-      "Close": <CheckCircle className="h-5 w-5 text-primary" />
+      "Learning Objectives": <Target className="h-5 w-5 text-[#003C5A]" />,
+      "Materials & Resources": <Boxes className="h-5 w-5 text-[#003C5A]" />,
+      "Introduction & Hook": <BookOpen className="h-5 w-5 text-[#003C5A]" />,
+      "Activities": <LayoutGrid className="h-5 w-5 text-[#003C5A]" />,
+      "Assessment Strategies": <PenTool className="h-5 w-5 text-[#003C5A]" />,
+      "Differentiation Strategies": <Brain className="h-5 w-5 text-[#003C5A]" />,
+      "Close": <CheckCircle className="h-5 w-5 text-[#003C5A]" />
     };
-    return iconMap[title] || <BookOpen className="h-5 w-5 text-primary" />;
+    return iconMap[title] || <BookOpen className="h-5 w-5 text-[#003C5A]" />;
   };
 
-  // Improved markdown content detection
+  // Enhanced markdown content detection
   const hasMarkdownContent = content.length === 1 && (
     content[0].includes('#') || 
     content[0].includes('*') || 
     content[0].includes('_') ||
     content[0].includes('-') ||
-    content[0].includes('Part')
+    content[0].includes('Part') ||
+    content[0].includes('1.') ||
+    content[0].includes(':') ||
+    content[0].includes('•')
   );
+
+  // Make sure content is not empty
+  if (!content || content.length === 0 || (content.length === 1 && content[0].trim() === '')) {
+    return null;
+  }
 
   return (
     <Card className="h-full transition-all duration-300 hover:shadow-lg animate-fade-in">

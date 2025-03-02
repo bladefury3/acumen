@@ -14,14 +14,22 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, content }) => {
   const safeContent = Array.isArray(content) ? content : 
     (typeof content === 'string' ? [content] : []);
   
-  // Enhanced markdown detection
+  // Enhanced markdown detection with more patterns
   const hasMarkdownContent = safeContent.length === 1 && (
     safeContent[0].includes('#') || 
     safeContent[0].includes('*') || 
     safeContent[0].includes('_') ||
     safeContent[0].includes('-') ||
-    safeContent[0].includes('Part')
+    safeContent[0].includes('Part') ||
+    safeContent[0].includes('1.') ||
+    safeContent[0].includes(':') ||
+    safeContent[0].includes('•')
   );
+
+  // Make sure content is not empty
+  if (!safeContent || safeContent.length === 0 || (safeContent.length === 1 && safeContent[0].trim() === '')) {
+    return null;
+  }
   
   return (
     <Card className="h-full transition-all duration-300 hover:shadow-lg animate-fade-in">
