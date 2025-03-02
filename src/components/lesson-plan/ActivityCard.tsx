@@ -55,8 +55,10 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ content }) => {
             <CardTitle className="text-base sm:text-lg font-semibold">Activities</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="prose prose-sm max-w-none inline text-sm leading-relaxed text-muted-foreground hover:text-foreground transition-colors">
-          <ReactMarkdown>{formattedContent}</ReactMarkdown>
+        <CardContent className="prose prose-sm max-w-none inline">
+          <div className="text-sm leading-relaxed text-muted-foreground hover:text-foreground transition-colors">
+            <ReactMarkdown>{formattedContent}</ReactMarkdown>
+          </div>
         </CardContent>
       </Card>
     );
