@@ -9,6 +9,7 @@ export interface ActivityCardProps {
 }
 
 const ActivityCard: React.FC<ActivityCardProps> = ({ title, content }) => {
+  const safeContent = Array.isArray(content) ? content : [];
   return (
     <Card className="h-full transition-all duration-300 hover:shadow-lg animate-fade-in">
       <CardHeader className="flex flex-row items-center justify-between pb-2 group">
