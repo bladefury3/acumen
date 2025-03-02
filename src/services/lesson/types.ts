@@ -6,9 +6,5 @@ export interface ParsedLesson {
   assessment_strategies: string;
   differentiation_strategies: string;
   close: string;
-  activities: {
-    activity_name: string;
-    description: string;
-    instructions: string;
-  }[];
+  activities: string;
 }

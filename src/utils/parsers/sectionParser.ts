@@ -1,4 +1,3 @@
-
 import { ParsedSection } from "@/types/lesson";
 
 /**
@@ -42,17 +41,12 @@ export const cleanMarkdown = (text: string): string => {
 /**
  * Extracts sections from AI response based on markdown headers
  */
-export const extractSections = (aiResponse: string): { 
-  title: string, 
-  content: string, 
-  startIndex: number, 
-  endIndex: number 
-}[] => {
+export const extractSections = (aiResponse: string): ParsedSection[] => {
   // Split the AI response into sections using markdown headers
   const sectionRegex = /(?:###\s*|(?:\d+\.)\s+)([^\n]+)(?:\n|$)/g;
   const sectionMatches = [...aiResponse.matchAll(sectionRegex)];
   
-  const sections = [];
+  const sections: ParsedSection[] = [];
   
   for (let i = 0; i < sectionMatches.length; i++) {
     const match = sectionMatches[i];
@@ -62,13 +56,11 @@ export const extractSections = (aiResponse: string): {
       ? sectionMatches[i + 1].index 
       : aiResponse.length;
     
-    const sectionContent = aiResponse.slice(startIndex, endIndex).trim();
+    const sectionContent = aiResponse.slice(startIndex, endIndex).trim().split('\n');
     
     sections.push({
-      title: sectionTitle,
+      title: identifySectionType(sectionTitle),
       content: sectionContent,
-      startIndex,
-      endIndex
     });
   }
   
@@ -91,10 +83,7 @@ export const findSectionByPatterns = (sections: ParsedSection[], titlePatterns: 
  */
 export const getSectionContent = (sections: ParsedSection[], titlePatterns: string[]): string => {
   const matchingSection = findSectionByPatterns(sections, titlePatterns);
-  
-  return matchingSection?.content.join('\n') || matchingSection?.activities?.map(a => 
-    `${a.title}\n${a.steps.join('\n')}`
-  ).join('\n') || '';
+  return matchingSection?.content.join('\n') || '';
 };
 
 /**
@@ -105,6 +94,7 @@ export const validateParsedSections = (parsedLesson: Record<string, string>): st
     'learning_objectives',
     'materials_resources',
     'introduction_hook',
+    'activities',
     'assessment_strategies',
     'differentiation_strategies',
     'close'
@@ -114,6 +104,7 @@ export const validateParsedSections = (parsedLesson: Record<string, string>): st
     'learning_objectives': 'Learning Objectives',
     'materials_resources': 'Materials/Resources',
     'introduction_hook': 'Introduction/Hook',
+    'activities': 'Activities',
     'assessment_strategies': 'Assessment Strategies',
     'differentiation_strategies': 'Differentiation Strategies',
     'close': 'Close/Closure'
@@ -122,15 +113,4 @@ export const validateParsedSections = (parsedLesson: Record<string, string>): st
   return requiredFields
     .filter(field => !parsedLesson[field])
     .map(field => fieldLabels[field as keyof typeof fieldLabels]);
-};
-
-/**
- * Find the activities section
- */
-export const findActivitiesSection = (sections: ParsedSection[]) => {
-  return sections.find(s => 
-    ['activities', 'main activities', 'learning activities'].some(term => 
-      s.title.toLowerCase().includes(term.toLowerCase())
-    )
-  );
 };

@@ -5,6 +5,5 @@ import { ParsedLesson } from "./types";
 // Re-export functions from the new modular parsers
 export { 
   findSectionContent, 
-  validateParsedSections, 
-  findActivitiesSection 
+  validateParsedSections   
 } from "@/utils/parsers/sectionParser";
