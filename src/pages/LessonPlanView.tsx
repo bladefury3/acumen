@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FileText, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LessonPlanData, ParsedSection } from "@/types/lesson";
+import { LessonPlanData } from "@/types/lesson";
 import { parseAndStoreAIResponse } from "@/services/lessonService";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import LessonBreadcrumb from "@/components/lesson-plan/LessonBreadcrumb";
@@ -22,7 +22,6 @@ const LessonPlanView = () => {
   const [lessonExists, setLessonExists] = useState(false);
   const [hasResources, setHasResources] = useState(false);
   const [resourcesId, setResourcesId] = useState<string | undefined>(undefined);
-  const [sections, setSections] = useState<ParsedSection[]>([]);
 
   const fetchLessonPlan = async () => {
     if (!id) return;
@@ -53,8 +52,7 @@ const LessonPlanView = () => {
       } else if (lessonPlanData.ai_response) {
         // If there's no lesson but we have an AI response, parse and store it
         try {
-          const parsedSections = await parseAndStoreAIResponse(lessonPlanData.ai_response, lessonPlanData.id);
-          setSections(parsedSections || []);
+          await parseAndStoreAIResponse(lessonPlanData.ai_response, lessonPlanData.id);
           setLessonExists(true);
         } catch (parseError) {
           console.error("Error parsing AI response:", parseError);
@@ -93,8 +91,7 @@ const LessonPlanView = () => {
     try {
       setIsReparsing(true);
       await cleanExistingLessonData(id);
-      const parsedSections = await parseAndStoreAIResponse(lessonPlan.ai_response, id);
-      setSections(parsedSections);
+      await parseAndStoreAIResponse(lessonPlan.ai_response, id);
       toast.success("Lesson plan reparsed successfully");
       
       // Refresh the page to show updated content
@@ -149,7 +146,6 @@ const LessonPlanView = () => {
         </div>
         <LessonPlanContent
           lessonPlan={lessonPlan}
-          sections={sections}
           resourcesId={resourcesId}
           hasResources={hasResources}
           onResourcesGenerated={handleResourcesGenerated}

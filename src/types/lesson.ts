@@ -1,4 +1,3 @@
-
 export interface LessonPlanData {
   id: string;
   objectives: string;
@@ -28,9 +27,9 @@ export interface Instruction {
   created_at: string;
 }
 
+// Replace ParsedSection with our new Section type
 export interface ParsedSection {
   title: string;
   content: string[];
-  activities?: Activity[];
   generated?: boolean;
 }

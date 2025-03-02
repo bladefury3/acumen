@@ -10,7 +10,9 @@ export interface ActivityCardProps {
 }
 
 const ActivityCard: React.FC<ActivityCardProps> = ({ title, content }) => {
-  const safeContent = Array.isArray(content) ? content : [];
+  // Ensure content is always an array
+  const safeContent = Array.isArray(content) ? content : 
+    (typeof content === 'string' ? [content] : []);
   
   return (
     <Card className="h-full transition-all duration-300 hover:shadow-lg animate-fade-in">
@@ -28,9 +30,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, content }) => {
             {safeContent.map((item, idx) => (
               <li key={idx} className="text-sm leading-relaxed text-muted-foreground hover:text-foreground transition-colors">
                 <div className="prose prose-sm max-w-none inline">
-                  <div className="activity-markdown">
-                    <ReactMarkdown>{item}</ReactMarkdown>
-                  </div>
+                  <ReactMarkdown>{item}</ReactMarkdown>
                 </div>
               </li>
             ))}

@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import SectionCard from './SectionCard';
-import ActivityCard from './ActivityCard';
 import { supabase } from '@/integrations/supabase/client';
+import { SECTION_DISPLAY_NAMES } from '@/services/parser/constants/sections';
 
 interface LessonSectionsProps {
   lessonId: string;
@@ -65,7 +65,6 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
     const lines = content.split('\n').filter(line => line.trim().length > 0);
     
     // If we got no lines but have content, it might be all in one line
-    // Try to split by bullets or numbered items
     if (lines.length === 0 && content.trim().length > 0) {
       // Try to split by bullet points or numbers at the beginning of text
       const bulletItems = content.split(/(?:^|\n)(?:\-|\*|\d+\.)\s+/g)
@@ -82,42 +81,41 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
     return lines;
   };
 
+  // Define a consistent order for sections
+  const sectionOrder = [
+    'learning_objectives',
+    'materials_resources',
+    'introduction_hook',
+    'activities',
+    'assessment_strategies',
+    'differentiation_strategies',
+    'close'
+  ];
+
   return (
     <div className="space-y-8">
-      <SectionCard
-        title="Learning Objectives"
-        content={formatContentToArray(lessonData.learning_objectives)}
-      />
-      
-      <SectionCard
-        title="Materials & Resources"
-        content={formatContentToArray(lessonData.materials_resources)}
-      />
-      
-      <SectionCard
-        title="Introduction & Hook"
-        content={formatContentToArray(lessonData.introduction_hook)}
-      />
-      
-      <ActivityCard 
-        title="Activities"
-        content={formatContentToArray(lessonData.activities)}
-      />
-      
-      <SectionCard
-        title="Assessment Strategies"
-        content={formatContentToArray(lessonData.assessment_strategies)}
-      />
-      
-      <SectionCard
-        title="Differentiation Strategies"
-        content={formatContentToArray(lessonData.differentiation_strategies)}
-      />
-      
-      <SectionCard
-        title="Close"
-        content={formatContentToArray(lessonData.close)}
-      />
+      {sectionOrder.map(sectionType => {
+        // Get display name from our constants
+        const displayName = SECTION_DISPLAY_NAMES[sectionType] || 
+          sectionType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        
+        // Use ActivityCard for activities section, SectionCard for others
+        const CardComponent = sectionType === 'activities' ? 'ActivityCard' : SectionCard;
+        
+        // Format content
+        const content = formatContentToArray(lessonData[sectionType as keyof LessonData] as string);
+        
+        // Only render if we have content
+        if (!content || content.length === 0) return null;
+        
+        return (
+          <SectionCard
+            key={sectionType}
+            title={displayName}
+            content={content}
+          />
+        );
+      })}
     </div>
   );
 };
