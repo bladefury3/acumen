@@ -1,3 +1,4 @@
+
 export interface LessonPlanData {
   id: string;
   objectives: string;
@@ -27,9 +28,10 @@ export interface Instruction {
   created_at: string;
 }
 
-// Replace ParsedSection with our new Section type
+// Updated ParsedSection to handle both regular content and activities
 export interface ParsedSection {
   title: string;
   content: string[];
   generated?: boolean;
+  // Remove the activities property as we're treating all sections the same
 }

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FileText, Settings } from "lucide-react";
@@ -22,6 +21,7 @@ const LessonPlanView = () => {
   const [lessonExists, setLessonExists] = useState(false);
   const [hasResources, setHasResources] = useState(false);
   const [resourcesId, setResourcesId] = useState<string | undefined>(undefined);
+  const [parsedSections, setParsedSections] = useState<ParsedSection[]>([]);
 
   const fetchLessonPlan = async () => {
     if (!id) return;
@@ -29,7 +29,6 @@ const LessonPlanView = () => {
     try {
       setIsLoading(true);
       
-      // Fetch the lesson plan data
       const { data: lessonPlanData, error: lessonPlanError } = await supabase
         .from('lesson_plans')
         .select('*')
@@ -39,7 +38,6 @@ const LessonPlanView = () => {
       if (lessonPlanError) throw lessonPlanError;
       setLessonPlan(lessonPlanData);
       
-      // Check if we already have a lesson for this lesson plan
       const { data: lessonData, error: lessonError } = await supabase
         .from('lessons')
         .select('id')
@@ -50,7 +48,6 @@ const LessonPlanView = () => {
       } else if (lessonData && lessonData.length > 0) {
         setLessonExists(true);
       } else if (lessonPlanData.ai_response) {
-        // If there's no lesson but we have an AI response, parse and store it
         try {
           await parseAndStoreAIResponse(lessonPlanData.ai_response, lessonPlanData.id);
           setLessonExists(true);
@@ -60,7 +57,6 @@ const LessonPlanView = () => {
         }
       }
       
-      // Check if resources exist
       const { data: resources, error: resourcesError } = await supabase
         .rpc('get_lesson_resources_by_lesson_id', { p_lesson_plan_id: id });
         
@@ -69,6 +65,21 @@ const LessonPlanView = () => {
       } else if (resources && resources.length > 0) {
         setHasResources(true);
         setResourcesId(resources[0].id);
+      }
+      
+      if (lessonPlanData) {
+        const basicSections: ParsedSection[] = [
+          {
+            title: "Learning Objectives",
+            content: lessonPlanData.objectives ? lessonPlanData.objectives.split('\n').filter(line => line.trim()) : []
+          },
+          {
+            title: "Materials & Resources",
+            content: lessonPlanData.learning_tools ? 
+              lessonPlanData.learning_tools.map(tool => tool.trim()).filter(Boolean) : []
+          }
+        ];
+        setParsedSections(basicSections);
       }
     } catch (error) {
       console.error('Error fetching lesson plan:', error);
@@ -94,7 +105,6 @@ const LessonPlanView = () => {
       await parseAndStoreAIResponse(lessonPlan.ai_response, id);
       toast.success("Lesson plan reparsed successfully");
       
-      // Refresh the page to show updated content
       window.location.reload();
     } catch (error) {
       console.error("Error reparsing lesson:", error);
@@ -149,16 +159,15 @@ const LessonPlanView = () => {
           resourcesId={resourcesId}
           hasResources={hasResources}
           onResourcesGenerated={handleResourcesGenerated}
+          sections={parsedSections}
         />
       </div>
     </DashboardLayout>
   );
 };
 
-// Add missing function import
 const cleanExistingLessonData = async (responseId: string) => {
   try {
-    // Delete existing lesson data
     await supabase
       .from('lessons')
       .delete()

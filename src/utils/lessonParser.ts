@@ -1,13 +1,10 @@
 
 // Re-export from the new modular structure for backward compatibility
-import { parseAIResponse, manualTestParsing } from './parsers/lessonParser';
-import { cleanMarkdown } from './parsers/sectionParser';
-import { parseActivities, extractDuration } from './parsers/activityParser';
+import { parseAIResponse, createLessonObject } from '@/services/parser';
+import { formatSectionContent } from '@/services/parser/transformers/markdown';
 
 export {
   parseAIResponse,
-  manualTestParsing,
-  cleanMarkdown,
-  parseActivities,
-  extractDuration
+  createLessonObject,
+  formatSectionContent
 };

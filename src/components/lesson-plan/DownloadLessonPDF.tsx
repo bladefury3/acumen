@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,12 +29,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     lineHeight: 1.5,
   },
-  activityTitle: {
-    fontSize: 14,
-    marginTop: 10,
-    marginBottom: 5,
-    color: '#475569',
-  },
   list: {
     marginLeft: 15,
   },
@@ -51,30 +44,13 @@ const LessonPDF = ({ lessonTitle, sections }: DownloadLessonPDFProps) => (
       {sections.map((section, index) => (
         <View key={index}>
           <Text style={styles.heading}>{section.title}</Text>
-          {section.activities ? (
-            section.activities.map((activity, actIndex) => (
-              <View key={actIndex}>
-                <Text style={styles.activityTitle}>
-                  {activity.title} ({activity.duration})
-                </Text>
-                <View style={styles.list}>
-                  {activity.steps.map((step, stepIndex) => (
-                    <Text key={stepIndex} style={styles.listItem}>
-                      • {step}
-                    </Text>
-                  ))}
-                </View>
-              </View>
-            ))
-          ) : (
-            <View style={styles.list}>
-              {section.content.map((item, itemIndex) => (
-                <Text key={itemIndex} style={styles.listItem}>
-                  • {item}
-                </Text>
-              ))}
-            </View>
-          )}
+          <View style={styles.list}>
+            {section.content.map((item, itemIndex) => (
+              <Text key={itemIndex} style={styles.listItem}>
+                • {item}
+              </Text>
+            ))}
+          </View>
         </View>
       ))}
     </Page>
@@ -84,7 +60,6 @@ const LessonPDF = ({ lessonTitle, sections }: DownloadLessonPDFProps) => (
 const DownloadLessonPDF = ({ lessonTitle, sections }: DownloadLessonPDFProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Reset generating state if component unmounts while generating
   useEffect(() => {
     return () => {
       if (isGenerating) {
@@ -93,7 +68,6 @@ const DownloadLessonPDF = ({ lessonTitle, sections }: DownloadLessonPDFProps) =>
     };
   }, [isGenerating]);
 
-  // Reset generating state after 5 seconds as a fallback
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     if (isGenerating) {
@@ -131,12 +105,10 @@ const DownloadLessonPDF = ({ lessonTitle, sections }: DownloadLessonPDFProps) =>
       onClick={handleDownloadStart}
     >
       {({ loading, error, blob }) => {
-        // If we have a blob and were generating, the download is complete
         if (blob && isGenerating) {
           handleDownloadComplete();
         }
         
-        // Handle any errors
         if (error) {
           handleError();
           return null;
