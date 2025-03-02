@@ -83,7 +83,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       differentiation_strategies: getSectionContent(sections, ['differentiation', 'accommodations', 'modifications']),
       close: getSectionContent(sections, ['close', 'closure', 'wrap up', 'conclusion']),
       // Store the raw activities content instead of parsed content
-      activities: rawActivitiesContent || getSectionContent(sections, ['activities', 'tasks', 'engagement', 'main activities']),
+      activities: getSectionContent(sections, ['Main Activities', 'activities']),
     };
 
     // Validate that we have all required sections
