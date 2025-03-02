@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity } from "@/services/lesson/types";
 import { ParsedSection } from "@/types/lesson";
@@ -36,7 +35,10 @@ const SectionCard = ({
         }
         
         if (data && data.activities) {
-          setDbActivities(data.activities);
+          const activitiesArray = Array.isArray(data.activities) 
+            ? data.activities as Activity[]
+            : [];
+          setDbActivities(activitiesArray);
         }
       } catch (error) {
         console.error('Exception fetching activities:', error);

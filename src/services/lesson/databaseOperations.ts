@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ParsedLesson } from "./types";
+import { Json } from "@/integrations/supabase/types";
 
 export const cleanExistingLessonData = async (responseId: string) => {
   try {
@@ -29,6 +30,9 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
       throw new Error(`Lesson plan with ID ${responseId} not found. Cannot create lesson.`);
     }
     
+    // Convert activities to Json compatible format
+    const activitiesJson = parsedLesson.activities as unknown as Json;
+    
     const { data: newLesson, error: lessonError } = await supabase
       .from('lessons')
       .insert({
@@ -39,7 +43,7 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
         assessment_strategies: parsedLesson.assessment_strategies,
         differentiation_strategies: parsedLesson.differentiation_strategies,
         close: parsedLesson.close,
-        activities: parsedLesson.activities
+        activities: activitiesJson
       })
       .select('id')
       .single();
@@ -114,7 +118,7 @@ export const migrateActivitiesToLessons = async () => {
         if (activitiesWithSteps.length > 0) {
           const { error: updateError } = await supabase
             .from('lessons')
-            .update({ activities: activitiesWithSteps })
+            .update({ activities: activitiesWithSteps as unknown as Json })
             .eq('id', lesson.id);
             
           if (updateError) {
