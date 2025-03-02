@@ -121,17 +121,25 @@ const cleanInstructionText = (text: string): string => {
 };
 
 export const createActivities = async (lessonId: string, activities: ParsedLesson['activities']) => {
+  if (!activities || activities.length === 0) {
+    console.warn('No activities to create for lesson ID:', lessonId);
+    return;
+  }
+
+  console.log(`Creating ${activities.length} activities for lesson ID: ${lessonId}`);
+  
   for (const activity of activities) {
     try {
       console.log(`Creating activity: ${activity.activity_name} for lesson ID: ${lessonId}`);
       
+      // Create the activity detail record
       const { data: newActivity, error: activityError } = await supabase
         .from('activities_detail')
         .insert({
           lesson_id: lessonId,
           activity_name: activity.activity_name,
-          description: activity.description,
-          instructions: activity.instructions
+          description: activity.description || '',
+          instructions: activity.instructions || ''
         })
         .select('id')
         .single();
@@ -141,10 +149,11 @@ export const createActivities = async (lessonId: string, activities: ParsedLesso
         throw activityError;
       }
 
-      // Split instructions and clean each one
+      // Process and insert instructions
       let instructionsToInsert = [];
       
       if (activity.instructions && activity.instructions.trim()) {
+        // Split instructions by line, clean each one, and add to insert array
         instructionsToInsert = activity.instructions
           .split('\n')
           .filter(text => text.trim().length > 0)
@@ -154,15 +163,23 @@ export const createActivities = async (lessonId: string, activities: ParsedLesso
           }));
       }
 
-      // If no instructions were parsed from the split, try to derive from descriptions
-      if (instructionsToInsert.length === 0 && activity.description) {
-        // Create at least one instruction from the description
-        instructionsToInsert.push({
-          instruction_text: `Explain to students about ${activity.activity_name.toLowerCase()}.`,
-          activities_detail_id: newActivity.id
-        });
+      // If no instructions were parsed, create at least one from the description
+      if (instructionsToInsert.length === 0) {
+        if (activity.description && activity.description.trim()) {
+          instructionsToInsert.push({
+            instruction_text: cleanInstructionText(activity.description),
+            activities_detail_id: newActivity.id
+          });
+        } else {
+          // Fallback if no description either
+          instructionsToInsert.push({
+            instruction_text: `Complete the ${activity.activity_name.toLowerCase()} activity.`,
+            activities_detail_id: newActivity.id
+          });
+        }
       }
 
+      // Insert the instructions
       if (instructionsToInsert.length > 0) {
         console.log(`Inserting ${instructionsToInsert.length} instructions for activity ${activity.activity_name}`);
         
