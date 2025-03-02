@@ -56,7 +56,23 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ content }) => {
           </div>
         </CardHeader>
         <CardContent className="prose prose-sm max-w-none">
-          <ReactMarkdown>{formattedContent}</ReactMarkdown>
+            <div className="prose prose-sm max-w-none">
+              <ul className="list-disc pl-4 space-y-2 marker:text-primary">
+                {content.map((item, idx) => (
+                  <li 
+                    key={idx} 
+                    className="text-sm leading-relaxed text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <div className="prose prose-sm max-w-none inline">
+                      <ReactMarkdown>
+                        {item}
+                      </ReactMarkdown>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </CardContent>
         </CardContent>
       </Card>
     );
