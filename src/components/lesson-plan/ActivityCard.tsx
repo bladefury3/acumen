@@ -14,12 +14,13 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, content }) => {
   const safeContent = Array.isArray(content) ? content : 
     (typeof content === 'string' ? [content] : []);
   
-  // If content is a single string, we'll render it as markdown directly
+  // Enhanced markdown detection
   const hasMarkdownContent = safeContent.length === 1 && (
     safeContent[0].includes('#') || 
     safeContent[0].includes('*') || 
     safeContent[0].includes('_') ||
-    safeContent[0].includes('-')
+    safeContent[0].includes('-') ||
+    safeContent[0].includes('Part')
   );
   
   return (
@@ -36,7 +37,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, content }) => {
         <div className="prose prose-sm max-w-none">
           {hasMarkdownContent ? (
             <div className="markdown">
-              <ReactMarkdown>
+              <ReactMarkdown className="whitespace-pre-wrap">
                 {safeContent[0]}
               </ReactMarkdown>
             </div>

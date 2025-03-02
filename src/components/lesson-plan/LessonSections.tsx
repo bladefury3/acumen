@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import SectionCard from './SectionCard';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,36 +60,59 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
   if (error) return <div className="text-center py-8 text-red-500">{error}</div>;
   if (!lessonData) return <div className="text-center py-8">No lesson data found.</div>;
 
-  // Helper function to process markdown content
+  // Enhanced content processing to handle different markdown formats
   const processContent = (content: string): string[] => {
     if (!content) return [];
 
-    // Check if content is already in markdown format
+    // Improved check for markdown content
     const hasMarkdownFormatting =
       content.includes('#') ||
       content.includes('*') ||
       content.includes('_') ||
-      content.includes('```');
+      content.includes('```') ||
+      content.includes('- ');
 
-    // If it has markdown formatting, return it as a single item
+    // If it has markdown formatting, properly format as markdown
     if (hasMarkdownFormatting) {
+      // Check if it's a list of bullet points or paragraphs
+      if (content.includes('- ') || content.includes('* ')) {
+        // Return as markdown list directly
+        return [content];
+      }
+      
+      // Check for section headers inside markdown
+      if (content.includes('**Part') || content.includes('## Part')) {
+        return [content];
+      }
+      
+      // Split by paragraphs for better readability
+      const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+      if (paragraphs.length > 1) {
+        return [content]; // Return as full markdown if we have multiple paragraphs
+      }
+      
       return [content];
     }
 
-    // Otherwise split by newlines and filter empty lines
+    // Split content by newlines and filter empty lines
     const lines = content.split('\n').filter(line => line.trim().length > 0);
-
-    // If we got no lines but have content, it might be all in one line
-    if (lines.length === 0 && content.trim().length > 0) {
-      // Try to split by bullet points or numbers at the beginning of text
-      const bulletItems = content.split(/(?:^|\n)(?:\-|\*|\d+\.)\s+/g)
-        .filter(item => item.trim().length > 0);
-
-      if (bulletItems.length > 0) {
-        return bulletItems.map(item => `- ${item.trim()}`);
+    
+    // If content is all in one line, check for patterns that suggest it should be split
+    if (lines.length <= 1 && content.trim().length > 0) {
+      // Try to split by bullet points, numbers, or sentences
+      const items = content.split(/(?:(?:\r?\n)|(?:\r?\n?[•\-\*]\s+)|(?:\d+\.\s+))/).filter(item => item.trim().length > 0);
+      
+      if (items.length > 1) {
+        return items.map(item => item.trim());
       }
-
-      // If still no items, just return the content as a single item
+      
+      // Try to split by sentences for better readability
+      const sentences = content.split(/(?<=\.)(?=\s+[A-Z])/).filter(s => s.trim().length > 0);
+      
+      if (sentences.length > 1) {
+        return sentences.map(s => s.trim());
+      }
+      
       return [content.trim()];
     }
 
@@ -113,7 +137,7 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
         const displayName = SECTION_DISPLAY_NAMES[sectionType] ||
           sectionType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-        // Format content
+        // Get and format content
         const content = processContent(lessonData[sectionType as keyof LessonData] as string);
 
         // Only render if we have content

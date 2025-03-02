@@ -25,12 +25,13 @@ const SectionCard = ({
     return iconMap[title] || <BookOpen className="h-5 w-5 text-primary" />;
   };
 
-  // If content is a single string, we'll render it as markdown directly
+  // Improved markdown content detection
   const hasMarkdownContent = content.length === 1 && (
     content[0].includes('#') || 
     content[0].includes('*') || 
     content[0].includes('_') ||
-    content[0].includes('-')
+    content[0].includes('-') ||
+    content[0].includes('Part')
   );
 
   return (
@@ -45,7 +46,7 @@ const SectionCard = ({
         <div className="prose prose-sm max-w-none">
           {hasMarkdownContent ? (
             <div className="markdown">
-              <ReactMarkdown>
+              <ReactMarkdown className="whitespace-pre-wrap">
                 {content[0]}
               </ReactMarkdown>
             </div>

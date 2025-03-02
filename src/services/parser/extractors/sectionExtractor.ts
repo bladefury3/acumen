@@ -11,6 +11,18 @@ import { identifySectionType } from '../constants/sections';
 export function findSectionContent(text: string): string[] {
   if (!text) return [];
   
+  // Check if the text contains markdown formatting
+  const hasMarkdown = text.includes('#') || 
+                      text.includes('*') || 
+                      text.includes('_') || 
+                      text.includes('```') ||
+                      text.includes('- ');
+  
+  // If it has markdown, preserve it instead of splitting into lines
+  if (hasMarkdown) {
+    return [text.trim()];
+  }
+  
   return text
     .split('\n')
     .map(line => line.trim())
@@ -28,8 +40,8 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
     );
   }
 
-  // First try to extract sections with markdown headers or numbered formats
-  const sectionRegex = /(?:#{1,4}\s*|(?:\d+\.)\s+)([^\n]+)(?:\n|$)/g;
+  // Enhanced section regex to catch more formats
+  const sectionRegex = /(?:#{1,4}\s*|(?:\d+\.\s+)|(?:\*\*\d+\.\s*)|(?:\*\*[^*]+\*\*:\s*))([^\n]+)(?:\n|$)/g;
   const sectionMatches = [...aiResponse.matchAll(sectionRegex)];
   
   const sections: ExtractedSection[] = [];
@@ -38,7 +50,7 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
   if (sectionMatches.length > 0) {
     for (let i = 0; i < sectionMatches.length; i++) {
       const match = sectionMatches[i];
-      const sectionTitle = match[1].trim();
+      const sectionTitle = match[1].replace(/\*\*/g, '').trim();
       const startIndex = match.index! + match[0].length;
       const endIndex = i < sectionMatches.length - 1 
         ? sectionMatches[i + 1].index 
@@ -67,8 +79,11 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
       const line = lines[i].trim();
       if (!line) continue;
       
-      // Check if this line looks like a section title
-      if (line.match(/^[A-Z][\w\s]+:$/) || line.match(/^[A-Z][\w\s]+\s*$/) || line.match(/^\d+\.\s+[A-Z]/)) {
+      // Enhanced pattern matching for section titles
+      if (line.match(/^[A-Z][\w\s]+:$/) || 
+          line.match(/^[A-Z][\w\s]+\s*$/) || 
+          line.match(/^\d+\.\s+[A-Z]/) ||
+          line.match(/^\*\*[^*]+\*\*:?\s*$/)) {
         // If we have a current section, add it to our sections
         if (currentSection && currentContent.length > 0) {
           currentSection.content = currentContent;
@@ -77,7 +92,7 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
         }
         
         // Start a new section
-        const title = line.replace(/^(\d+\.\s+|\s*:|\s*)/, '').trim();
+        const title = line.replace(/^(\d+\.\s+|\s*:|\s*|\*\*|\*\*)/, '').trim();
         startIndex = aiResponse.indexOf(line);
         currentSection = {
           title,
