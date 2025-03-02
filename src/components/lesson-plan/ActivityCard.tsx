@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity } from "@/types/lesson";
+import { Activity } from "@/services/lesson/types";
 import ReactMarkdown from "react-markdown";
 
 interface ActivityCardProps {

@@ -21,13 +21,6 @@ export interface Activity {
   steps: string[];
 }
 
-export interface Instruction {
-  id: string;
-  instruction_text: string;
-  activities_detail_id: string;
-  created_at: string;
-}
-
 export interface ParsedSection {
   title: string;
   content: string[];

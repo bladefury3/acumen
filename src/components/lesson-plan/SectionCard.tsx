@@ -1,5 +1,7 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, ParsedSection } from "@/types/lesson";
+import { Activity } from "@/services/lesson/types";
+import { ParsedSection } from "@/types/lesson";
 import ActivityCard from "./ActivityCard";
 import { BookOpen, Target, Boxes, Brain, PenTool, CheckCircle, LayoutGrid } from "lucide-react";
 import ReactMarkdown from "react-markdown";
