@@ -115,7 +115,7 @@ export const validateParsedSections = (parsedLesson: Record<string, string>): st
     'learning_objectives': 'Learning Objectives',
     'materials_resources': 'Materials/Resources',
     'introduction_hook': 'Introduction/Hook',
-    'activities': 'Activities'
+    'activities': 'Activities',
     'assessment_strategies': 'Assessment Strategies',
     'differentiation_strategies': 'Differentiation Strategies',
     'close': 'Close/Closure'
