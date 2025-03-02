@@ -1,4 +1,3 @@
-
 /**
  * Functions for extracting sections from AI responses
  */
@@ -39,10 +38,9 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
       'AI response is empty or contains no content'
     );
   }
-
-  // Enhanced section regex to catch more formats including numbered sections and bold sections
-  // Now also captures sections like "4. Main Activities" or "Main Activities (25 minutes)"
-  const sectionRegex = /(?:#{1,4}\s*|(?:\d+\.\s+)|(?:\*\*\d+\.\s*)|(?:\*\*[^*]+\*\*:\s*))([^\n]+)(?:\n|$)/g;
+  
+  // Simplified section regex to catch headings like "### 1. Learning Objectives"
+  const sectionRegex = /(?:#{1,4}\s*\d*\.*\s*)([^#\n]+)(?:\n|$)/g;
   const sectionMatches = [...aiResponse.matchAll(sectionRegex)];
   
   const sections: ExtractedSection[] = [];
@@ -53,6 +51,10 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
       const match = sectionMatches[i];
       // Clean up section title removing markdown and timing in parentheses
       let sectionTitle = match[1].replace(/\*\*/g, '').trim();
+      
+      // Remove numbering from title if present (e.g., "1. Learning Objectives" -> "Learning Objectives")
+      sectionTitle = sectionTitle.replace(/^\d+\.\s*/, '');
+      
       // Remove timing info in parentheses if present
       sectionTitle = sectionTitle.replace(/\s*\(\d+\s*(?:minutes|mins|minute|min)\)/i, '');
       

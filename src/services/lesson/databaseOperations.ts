@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ParsedLesson } from "./types";
 
@@ -73,29 +72,19 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
       return acc;
     }, {} as Record<keyof ParsedLesson, string>);
     
-    // Extra validation for activities to ensure it's not empty
-    if (!sanitizedLesson.activities || sanitizedLesson.activities === '-') {
-      console.warn('No activities content found, trying to extract from other sections');
-      
-      // Try to find Main Activities in the AI response from the lesson plan
-      const { data: lessonPlan, error: lessonPlanError } = await supabase
-        .from('lesson_plans')
-        .select('ai_response')
-        .eq('id', responseId)
-        .single();
-        
-      if (!lessonPlanError && lessonPlan?.ai_response) {
-        // Extract Main Activities section from the AI response
-        const activitiesMatch = lessonPlan.ai_response.match(/(?:main activities|activities)(?:\s*\(\d+\s*minutes\))?:?([\s\S]*?)(?=(?:assessment|differentiation|close|closure):|\s*$)/i);
-        
-        if (activitiesMatch && activitiesMatch[1] && activitiesMatch[1].trim()) {
-          sanitizedLesson.activities = activitiesMatch[1].trim();
-          console.log('Extracted activities from AI response:', sanitizedLesson.activities);
-        }
-      }
-    }
-    
-    console.log('Inserting lesson with data:', sanitizedLesson);
+    // Log the final sanitized data before insertion
+    console.log('Inserting lesson with data:', {
+      response_id: responseId,
+      learning_objectives: sanitizedLesson.learning_objectives.substring(0, 20) + '...',
+      materials_resources: sanitizedLesson.materials_resources.substring(0, 20) + '...',
+      introduction_hook: sanitizedLesson.introduction_hook.substring(0, 20) + '...',
+      activities: sanitizedLesson.activities ? 
+                 (sanitizedLesson.activities.substring(0, 20) + '...') : 
+                 'Not available',
+      assessment_strategies: sanitizedLesson.assessment_strategies.substring(0, 20) + '...',
+      differentiation_strategies: sanitizedLesson.differentiation_strategies.substring(0, 20) + '...',
+      close: sanitizedLesson.close.substring(0, 20) + '...'
+    });
     
     const { data: newLesson, error: lessonError } = await supabase
       .from('lessons')
