@@ -12,7 +12,7 @@ import {
 } from "./lesson/databaseOperations";
 import { ParsedLesson } from "./lesson/types";
 
-export const parseAndStoreAIResponse = async (aiResponse: string, responseId: string) => {
+export const parseAndStoreAIResponse = async (aiResponse: string, responseId: string): Promise<ParsedSection[]> => {
   try {
     console.log('Parsing AI response for lesson plan...');
     const sections = parseAIResponse(aiResponse);
@@ -26,7 +26,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       assessment_strategies: getSectionContent(sections, ['assessment', 'evaluation', 'measuring']),
       differentiation_strategies: getSectionContent(sections, ['differentiation', 'accommodations', 'modifications']),
       close: getSectionContent(sections, ['close', 'closure', 'wrap up', 'conclusion']),
-      activities: getSectionContent(sections, ['activities', 'tasks', 'engagement']),
+      activities: getSectionContent(sections, ['activities', 'tasks', 'engagement', 'main activities']),
     };
 
     // Validate that we have all required sections

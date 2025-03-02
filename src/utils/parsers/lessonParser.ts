@@ -18,6 +18,7 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
 
     // Extract sections from the AI response
     const rawSections = extractSections(aiResponse);
+    console.log("Raw sections extracted:", rawSections);
 
     if (rawSections.length === 0) {
       throw new Error("No valid sections found in AI response");
@@ -44,7 +45,7 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
         .map((line) => line.trim())
         .filter((line) => line.length > 0);
 
-      // Default section processing (including Activities section)
+      // Default section processing
       sections.push({
         title: sectionTitle,
         content: contentLines,
@@ -75,7 +76,7 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
     return sections;
   } catch (error) {
     console.error("Error parsing AI response:", error);
-    throw new Error(`Failed to parse AI response: ${error.message}`);
+    throw new Error(`Failed to parse AI response: ${(error as Error).message}`);
   }
 };
 

@@ -1,3 +1,4 @@
+
 import { ParsedSection } from "@/types/lesson";
 
 /**
@@ -6,10 +7,10 @@ import { ParsedSection } from "@/types/lesson";
 export const identifySectionType = (title: string): string => {
   const normalizedTitle = title.toLowerCase();
   
-  if (/objective|goal/i.test(normalizedTitle)) return 'Learning Objectives';
+  if (/learning objective|objective|goal/i.test(normalizedTitle)) return 'Learning Objectives';
   if (/material|resource|supply/i.test(normalizedTitle)) return 'Materials & Resources';
   if (/introduction|hook|opening/i.test(normalizedTitle)) return 'Introduction & Hook';
-  if (/activit/i.test(normalizedTitle)) return 'Activities';
+  if (/activit|main activities/i.test(normalizedTitle)) return 'Activities';
   if (/assess|evaluat/i.test(normalizedTitle)) return 'Assessment Strategies';
   if (/different|accommodat|modif/i.test(normalizedTitle)) return 'Differentiation Strategies';
   if (/clos|conclusion|wrap/i.test(normalizedTitle)) return 'Close';
@@ -39,12 +40,15 @@ export const cleanMarkdown = (text: string): string => {
 };
 
 /**
- * Extracts sections from AI response based on markdown headers
+ * Extracts sections from AI response based on markdown headers or numbered format (X. Section Title)
  */
 export const extractSections = (aiResponse: string): ParsedSection[] => {
-  // Split the AI response into sections using markdown headers
+  // Split the AI response into sections using both markdown headers and numbered formats
+  // This regex handles both "### Section Title" and "X. Section Title" formats
   const sectionRegex = /(?:###\s*|(?:\d+\.)\s+)([^\n]+)(?:\n|$)/g;
   const sectionMatches = [...aiResponse.matchAll(sectionRegex)];
+  
+  console.log("Section matches:", sectionMatches.length);
   
   const sections: ParsedSection[] = [];
   
@@ -56,11 +60,11 @@ export const extractSections = (aiResponse: string): ParsedSection[] => {
       ? sectionMatches[i + 1].index 
       : aiResponse.length;
     
-    const sectionContent = aiResponse.slice(startIndex, endIndex).trim().split('\n');
+    const sectionContent = aiResponse.slice(startIndex, endIndex).trim();
     
     sections.push({
       title: identifySectionType(sectionTitle),
-      content: sectionContent,
+      content: sectionContent.split('\n').map(line => line.trim()).filter(line => line.length > 0),
     });
   }
   
