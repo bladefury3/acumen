@@ -10,7 +10,7 @@ export interface ActivityCardProps {
   content: string;
 }  
 
-const ActivityCard: React.FC<ActivityCardProps> = ({ title, content }): => {
+const ActivityCard: React.FC<ActivityCardProps> = ({ title, content }) => {
   // Format the content string as needed
   const formattedContent = content || 'No activities available.';  
 
