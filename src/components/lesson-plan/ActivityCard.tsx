@@ -44,7 +44,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ content }) => {
   if (currentActivity) activities.push(currentActivity);
 
   if (!validActivityFormat) {
-    // If the content format is not structured as activities, print raw Markdown output
+    // If the content format is not structured as activities, print raw Markdown output with proper styling
     return (
       <Card className="h-full transition-all duration-300 hover:shadow-lg animate-fade-in">
         <CardHeader className="flex flex-row items-center justify-between pb-2 group">
@@ -55,10 +55,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ content }) => {
             <CardTitle className="text-base sm:text-lg font-semibold">Activities</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="prose prose-sm max-w-none inline">
-          <div className="text-sm leading-relaxed text-muted-foreground hover:text-foreground transition-colors">
-            <ReactMarkdown>{formattedContent}</ReactMarkdown>
-          </div>
+        <CardContent className="prose prose-sm max-w-none p-4 bg-gray-50 rounded-md border border-gray-200">
+          <ReactMarkdown>{formattedContent}</ReactMarkdown>
         </CardContent>
       </Card>
     );
