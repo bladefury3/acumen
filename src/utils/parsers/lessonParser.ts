@@ -38,7 +38,7 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
     // Process each extracted section
     for (const rawSection of rawSections) {
       const sectionTitle = identifySectionType(rawSection.title);
-      const contentLines = rawSection.content
+      const contentLines = (typeof rawSection.content === "string" ? rawSection.content : "")
         .split("\n")
         .map((line) => line.trim())
         .filter((line) => line.length > 0);
