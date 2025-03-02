@@ -26,7 +26,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
       </CardHeader>
       <CardContent className="space-y-4 pt-2">
         <div className="prose prose-sm max-w-none">
-          {hasMarkdownContent ? <div className="markdown">
+          {hasMarkdownContent ? <div className="markdown whitespace-pre-wrap text-sm text-muted-foreground hover:text-foreground transition-colors">
               <ReactMarkdown>
                 {safeContent[0]}
               </ReactMarkdown>
