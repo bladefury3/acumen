@@ -4,40 +4,7 @@ import { ParsedLesson } from "./types";
 
 export const cleanExistingLessonData = async (responseId: string) => {
   try {
-    // First get all activities_detail ids to delete their instructions
-    const { data: activitiesData, error: activitiesFetchError } = await supabase
-      .from('activities_detail')
-      .select('id')
-      .eq('lesson_id', responseId);
-
-    if (activitiesFetchError) {
-      console.error('Error fetching activities:', activitiesFetchError);
-      throw new Error('Failed to fetch activities for cleaning');
-    }
-
-    // Delete instructions for each activity
-    if (activitiesData && activitiesData.length > 0) {
-      const activityIds = activitiesData.map(activity => activity.id);
-      
-      for (const activityId of activityIds) {
-        const { error: instructionsError } = await supabase
-          .from('instructions')
-          .delete()
-          .eq('activities_detail_id', activityId);
-
-        if (instructionsError) {
-          console.error(`Error cleaning instructions for activity ${activityId}:`, instructionsError);
-          // Continue with deletion even if some instructions fail
-        }
-      }
-    }
-
-    // Now delete activities and lessons
-    await supabase
-      .from('activities_detail')
-      .delete()
-      .eq('lesson_id', responseId);
-
+    // Delete existing lesson data
     await supabase
       .from('lessons')
       .delete()
@@ -71,7 +38,8 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
         introduction_hook: parsedLesson.introduction_hook,
         assessment_strategies: parsedLesson.assessment_strategies,
         differentiation_strategies: parsedLesson.differentiation_strategies,
-        close: parsedLesson.close
+        close: parsedLesson.close,
+        activities: parsedLesson.activities
       })
       .select('id')
       .single();
@@ -88,124 +56,81 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
   }
 };
 
-// Helper function to clean instruction text
-const cleanInstructionText = (text: string): string => {
-  if (!text || text.trim().length < 5) {
-    return "Complete this step of the activity.";
-  }
-
-  // Remove bullet points, numbers, and leading/trailing whitespace
-  let cleaned = text.replace(/^[-•*]\s+|\d+[).]\s+/, '').trim();
-  
-  // Ensure the text ends with a period if it doesn't already
-  if (cleaned && !cleaned.endsWith('.') && !cleaned.endsWith('?') && !cleaned.endsWith('!')) {
-    cleaned += '.';
-  }
-  
-  return cleaned;
-};
-
-export const createActivities = async (lessonId: string, activities: ParsedLesson['activities']) => {
-  if (!activities || activities.length === 0) {
-    console.warn('No activities to create for lesson ID:', lessonId);
-    return;
-  }
-
-  console.log(`Creating ${activities.length} activities for lesson ID: ${lessonId}`);
-  
-  for (const activity of activities) {
-    try {
-      console.log(`Creating activity: ${activity.activity_name} for lesson ID: ${lessonId}`);
-      
-      // Create the activity detail record
-      const { data: newActivity, error: activityError } = await supabase
-        .from('activities_detail')
-        .insert({
-          lesson_id: lessonId,
-          activity_name: activity.activity_name,
-          description: activity.duration || '0 minutes', // Still using description here as that's what the database expects
-          instructions: "" // Adding this empty field to satisfy TypeScript until types are updated
-        })
-        .select('id')
-        .single();
-
-      if (activityError) {
-        console.error(`Error creating activity ${activity.activity_name}:`, activityError);
-        throw activityError;
-      }
-
-      // Process and insert instructions
-      let instructionsToInsert = [];
-      
-      if (activity.steps && activity.steps.length > 0) {
-        // Clean each step and add to insert array
-        instructionsToInsert = activity.steps
-          .filter(text => text && text.trim().length > 0)
-          .map(instruction_text => ({
-            instruction_text: cleanInstructionText(instruction_text),
-            activities_detail_id: newActivity.id
-          }));
-      }
-
-      // If no steps were parsed, create at least one from the activity name
-      if (instructionsToInsert.length === 0) {
-        instructionsToInsert.push({
-          instruction_text: `Complete the ${activity.activity_name} activity.`,
-          activities_detail_id: newActivity.id
-        });
-      }
-
-      // Insert the instructions
-      if (instructionsToInsert.length > 0) {
-        console.log(`Inserting ${instructionsToInsert.length} instructions for activity ${activity.activity_name}`);
-        
-        const { error: instructionsError } = await supabase
-          .from('instructions')
-          .insert(instructionsToInsert);
-
-        if (instructionsError) {
-          console.error(`Error inserting instructions for activity ${activity.activity_name}:`, instructionsError);
-          throw instructionsError;
-        }
-      } else {
-        console.warn(`No instructions found to insert for activity ${activity.activity_name}`);
-      }
-    } catch (error) {
-      console.error(`Failed to create activity ${activity.activity_name}:`, error);
-      throw error;
-    }
-  }
-};
-
-// Function to re-parse and update a specific lesson plan
-export const reparseAndUpdateLesson = async (lessonPlanId: string) => {
+// Migration function to copy data from old structure to new
+export const migrateActivitiesToLessons = async () => {
   try {
-    // Fetch the lesson plan and AI response
-    const { data: lessonPlan, error: lessonPlanError } = await supabase
-      .from('lesson_plans')
-      .select('ai_response')
-      .eq('id', lessonPlanId)
-      .single();
+    console.log('Starting migration of activities to lessons table...');
     
-    if (lessonPlanError || !lessonPlan) {
-      console.error('Error fetching lesson plan:', lessonPlanError);
-      throw new Error(`Lesson plan with ID ${lessonPlanId} not found.`);
+    // Get all lessons
+    const { data: lessons, error: lessonsError } = await supabase
+      .from('lessons')
+      .select('id, response_id')
+      .is('activities', null);
+      
+    if (lessonsError) {
+      console.error('Error fetching lessons:', lessonsError);
+      throw lessonsError;
     }
     
-    if (!lessonPlan.ai_response) {
-      throw new Error(`Lesson plan with ID ${lessonPlanId} has no AI response to parse.`);
+    console.log(`Found ${lessons?.length || 0} lessons to migrate`);
+    
+    // Process each lesson
+    for (const lesson of lessons || []) {
+      try {
+        // Get activities for this lesson
+        const { data: activities, error: activitiesError } = await supabase
+          .from('activities_detail')
+          .select('id, activity_name, description')
+          .eq('lesson_id', lesson.id);
+          
+        if (activitiesError) {
+          console.error(`Error fetching activities for lesson ${lesson.id}:`, activitiesError);
+          continue;
+        }
+        
+        // Get instructions for each activity
+        const activitiesWithSteps = [];
+        
+        for (const activity of activities || []) {
+          const { data: instructions, error: instructionsError } = await supabase
+            .from('instructions')
+            .select('instruction_text')
+            .eq('activities_detail_id', activity.id)
+            .order('created_at', { ascending: true });
+            
+          if (instructionsError) {
+            console.error(`Error fetching instructions for activity ${activity.id}:`, instructionsError);
+            continue;
+          }
+          
+          activitiesWithSteps.push({
+            activity_name: activity.activity_name,
+            duration: activity.description,
+            steps: instructions ? instructions.map(i => i.instruction_text) : []
+          });
+        }
+        
+        // Update the lesson with the new activities array
+        if (activitiesWithSteps.length > 0) {
+          const { error: updateError } = await supabase
+            .from('lessons')
+            .update({ activities: activitiesWithSteps })
+            .eq('id', lesson.id);
+            
+          if (updateError) {
+            console.error(`Error updating lesson ${lesson.id} with activities:`, updateError);
+          } else {
+            console.log(`Successfully migrated ${activitiesWithSteps.length} activities for lesson ${lesson.id}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error processing lesson ${lesson.id}:`, error);
+      }
     }
     
-    // Clean existing data
-    await cleanExistingLessonData(lessonPlanId);
-    
-    // Re-parse the AI response (will be implemented in lessonService)
-    const { parseAndStoreAIResponse } = await import('../lessonService');
-    await parseAndStoreAIResponse(lessonPlan.ai_response, lessonPlanId);
-    
-    return { success: true, message: `Lesson plan ${lessonPlanId} successfully re-parsed.` };
+    console.log('Migration completed');
   } catch (error) {
-    console.error('Error re-parsing lesson plan:', error);
+    console.error('Error during migration:', error);
     throw error;
   }
 };

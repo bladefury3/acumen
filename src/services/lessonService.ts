@@ -9,8 +9,7 @@ import {
 } from "@/utils/parsers/sectionParser";
 import { 
   cleanExistingLessonData, 
-  createNewLesson, 
-  createActivities 
+  createNewLesson
 } from "./lesson/databaseOperations";
 import { ParsedLesson } from "./lesson/types";
 
@@ -83,10 +82,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     await cleanExistingLessonData(responseId);
     
     // Create the new lesson record
-    const newLesson = await createNewLesson(responseId, parsedLesson);
-    
-    // Create activities with proper reference to the lesson ID
-    await createActivities(newLesson.id, parsedLesson.activities);
+    await createNewLesson(responseId, parsedLesson);
 
     return sections;
   } catch (error) {

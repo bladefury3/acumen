@@ -54,7 +54,7 @@ const LessonPlanContent = ({
   return (
     <div className="space-y-8 animate-fade-in pb-16">
       <LessonHeader lessonPlan={lessonPlan} />
-      <LessonSections groupedSections={groupedSections} />
+      <LessonSections groupedSections={groupedSections} lessonId={lessonPlan.id} />
       <Separator className="my-8" />
       
       <div className="flex justify-between items-center">
