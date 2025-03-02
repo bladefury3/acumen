@@ -73,7 +73,7 @@ export const extractSections = (aiResponse: string): ParsedSection[] => {
       // Create the section
       sections.push({
         title: identifySectionType(sectionTitle),
-        content: contentLines,
+        content: findSectionContent(contentLines),
         generated: false
       });
     }

@@ -19,71 +19,15 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     const sections = parseAIResponse(aiResponse);
     console.log('Parsed sections:', sections);
 
-    // Extract raw activities section from the AI response
-    let rawActivitiesContent = '';
-    
-    // Look for patterns like "### 4. Main Activities" or "#### Main Activities" in the AI response
-    const activitiesHeaderPatterns = [
-      /#{1,4}\s*\d*\.*\s*Main\s*Activities/i,
-      /#{1,4}\s*\d*\.*\s*Activities/i
-    ];
-    
-    // Try to extract the activities section as raw content
-    for (const pattern of activitiesHeaderPatterns) {
-      const match = aiResponse.match(pattern);
-      if (match) {
-        const startIdx = match.index;
-        if (startIdx !== undefined) {
-          // Find the next section header after activities
-          const restOfContent = aiResponse.substring(startIdx);
-          // Look specifically for the next section header that's NOT part of the activities
-          const nextSectionMatch = restOfContent.match(/#{1,4}\s*\d*\.*\s*(Assessment|Differentiation|Close|Closure|Wrap|Conclusion)/i);
-          
-          if (nextSectionMatch && nextSectionMatch.index) {
-            // Extract the content between the activities header and the next section
-            rawActivitiesContent = restOfContent.substring(0, nextSectionMatch.index).trim();
-          } else {
-            // If no next section found, take a more cautious approach - look for any markdown header
-            const anyNextSection = restOfContent.match(/#{1,4}\s*\d*\.*\s*[A-Za-z]/);
-            if (anyNextSection && anyNextSection.index && anyNextSection.index > 50) { // Ensure it's not just matching itself
-              rawActivitiesContent = restOfContent.substring(0, anyNextSection.index).trim();
-            } else {
-              // If still no clear next section, just take a reasonable chunk (e.g., 1000 chars)
-              // and then try to find a good cut-off point like a blank line
-              let potentialContent = restOfContent.substring(0, Math.min(2000, restOfContent.length));
-              const lastBlankLine = potentialContent.lastIndexOf('\n\n');
-              if (lastBlankLine > 100) { // Make sure we have enough content
-                rawActivitiesContent = potentialContent.substring(0, lastBlankLine).trim();
-              } else {
-                rawActivitiesContent = potentialContent.trim();
-              }
-            }
-          }
-          break;
-        }
-      }
-    }
-    
-    // If we still couldn't find the activities section, try a simpler approach
-    if (!rawActivitiesContent) {
-      const activitySection = findSectionByPatterns(sections, ['activities', 'main activities']);
-      if (activitySection) {
-        rawActivitiesContent = activitySection.content.join('\n');
-      }
-    }
-
-    console.log('Extracted activities content:', rawActivitiesContent);
-
     // Create a typed object for lesson data
     const parsedLesson: Record<string, string> = {
       learning_objectives: getSectionContent(sections, ['learning objectives', 'learning goals', 'objectives']),
       materials_resources: getSectionContent(sections, ['materials', 'resources', 'supplies']),
       introduction_hook: getSectionContent(sections, ['introduction', 'hook', 'opening']),
+      activities: getSectionContent(sections, ['main activities', 'activities']),
       assessment_strategies: getSectionContent(sections, ['assessment', 'evaluation', 'measuring']),
       differentiation_strategies: getSectionContent(sections, ['differentiation', 'accommodations', 'modifications']),
       close: getSectionContent(sections, ['close', 'closure', 'wrap up', 'conclusion']),
-      // Store the raw activities content instead of parsed content
-      activities: getSectionContent(sections, ['main activities', 'activities']),
     };
 
     // Validate that we have all required sections
