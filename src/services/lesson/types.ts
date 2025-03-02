@@ -1,6 +1,4 @@
 
-import { Json } from "@/integrations/supabase/types";
-
 export interface ParsedLesson {
   learning_objectives: string;
   materials_resources: string;
@@ -8,12 +6,9 @@ export interface ParsedLesson {
   assessment_strategies: string;
   differentiation_strategies: string;
   close: string;
-  activities: Activity[];
-}
-
-export interface Activity {
-  activity_name: string;
-  duration: string;
-  steps: string[];
-  [key: string]: string | string[]; // Add index signature for Json compatibility
+  activities: {
+    activity_name: string;
+    description: string;
+    instructions: string;
+  }[];
 }

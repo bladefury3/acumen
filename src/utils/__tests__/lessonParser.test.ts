@@ -1,5 +1,5 @@
-import { parseAIResponse, cleanMarkdown } from "../lessonParser";
-import { extractActivitiesWithFallbacks } from "../parsers/activityParser";
+
+import { parseAIResponse, cleanMarkdown, parseActivities } from "../lessonParser";
 
 describe('Lesson Parser Functions', () => {
   describe('cleanMarkdown', () => {
@@ -12,15 +12,10 @@ describe('Lesson Parser Functions', () => {
   });
 
   describe('parseActivities', () => {
-    // Adjust this test to use the activity extraction from parseAIResponse instead
     it('extracts activity title and duration', () => {
-      const sections = parseAIResponse(`
-### Main Activities
-- **Activity 1: Understanding Arguments (10 minutes)** - Present an example argument and identify components
-      `);
-      
-      const activitiesSection = sections.find(s => s.title === 'Activities');
-      const activities = activitiesSection?.activities || [];
+      const activities = parseActivities([
+        'Activity 1: Understanding Arguments (10 minutes) - Present an example argument and identify components'
+      ]);
       
       expect(activities[0].title).toBe('Understanding Arguments');
       expect(activities[0].duration).toBe('10 minutes');
@@ -28,149 +23,21 @@ describe('Lesson Parser Functions', () => {
     });
 
     it('handles activities without explicit duration', () => {
-      const sections = parseAIResponse(`
-### Main Activities
-- **Activity 1: Understanding Arguments** - Present an example argument and identify components
-      `);
-      
-      const activitiesSection = sections.find(s => s.title === 'Activities');
-      const activities = activitiesSection?.activities || [];
+      const activities = parseActivities([
+        'Activity 1: Understanding Arguments - Present an example argument and identify components'
+      ]);
       
       expect(activities[0].title).toBe('Understanding Arguments');
-      // Duration might be a default value or empty
-      expect(activities[0]).toHaveProperty('duration');
+      expect(activities[0].duration).toBe("");
     });
 
     it('parses steps from activity description', () => {
-      const sections = parseAIResponse(`
-### Main Activities
-- **Activity 1: Research and Evidence (15 minutes)** - Have students work in groups to find factual evidence. Emphasize the use of credible sources.
-      `);
-      
-      const activitiesSection = sections.find(s => s.title === 'Activities');
-      const activities = activitiesSection?.activities || [];
+      const activities = parseActivities([
+        'Activity 1: Research and Evidence (15 minutes) - Have students work in groups to find factual evidence. Emphasize the use of credible sources.'
+      ]);
       
       expect(activities[0].steps).toContain('Have students work in groups to find factual evidence.');
       expect(activities[0].steps).toContain('Emphasize the use of credible sources.');
-    });
-  });
-
-  describe('extractActivitiesWithFallbacks', () => {
-    it('handles explicit step format with explicit duration labels', () => {
-      const content = `### 4. Main Activities
-#### Activity 1: Introduction to Integer Exponents (15 minutes)
-##### Duration: 15 minutes
-1. **Step 1**: Define what integer exponents are and provide examples on the board, such as 2^3 = 8.
-2. **Step 2**: Explain the rules for simplifying expressions with integer exponents, including the product of powers rule, the power of a power rule, and the power of a product rule.
-3. **Step 3**: Provide examples for each rule and have students work in pairs to simplify given expressions.
-
-#### Activity 2: Practice with Integer Exponents (15 minutes)
-##### Duration: 15 minutes
-1. **Step 1**: Distribute a worksheet with practice problems related to integer exponents.
-2. **Step 2**: Have students work individually to solve the problems.
-3. **Step 3**: Circulate around the room to assist students as needed and encourage peer-to-peer help.`;
-
-      const lines = content.split('\n').map(line => line.trim()).filter(line => line);
-      const activities = extractActivitiesWithFallbacks(lines);
-      
-      expect(activities.length).toBe(2);
-      
-      // Check first activity
-      expect(activities[0].title).toBe('Introduction to Integer Exponents');
-      expect(activities[0].duration).toBe('15 minutes');
-      expect(activities[0].steps.length).toBe(3);
-      expect(activities[0].steps[0]).toContain('Define what integer exponents are');
-      
-      // Check second activity
-      expect(activities[1].title).toBe('Practice with Integer Exponents');
-      expect(activities[1].duration).toBe('15 minutes');
-      expect(activities[1].steps.length).toBe(3);
-      expect(activities[1].steps[0]).toContain('Distribute a worksheet');
-    });
-    
-    it('handles the full response with explicit duration and numbered steps', () => {
-      const content = `### 4. Main Activities
-#### Activity 1: Introduction to Integer Exponents (15 minutes)
-##### Duration: 15 minutes
-1. **Step 1**: Define what integer exponents are and provide examples on the board, such as 2^3 = 8.
-2. **Step 2**: Explain the rules for simplifying expressions with integer exponents, including the product of powers rule, the power of a power rule, and the power of a product rule.
-3. **Step 3**: Provide examples for each rule and have students work in pairs to simplify given expressions.
-
-#### Activity 2: Practice with Integer Exponents (15 minutes)
-##### Duration: 15 minutes
-1. **Step 1**: Distribute a worksheet with practice problems related to integer exponents.
-2. **Step 2**: Have students work individually to solve the problems.
-3. **Step 3**: Circulate around the room to assist students as needed and encourage peer-to-peer help.
-
-#### Activity 3: Introduction to Scientific Notation (15 minutes)
-##### Duration: 15 minutes
-1. **Step 1**: Introduce the concept of scientific notation, explaining that it's a way to express very large or very small numbers in a more compact form.
-2. **Step 2**: Use examples to show how to convert numbers from standard form to scientific notation and vice versa.
-3. **Step 3**: Discuss the importance of scientific notation in real-world applications, such as science and engineering.
-
-#### Activity 4: Applying Scientific Notation (10 minutes)
-##### Duration: 10 minutes
-1. **Step 1**: Provide a scenario where scientific notation is necessary, such as calculating the distance between two planets.
-2. **Step 2**: Have students work in groups to solve the problem, applying what they've learned about scientific notation.
-3. **Step 3**: Allow time for groups to share their solutions and discuss any common challenges.`;
-
-      const lines = content.split('\n').map(line => line.trim()).filter(line => line);
-      const activities = extractActivitiesWithFallbacks(lines);
-      
-      expect(activities.length).toBe(4);
-      
-      // Check first activity
-      expect(activities[0].title).toBe('Introduction to Integer Exponents');
-      expect(activities[0].duration).toBe('15 minutes');
-      expect(activities[0].steps.length).toBe(3);
-      
-      // Check second activity
-      expect(activities[1].title).toBe('Practice with Integer Exponents');
-      expect(activities[1].duration).toBe('15 minutes');
-      expect(activities[1].steps.length).toBe(3);
-      
-      // Check third activity
-      expect(activities[2].title).toBe('Introduction to Scientific Notation');
-      expect(activities[2].duration).toBe('15 minutes');
-      expect(activities[2].steps.length).toBe(3);
-      
-      // Check fourth activity
-      expect(activities[3].title).toBe('Applying Scientific Notation');
-      expect(activities[3].duration).toBe('10 minutes');
-      expect(activities[3].steps.length).toBe(3);
-    });
-    
-    it('handles the H2 style headings with step formatting', () => {
-      const content = `### 4. Main Activities
-## Introduction to Integer Exponents 1
-### Duration: 10 minutes
-***Step*** 1: Define integer exponents and provide examples on the board, such as 2^3 = 8.
-***Step*** 2: Use simple examples related to the Denver Broncos, like calculating the total number of yards a player could run if they ran a certain number of yards each game, raised to the power of the number of games played.
-***Step*** 3: Have students work in pairs to solve a few basic problems with integer exponents.
-
-## Introduction to Scientific Notation 2
-### Duration: 15 minutes
-***Step*** 1: Introduce the concept of scientific notation, explaining that it's a way to express very large or very small numbers in a more compact form.
-***Step*** 2: Provide examples, such as expressing the attendance at a Broncos game (e.g., 76,000) in scientific notation (7.6 x 10^4).
-***Step*** 3: Use the whiteboard to demonstrate how to convert between standard and scientific notation.
-***Step*** 4: Distribute handouts with practice problems for students to work on individually.`;
-
-      const lines = content.split('\n').map(line => line.trim()).filter(line => line);
-      const activities = extractActivitiesWithFallbacks(lines);
-      
-      expect(activities.length).toBe(2);
-      
-      // Check first activity
-      expect(activities[0].title).toBe('Introduction to Integer Exponents');
-      expect(activities[0].duration).toBe('10 minutes');
-      expect(activities[0].steps.length).toBe(3);
-      expect(activities[0].steps[0]).toContain('Define integer exponents');
-      
-      // Check second activity
-      expect(activities[1].title).toBe('Introduction to Scientific Notation');
-      expect(activities[1].duration).toBe('15 minutes');
-      expect(activities[1].steps.length).toBe(4);
-      expect(activities[1].steps[0]).toContain('Introduce the concept of scientific notation');
     });
   });
 

@@ -21,45 +21,44 @@ const LessonPlanView = () => {
   const [hasResources, setHasResources] = useState(false);
   const [resourcesId, setResourcesId] = useState<string | undefined>(undefined);
 
-  const fetchLessonPlan = async () => {
-    if (!id) return;
-    
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('lesson_plans')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      setLessonPlan(data);
-      
-      if (data.ai_response) {
-        const sections = await parseAndStoreAIResponse(data.ai_response, data.id);
-        setParsedSections(sections);
-      }
-      
-      // Check if resources exist using RPC function
-      const { data: resources, error: resourcesError } = await supabase
-        .rpc('get_lesson_resources_by_lesson_id', { p_lesson_plan_id: id });
-        
-      if (resourcesError) {
-        console.error("Error checking for resources:", resourcesError);
-      } else if (resources && resources.length > 0) {
-        setHasResources(true);
-        setResourcesId(resources[0].id);
-      }
-    } catch (error) {
-      console.error('Error fetching lesson plan:', error);
-      toast.error("Failed to load lesson plan");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchLessonPlan();
+    const fetchLessonPlan = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('lesson_plans')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+        setLessonPlan(data);
+        
+        if (data.ai_response) {
+          const sections = await parseAndStoreAIResponse(data.ai_response, data.id);
+          setParsedSections(sections);
+        }
+        
+        // Check if resources exist using RPC function
+        const { data: resources, error: resourcesError } = await supabase
+          .rpc('get_lesson_resources_by_lesson_id', { p_lesson_plan_id: id });
+          
+        if (resourcesError) {
+          console.error("Error checking for resources:", resourcesError);
+        } else if (resources && resources.length > 0) {
+          setHasResources(true);
+          setResourcesId(resources[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching lesson plan:', error);
+        toast.error("Failed to load lesson plan");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchLessonPlan();
+    }
   }, [id]);
 
   const sidebarItems = [
@@ -93,9 +92,7 @@ const LessonPlanView = () => {
   return (
     <DashboardLayout sidebarItems={sidebarItems}>
       <div className="space-y-8 animate-fade-in pb-16">
-        <div className="flex justify-between items-center">
-          <LessonBreadcrumb />
-        </div>
+        <LessonBreadcrumb />
         <LessonPlanContent
           lessonPlan={lessonPlan}
           groupedSections={groupedSections}

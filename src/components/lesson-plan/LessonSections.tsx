@@ -11,19 +11,17 @@ interface LessonSectionsProps {
     assessmentRow: ParsedSection[];
     close?: ParsedSection;
   };
-  lessonId?: string;
 }
 
 const LessonSections = ({
   groupedSections,
-  lessonId
 }: LessonSectionsProps) => {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {groupedSections.topRow.map((section, index) => (
           <div key={index}>
-            <SectionCard section={section} lessonId={lessonId} />
+            <SectionCard section={section} />
           </div>
         ))}
       </div>
@@ -32,7 +30,7 @@ const LessonSections = ({
 
       {groupedSections.introduction && (
         <div className="w-full">
-          <SectionCard section={groupedSections.introduction} lessonId={lessonId} />
+          <SectionCard section={groupedSections.introduction} />
         </div>
       )}
 
@@ -40,7 +38,7 @@ const LessonSections = ({
 
       {groupedSections.activities && (
         <div className="w-full">
-          <SectionCard section={groupedSections.activities} lessonId={lessonId} />
+          <SectionCard section={groupedSections.activities} />
         </div>
       )}
 
@@ -49,14 +47,14 @@ const LessonSections = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {groupedSections.assessmentRow.map((section, index) => (
           <div key={index}>
-            <SectionCard section={section} lessonId={lessonId} />
+            <SectionCard section={section} />
           </div>
         ))}
       </div>
 
       {groupedSections.close && (
         <div className="w-full">
-          <SectionCard section={groupedSections.close} lessonId={lessonId} />
+          <SectionCard section={groupedSections.close} />
         </div>
       )}
     </div>
