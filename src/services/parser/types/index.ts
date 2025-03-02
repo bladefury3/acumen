@@ -8,6 +8,7 @@ export interface Section {
   type: string;
   title: string;
   content: string[];
+  markdownContent?: string; // Added markdown content
   rawContent?: string;
 }
 
@@ -21,6 +22,7 @@ export interface ParsedLessonContent {
 export interface ExtractedSection {
   title: string;
   content: string[];
+  markdownContent?: string; // Added markdown content
   startIndex: number;
   endIndex: number;
 }

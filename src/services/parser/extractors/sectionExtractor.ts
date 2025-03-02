@@ -4,19 +4,16 @@
  */
 import { ExtractedSection, ParserError, ParserErrorType } from '../types';
 import { identifySectionType } from '../constants/sections';
-import { processContentLines } from '../transformers/markdown';
 
 /**
- * Extract section content (excluding headers and empty lines)
+ * Extract section content (preserving markdown formatting)
  */
-export function findSectionContent(lines: string[]): string[] {
-  return lines
-    .filter(line => {
-      const cleaned = line.trim();
-      return cleaned && !cleaned.startsWith('#') && 
-        (cleaned.startsWith('*') || cleaned.startsWith('-') || /^\d+\./.test(cleaned) || cleaned.length > 0);
-    })
-    .map(line => line.replace(/^\*\s*|\s*\*$|^[-*•]\s*|\d+\.\s*/, '').trim())
+export function findSectionContent(text: string): string[] {
+  if (!text) return [];
+  
+  return text
+    .split('\n')
+    .map(line => line.trim())
     .filter(line => line.length > 0);
 }
 
@@ -48,18 +45,12 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
         : aiResponse.length;
       
       const sectionContent = aiResponse.slice(startIndex, endIndex).trim();
-      const contentLines = sectionContent
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0);
       
-      // Skip empty sections
-      if (contentLines.length === 0) continue;
-      
-      // Create the section
+      // Create the section - preserve markdown content
       sections.push({
         title: sectionTitle,
-        content: findSectionContent(contentLines),
+        content: findSectionContent(sectionContent),
+        markdownContent: sectionContent,
         startIndex,
         endIndex
       });
@@ -69,6 +60,7 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
     const lines = aiResponse.split('\n').map(line => line.trim());
     let currentSection: ExtractedSection | null = null;
     let currentContent: string[] = [];
+    let markdownContent = '';
     let startIndex = 0;
     
     for (let i = 0; i < lines.length; i++) {
@@ -79,7 +71,8 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
       if (line.match(/^[A-Z][\w\s]+:$/) || line.match(/^[A-Z][\w\s]+\s*$/) || line.match(/^\d+\.\s+[A-Z]/)) {
         // If we have a current section, add it to our sections
         if (currentSection && currentContent.length > 0) {
-          currentSection.content = findSectionContent(currentContent);
+          currentSection.content = currentContent;
+          currentSection.markdownContent = markdownContent;
           sections.push(currentSection);
         }
         
@@ -89,19 +82,23 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
         currentSection = {
           title,
           content: [],
+          markdownContent: '',
           startIndex,
           endIndex: aiResponse.length
         };
         currentContent = [];
+        markdownContent = '';
       } else if (currentSection) {
         // Add this line to the current section content
         currentContent.push(line);
+        markdownContent += line + '\n';
       }
     }
     
     // Don't forget to add the last section
     if (currentSection && currentContent.length > 0) {
-      currentSection.content = findSectionContent(currentContent);
+      currentSection.content = currentContent;
+      currentSection.markdownContent = markdownContent;
       sections.push(currentSection);
     }
   }

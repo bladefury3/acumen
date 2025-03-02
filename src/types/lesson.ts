@@ -28,10 +28,10 @@ export interface Instruction {
   created_at: string;
 }
 
-// Updated ParsedSection to handle both regular content and activities
+// Simplified ParsedSection to handle markdown content
 export interface ParsedSection {
   title: string;
   content: string[];
+  markdownContent?: string; // Original markdown content
   generated?: boolean;
-  // Remove the activities property as we're treating all sections the same
 }

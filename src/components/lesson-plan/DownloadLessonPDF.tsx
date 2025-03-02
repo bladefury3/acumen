@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 15,
     marginBottom: 10,
-    color: '#334155',
+    color: '#003C5A',
   },
   content: {
     marginBottom: 10,
@@ -47,7 +47,7 @@ const LessonPDF = ({ lessonTitle, sections }: DownloadLessonPDFProps) => (
           <View style={styles.list}>
             {section.content.map((item, itemIndex) => (
               <Text key={itemIndex} style={styles.listItem}>
-                • {item}
+                • {item.replace(/^[-*•]\s*|\d+\.\s*/, '')}
               </Text>
             ))}
           </View>
@@ -117,11 +117,11 @@ const DownloadLessonPDF = ({ lessonTitle, sections }: DownloadLessonPDFProps) =>
         return (
           <Button
             variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-[#003C5A] text-[#C3CFF5] hover:bg-[#00293d] hover:text-[#C3CFF5]"
             disabled={loading || isGenerating}
           >
             {loading || isGenerating ? (
-              <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <div className="h-4 w-4 border-2 border-[#C3CFF5] border-t-transparent rounded-full animate-spin" />
             ) : (
               <Download className="h-4 w-4" />
             )}

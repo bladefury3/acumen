@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import SectionCard from './SectionCard';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,11 +56,23 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
   if (error) return <div className="text-center py-8 text-red-500">{error}</div>;
   if (!lessonData) return <div className="text-center py-8">No lesson data found.</div>;
 
-  // Helper function to split content by newlines and filter empty lines
-  const formatContentToArray = (content: string): string[] => {
+  // Helper function to process markdown content
+  const processContent = (content: string): string[] => {
     if (!content) return [];
     
-    // First try splitting by newlines
+    // Check if content is already in markdown format
+    const hasMarkdownFormatting = 
+      content.includes('#') || 
+      content.includes('*') || 
+      content.includes('_') ||
+      content.includes('```');
+    
+    // If it has markdown formatting, return it as a single item
+    if (hasMarkdownFormatting) {
+      return [content];
+    }
+    
+    // Otherwise split by newlines and filter empty lines
     const lines = content.split('\n').filter(line => line.trim().length > 0);
     
     // If we got no lines but have content, it might be all in one line
@@ -99,17 +110,19 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
         const displayName = SECTION_DISPLAY_NAMES[sectionType] || 
           sectionType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         
-        // Use ActivityCard for activities section, SectionCard for others
-        const CardComponent = sectionType === 'activities' ? 'ActivityCard' : SectionCard;
-        
         // Format content
-        const content = formatContentToArray(lessonData[sectionType as keyof LessonData] as string);
+        const content = processContent(lessonData[sectionType as keyof LessonData] as string);
         
         // Only render if we have content
         if (!content || content.length === 0) return null;
         
+        // Use ActivityCard for activities section, SectionCard for others
+        const CardComponent = sectionType === 'activities' 
+          ? require('./ActivityCard').default 
+          : SectionCard;
+        
         return (
-          <SectionCard
+          <CardComponent
             key={sectionType}
             title={displayName}
             content={content}

@@ -14,7 +14,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
   try {
     console.log('Parsing AI response for lesson plan...');
     
-    // Use our new parser to extract all sections
+    // Use our parser to extract all sections
     const { sections, missingTypes } = parseAIResponse(aiResponse);
     console.log('Parsed sections:', sections);
     
@@ -23,6 +23,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     }
 
     // Convert sections to a lesson object for database storage
+    // Ensure we preserve markdown content
     const parsedLesson = createLessonObject(sections);
     console.log(`Processed lesson data:`, parsedLesson);
 

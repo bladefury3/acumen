@@ -8,3 +8,13 @@ export interface ParsedLesson {
   close: string;
   activities: string;
 }
+
+// Legacy types for tests compatibility
+export type ParsedLessonContent = Section[];
+
+export interface Section {
+  type: string;
+  title: string;
+  content: string[];
+  markdownContent?: string;
+}

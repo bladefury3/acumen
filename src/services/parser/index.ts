@@ -29,11 +29,12 @@ export function parseAIResponse(aiResponse: string): ParsedLessonContent {
     // Convert to normalized sections with standard types
     const normalizedSections = normalizeSections(extractedSections);
     
-    // Convert to our standard Section format
+    // Convert to our standard Section format, preserving markdown
     const sections: Section[] = normalizedSections.map(section => ({
       type: section.title,
       title: SECTION_DISPLAY_NAMES[section.title] || section.title,
       content: section.content,
+      markdownContent: section.markdownContent || section.content.join('\n'),
       rawContent: aiResponse.slice(section.startIndex, section.endIndex)
     }));
     
@@ -80,7 +81,9 @@ export function findSectionByType(sections: Section[], type: string): Section | 
 export function getSectionContentAsString(sections: Section[], type: string): string {
   const section = findSectionByType(sections, type);
   if (!section) return '';
-  return section.content.join('\n');
+  
+  // Return markdown content if available, otherwise join content
+  return section.markdownContent || section.content.join('\n');
 }
 
 /**
@@ -89,9 +92,9 @@ export function getSectionContentAsString(sections: Section[], type: string): st
 export function createLessonObject(sections: Section[]): Record<string, string> {
   const lessonData: Record<string, string> = {};
   
-  // Map each section type to its content
+  // Map each section type to its markdown content
   for (const section of sections) {
-    lessonData[section.type] = section.content.join('\n');
+    lessonData[section.type] = section.markdownContent || section.content.join('\n');
   }
   
   return lessonData;

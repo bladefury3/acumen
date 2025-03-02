@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FileText, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LessonPlanData } from "@/types/lesson";
+import { LessonPlanData, ParsedSection } from "@/types/lesson";
 import { parseAndStoreAIResponse } from "@/services/lessonService";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import LessonBreadcrumb from "@/components/lesson-plan/LessonBreadcrumb";
