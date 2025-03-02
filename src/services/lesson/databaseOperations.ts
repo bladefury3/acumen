@@ -124,7 +124,8 @@ export const createActivities = async (lessonId: string, activities: ParsedLesso
         .insert({
           lesson_id: lessonId,
           activity_name: activity.activity_name,
-          description: activity.duration || '0 minutes' // Use description here as that's what TypeScript expects
+          description: activity.duration || '0 minutes', // Use description here as that's what TypeScript expects
+          instructions: "" // Adding this empty field to satisfy TypeScript until types are updated
         })
         .select('id')
         .single();
