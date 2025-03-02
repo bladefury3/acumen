@@ -8,9 +8,20 @@ interface LessonSectionsProps {
   lessonId: string;
 }
 
+interface LessonData {
+  id: string;
+  learning_objectives: string;
+  materials_resources: string;
+  introduction_hook: string;
+  assessment_strategies: string;
+  differentiation_strategies: string;
+  close: string;
+  activities: string;
+  response_id: string;
+}
+
 const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
-  const [lessonData, setLessonData] = useState<any>(null);
-  const [activitiesContent, setActivitiesContent] = useState<string>('');
+  const [lessonData, setLessonData] = useState<LessonData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,12 +38,8 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
         
         if (error) throw error;
         
+        console.log('Fetched lesson data:', data);
         setLessonData(data);
-        // Store activities as string content for display
-        if (data.activities) {
-          setActivitiesContent(data.activities);
-        }
-        
       } catch (err) {
         console.error('Error fetching lesson sections:', err);
         setError('Failed to load lesson sections');
@@ -50,41 +57,46 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
   if (error) return <div className="text-center py-8 text-red-500">{error}</div>;
   if (!lessonData) return <div className="text-center py-8">No lesson data found.</div>;
 
+  // Helper function to split content by newlines and filter empty lines
+  const formatContentToArray = (content: string): string[] => {
+    return content ? content.split('\n').filter(line => line.trim().length > 0) : [];
+  };
+
   return (
     <div className="space-y-8">
       <SectionCard
         title="Learning Objectives"
-        content={lessonData.learning_objectives ? lessonData.learning_objectives.split('\n').filter((line: string) => line.trim().length > 0) : []}
+        content={formatContentToArray(lessonData.learning_objectives)}
       />
       
       <SectionCard
         title="Materials & Resources"
-        content={lessonData.materials_resources ? lessonData.materials_resources.split('\n').filter((line: string) => line.trim().length > 0) : []}
+        content={formatContentToArray(lessonData.materials_resources)}
       />
       
       <SectionCard
         title="Introduction & Hook"
-        content={lessonData.introduction_hook ? lessonData.introduction_hook.split('\n').filter((line: string) => line.trim().length > 0) : []}
+        content={formatContentToArray(lessonData.introduction_hook)}
       />
       
       <ActivityCard 
         title="Activities"
-        content={activitiesContent}
+        content={lessonData.activities || 'No activities available.'}
       />
       
       <SectionCard
         title="Assessment Strategies"
-        content={lessonData.assessment_strategies ? lessonData.assessment_strategies.split('\n').filter((line: string) => line.trim().length > 0) : []}
+        content={formatContentToArray(lessonData.assessment_strategies)}
       />
       
       <SectionCard
         title="Differentiation Strategies"
-        content={lessonData.differentiation_strategies ? lessonData.differentiation_strategies.split('\n').filter((line: string) => line.trim().length > 0) : []}
+        content={formatContentToArray(lessonData.differentiation_strategies)}
       />
       
       <SectionCard
         title="Close"
-        content={lessonData.close ? lessonData.close.split('\n').filter((line: string) => line.trim().length > 0) : []}
+        content={formatContentToArray(lessonData.close)}
       />
     </div>
   );

@@ -18,6 +18,7 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     const sections = parseAIResponse(aiResponse);
     console.log('Parsed sections:', sections);
 
+    // Create a typed object for lesson data
     const parsedLesson: Record<string, string> = {
       learning_objectives: getSectionContent(sections, ['learning objectives', 'learning goals', 'objectives']),
       materials_resources: getSectionContent(sections, ['materials', 'resources', 'supplies']),
@@ -44,8 +45,8 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     // First clean up any existing data for this response ID
     await cleanExistingLessonData(responseId);
     
-    // Create the new lesson record
-    await createNewLesson(responseId, parsedLesson);
+    // Create the new lesson record with the parsed data
+    await createNewLesson(responseId, parsedLesson as unknown as ParsedLesson);
     
     return sections;
   } catch (error) {
