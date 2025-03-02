@@ -1,124 +1,33 @@
 
-import { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Activity, Instruction } from "@/types/lesson";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Activity } from '@/types/lesson';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import ReactMarkdown from 'react-markdown';
 
 interface ActivityCardProps {
-  activity: Activity;
-  activityId?: string;
+  title: string;
+  content: string;
 }
 
-const ActivityCard = ({ activity, activityId }: ActivityCardProps) => {
-  const [instructions, setInstructions] = useState<Instruction[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (!activityId) return;
-
-    const fetchInstructions = async () => {
-      setIsLoading(true);
-      
-      try {
-        const { data, error } = await supabase
-          .from('instructions')
-          .select('*')
-          .eq('activities_detail_id', activityId)
-          .order('created_at', { ascending: true });
-
-        if (error) {
-          console.error("Error fetching instructions:", error);
-          toast.error("Failed to load activity instructions");
-          return;
-        }
-
-        if (data && data.length > 0) {
-          console.log(`Loaded ${data.length} instructions for activity ID ${activityId}`);
-          setInstructions(data);
-        } else {
-          console.log(`No instructions found for activity ID ${activityId}`);
-        }
-      } catch (error) {
-        console.error("Exception fetching instructions:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Set up real-time subscription for changes to instructions
-    const channel = supabase
-      .channel(`instructions-changes-${activityId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'instructions',
-          filter: `activities_detail_id=eq.${activityId}`
-        },
-        (payload) => {
-          console.log("Realtime update for instructions:", payload);
-          fetchInstructions();
-        }
-      )
-      .subscribe((status) => {
-        console.log(`Subscription status for activity ${activityId}:`, status);
-      });
-
-    // Initial fetch
-    fetchInstructions();
-    
-    // Cleanup function
-    return () => { 
-      console.log(`Cleaning up subscription for activity ${activityId}`);
-      supabase.removeChannel(channel); 
-    };
-  }, [activityId]);
+const ActivityCard: React.FC<ActivityCardProps> = ({ title, content }) => {
+  // Format the content string as needed
+  const formattedContent = content || 'No activities available.';
 
   return (
-    <Card className="bg-accent/50">
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="text-base sm:text-lg">{activity.title}</CardTitle>
-        <CardDescription>{activity.duration}</CardDescription>
+    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
+      <CardHeader className="bg-[#003C5A] text-[#C3CFF5] rounded-t-lg">
+        <CardTitle className="text-xl font-bold flex justify-between items-center">
+          <span>{title}</span>
+          <Badge className="bg-[#D95D27] text-[#FCEDEB] hover:bg-[#D95D27]/90">
+            Activities
+          </Badge>
+        </CardTitle>
       </CardHeader>
-      <CardContent className="p-4 pt-2">
-        <div className="prose prose-sm max-w-none">
-          <h3 className="text-sm font-medium mb-2">Instructions:</h3>
-          {isLoading ? (
-            <div className="text-sm text-muted-foreground">Loading instructions...</div>
-          ) : (
-            <ul className="list-disc pl-4 space-y-2 text-sm">
-              {activityId && instructions.length > 0 ? (
-                instructions.map((instruction) => (
-                  <li key={instruction.id} className="leading-relaxed">
-                    <div className="prose prose-sm max-w-none">
-                      <ReactMarkdown>
-                        {instruction.instruction_text}
-                      </ReactMarkdown>
-                    </div>
-                  </li>
-                ))
-              ) : (
-                activity.steps.map((step, stepIdx) => (
-                  <li key={stepIdx} className="leading-relaxed">
-                    <div className="prose prose-sm max-w-none">
-                      <ReactMarkdown>
-                        {step}
-                      </ReactMarkdown>
-                    </div>
-                  </li>
-                ))
-              )}
-            </ul>
-          )}
+      <CardContent className="p-6">
+        <div className="prose max-w-none dark:prose-invert">
+          <ReactMarkdown>{formattedContent}</ReactMarkdown>
         </div>
       </CardContent>
     </Card>

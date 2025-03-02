@@ -71,7 +71,8 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
         introduction_hook: parsedLesson.introduction_hook,
         assessment_strategies: parsedLesson.assessment_strategies,
         differentiation_strategies: parsedLesson.differentiation_strategies,
-        close: parsedLesson.close
+        close: parsedLesson.close,
+        activities: parsedLesson.activities // Store activities as string
       })
       .select('id')
       .single();
@@ -120,83 +121,69 @@ const cleanInstructionText = (text: string): string => {
   return cleaned.trim();
 };
 
-export const createActivities = async (lessonId: string, activities: ParsedLesson['activities']) => {
-  if (!activities || activities.length === 0) {
-    console.warn('No activities to create for lesson ID:', lessonId);
-    return;
-  }
-
-  console.log(`Creating ${activities.length} activities for lesson ID: ${lessonId}`);
-  
-  for (const activity of activities) {
-    try {
-      console.log(`Creating activity: ${activity.activity_name} for lesson ID: ${lessonId}`);
+// Migration function to move activities from activities_detail to lessons.activities
+export const migrateActivitiesToLessons = async () => {
+  try {
+    console.log('Starting migration of activities to lessons table...');
+    
+    // Get all lessons
+    const { data: lessons, error: lessonsError } = await supabase
+      .from('lessons')
+      .select('id, response_id, activities');
       
-      // Create the activity detail record
-      const { data: newActivity, error: activityError } = await supabase
-        .from('activities_detail')
-        .insert({
-          lesson_id: lessonId,
-          activity_name: activity.activity_name,
-          description: activity.description || '',
-          instructions: activity.instructions || ''
-        })
-        .select('id')
-        .single();
-
-      if (activityError) {
-        console.error(`Error creating activity ${activity.activity_name}:`, activityError);
-        throw activityError;
-      }
-
-      // Process and insert instructions
-      let instructionsToInsert = [];
-      
-      if (activity.instructions && activity.instructions.trim()) {
-        // Split instructions by line, clean each one, and add to insert array
-        instructionsToInsert = activity.instructions
-          .split('\n')
-          .filter(text => text.trim().length > 0)
-          .map(instruction_text => ({
-            instruction_text: cleanInstructionText(instruction_text),
-            activities_detail_id: newActivity.id
-          }));
-      }
-
-      // If no instructions were parsed, create at least one from the description
-      if (instructionsToInsert.length === 0) {
-        if (activity.description && activity.description.trim()) {
-          instructionsToInsert.push({
-            instruction_text: cleanInstructionText(activity.description),
-            activities_detail_id: newActivity.id
-          });
-        } else {
-          // Fallback if no description either
-          instructionsToInsert.push({
-            instruction_text: `Complete the ${activity.activity_name.toLowerCase()} activity.`,
-            activities_detail_id: newActivity.id
-          });
-        }
-      }
-
-      // Insert the instructions
-      if (instructionsToInsert.length > 0) {
-        console.log(`Inserting ${instructionsToInsert.length} instructions for activity ${activity.activity_name}`);
-        
-        const { error: instructionsError } = await supabase
-          .from('instructions')
-          .insert(instructionsToInsert);
-
-        if (instructionsError) {
-          console.error(`Error inserting instructions for activity ${activity.activity_name}:`, instructionsError);
-          throw instructionsError;
-        }
-      } else {
-        console.warn(`No instructions found to insert for activity ${activity.activity_name}`);
-      }
-    } catch (error) {
-      console.error(`Failed to create activity ${activity.activity_name}:`, error);
-      throw error;
+    if (lessonsError) {
+      console.error('Error fetching lessons:', lessonsError);
+      throw lessonsError;
     }
+    
+    // Process each lesson
+    for (const lesson of lessons || []) {
+      // Skip lessons that already have activities data
+      if (lesson.activities) {
+        console.log(`Lesson ${lesson.id} already has activities data, skipping...`);
+        continue;
+      }
+      
+      // Get activities for this lesson
+      const { data: activities, error: activitiesError } = await supabase
+        .from('activities_detail')
+        .select('*')
+        .eq('lesson_id', lesson.id);
+        
+      if (activitiesError) {
+        console.error(`Error fetching activities for lesson ${lesson.id}:`, activitiesError);
+        continue; // Skip this lesson if there's an error
+      }
+      
+      if (!activities || activities.length === 0) {
+        console.log(`No activities found for lesson ${lesson.id}`);
+        continue;
+      }
+      
+      // Convert activities to a string
+      const activitiesString = activities
+        .map(activity => {
+          return `Activity: ${activity.activity_name}\n${activity.description}\n${activity.instructions}`;
+        })
+        .join('\n\n');
+      
+      // Update the lesson with the activities string
+      const { error: updateError } = await supabase
+        .from('lessons')
+        .update({ activities: activitiesString })
+        .eq('id', lesson.id);
+        
+      if (updateError) {
+        console.error(`Error updating lesson ${lesson.id} with activities:`, updateError);
+      } else {
+        console.log(`Successfully migrated activities for lesson ${lesson.id}`);
+      }
+    }
+    
+    console.log('Migration completed successfully');
+    return true;
+  } catch (error) {
+    console.error('Migration failed:', error);
+    return false;
   }
 };

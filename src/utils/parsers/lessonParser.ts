@@ -1,4 +1,5 @@
-import { Activity, ParsedSection } from "@/types/lesson";
+
+import { ParsedSection } from "@/types/lesson";
 import {
   cleanMarkdown,
   extractSections,
