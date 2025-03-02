@@ -59,9 +59,9 @@ serve(async (req) => {
       2. Materials and Resources
       3. Introduction/Hook
       4. Main Activities
-        ##<Activty Name> <Activity number>: 
+        ##<Activty Name> <Activity number>
         ### Duration
-        Step <Number>: <step-instruction>
+        ***Step*** <Number>: <activity-step-instruction>
       5. Assessment Strategies
       6. Differentiation Strategies
       7. Closure
