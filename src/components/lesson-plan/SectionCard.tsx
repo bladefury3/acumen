@@ -45,8 +45,8 @@ const SectionCard = ({
       <CardContent className="space-y-4 pt-2">
         <div className="prose prose-sm max-w-none">
           {hasMarkdownContent ? (
-            <div className="markdown">
-              <ReactMarkdown className="whitespace-pre-wrap">
+            <div className="markdown whitespace-pre-wrap">
+              <ReactMarkdown>
                 {content[0]}
               </ReactMarkdown>
             </div>

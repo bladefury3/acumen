@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FileText, Settings } from "lucide-react";
@@ -149,7 +150,7 @@ const LessonPlanView = () => {
             variant="outline" 
             onClick={handleReparseLesson}
             disabled={isReparsing}
-            className="bg-[#003C5A] text-[#C3CFF5] hover:bg-[#00293d] hover:text-[#C3CFF5]"
+            className="bg-[#003C5A] text-[#C3CFF5] hover:bg-[#002b41] hover:text-[#C3CFF5]"
           >
             {isReparsing ? "Processing..." : "Reparse Lesson"}
           </Button>
