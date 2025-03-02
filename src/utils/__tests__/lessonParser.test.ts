@@ -139,6 +139,39 @@ describe('Lesson Parser Functions', () => {
       expect(activities[3].duration).toBe('10 minutes');
       expect(activities[3].steps.length).toBe(3);
     });
+    
+    it('handles the H2 style headings with step formatting', () => {
+      const content = `### 4. Main Activities
+## Introduction to Integer Exponents 1
+### Duration: 10 minutes
+***Step*** 1: Define integer exponents and provide examples on the board, such as 2^3 = 8.
+***Step*** 2: Use simple examples related to the Denver Broncos, like calculating the total number of yards a player could run if they ran a certain number of yards each game, raised to the power of the number of games played.
+***Step*** 3: Have students work in pairs to solve a few basic problems with integer exponents.
+
+## Introduction to Scientific Notation 2
+### Duration: 15 minutes
+***Step*** 1: Introduce the concept of scientific notation, explaining that it's a way to express very large or very small numbers in a more compact form.
+***Step*** 2: Provide examples, such as expressing the attendance at a Broncos game (e.g., 76,000) in scientific notation (7.6 x 10^4).
+***Step*** 3: Use the whiteboard to demonstrate how to convert between standard and scientific notation.
+***Step*** 4: Distribute handouts with practice problems for students to work on individually.`;
+
+      const lines = content.split('\n').map(line => line.trim()).filter(line => line);
+      const activities = extractActivitiesWithFallbacks(lines);
+      
+      expect(activities.length).toBe(2);
+      
+      // Check first activity
+      expect(activities[0].title).toBe('Introduction to Integer Exponents');
+      expect(activities[0].duration).toBe('10 minutes');
+      expect(activities[0].steps.length).toBe(3);
+      expect(activities[0].steps[0]).toContain('Define integer exponents');
+      
+      // Check second activity
+      expect(activities[1].title).toBe('Introduction to Scientific Notation');
+      expect(activities[1].duration).toBe('15 minutes');
+      expect(activities[1].steps.length).toBe(4);
+      expect(activities[1].steps[0]).toContain('Introduce the concept of scientific notation');
+    });
   });
 
   describe('parseAIResponse', () => {

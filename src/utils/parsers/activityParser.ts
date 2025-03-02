@@ -1,3 +1,4 @@
+
 import { Activity } from "@/types/lesson";
 import { cleanMarkdown } from "./sectionParser";
 
@@ -8,6 +9,10 @@ export const extractDuration = (text: string): string | null => {
   // Check for explicit Duration: label
   const explicitDurationMatch = text.match(/Duration:\s*(\d+)\s*(?:minutes?|mins?)/i);
   if (explicitDurationMatch) return `${explicitDurationMatch[1]} minutes`;
+  
+  // Check for "### Duration: X minutes" format
+  const durationHeadingMatch = text.match(/Duration:\s*(\d+)\s*(?:minutes?|mins?)/i);
+  if (durationHeadingMatch) return `${durationHeadingMatch[1]} minutes`;
   
   // Pattern for duration in parentheses: (15 minutes)
   const durationMatch = text.match(/\((\d+)\s*(?:minutes?|mins?)?\)/i);
@@ -43,6 +48,20 @@ export const extractActivityTitle = (text: string): string => {
   const headingMatch = text.match(headingActivityPattern);
   if (headingMatch) {
     return cleanMarkdown(headingMatch[1].trim());
+  }
+  
+  // Format 4: "## Title X" (with number at the end)
+  const markdownH2WithNumberPattern = /##\s*([^0-9]+)\s*\d+/i;
+  const h2WithNumberMatch = text.match(markdownH2WithNumberPattern);
+  if (h2WithNumberMatch) {
+    return cleanMarkdown(h2WithNumberMatch[1].trim());
+  }
+  
+  // Format 5: "## Title" (generic h2 heading)
+  const markdownH2Pattern = /##\s*([^#]+)/i;
+  const h2Match = text.match(markdownH2Pattern);
+  if (h2Match) {
+    return cleanMarkdown(h2Match[1].trim());
   }
   
   // Fallback: just clean the text and use what we have
@@ -92,14 +111,14 @@ export const parseActivitiesWithExplicitSteps = (contentLines: string[]): Activi
     const line = contentLines[i].trim();
     if (!line) continue;
     
-    // Check if this is an activity heading (starts with #### Activity)
-    const isActivityHeading = /^####\s+Activity/.test(line);
+    // Check if this is an activity heading (starts with #### Activity or ## Title)
+    const isActivityHeading = /^####\s+Activity/.test(line) || /^##\s+/.test(line);
     
-    // Check if this is a step heading (starts with ##### Step)
-    const isStepHeading = /^#####\s+Step/.test(line);
+    // Check if this is a step heading (starts with ##### Step or ***Step***)
+    const isStepHeading = /^#####\s+Step/.test(line) || /^\*\*\*Step\*\*\*/.test(line);
     
     // Check if this is a duration heading
-    const isDurationHeading = /^#####\s+Duration:/.test(line);
+    const isDurationHeading = /^###\s+Duration:/.test(line) || /^#####\s+Duration:/.test(line);
     
     // Check if this is a numbered step format: "1. **Step 1**: ..."
     const isNumberedStep = /^\d+\.\s*\*\*Step\s+\d+\*\*:/.test(line);
@@ -158,7 +177,12 @@ export const parseActivitiesWithExplicitSteps = (contentLines: string[]): Activi
       }
       
       // Start tracking a new step
-      currentStep = line.replace(/^#####\s+Step\s+\d+:\s*/, '').trim();
+      // Handle both ##### Step 1: format and ***Step*** 1: format
+      if (line.includes('***Step***')) {
+        currentStep = line.replace(/^\*\*\*Step\*\*\*\s*/, '').trim();
+      } else {
+        currentStep = line.replace(/^#####\s+Step\s+\d+:\s*/, '').trim();
+      }
       stepDescription = [];
     }
     else if (currentActivity) {
@@ -257,7 +281,7 @@ export const parseActivitiesWithNumberedSteps = (contentLines: string[]): Activi
     if (!line) continue;
     
     // Check if this is an activity heading (starts with #### Activity)
-    const isActivityHeading = /^####\s+Activity/.test(line);
+    const isActivityHeading = /^####\s+Activity/.test(line) || /^##\s+/.test(line);
     
     if (isActivityHeading) {
       // If we were processing an activity, parse its steps and add it to our list
@@ -285,7 +309,7 @@ export const parseActivitiesWithNumberedSteps = (contentLines: string[]): Activi
     } 
     else if (currentActivity) {
       // Check if this is a duration line
-      if (/^#####\s+Duration:/.test(line)) {
+      if (/^#####\s+Duration:/.test(line) || /^###\s+Duration:/.test(line)) {
         const duration = extractDuration(line);
         if (duration) {
           currentActivity.duration = duration;
