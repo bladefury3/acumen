@@ -41,6 +41,7 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
   }
 
   // Enhanced section regex to catch more formats including numbered sections and bold sections
+  // Now also captures sections like "4. Main Activities" or "Main Activities (25 minutes)"
   const sectionRegex = /(?:#{1,4}\s*|(?:\d+\.\s+)|(?:\*\*\d+\.\s*)|(?:\*\*[^*]+\*\*:\s*))([^\n]+)(?:\n|$)/g;
   const sectionMatches = [...aiResponse.matchAll(sectionRegex)];
   
@@ -50,7 +51,11 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
   if (sectionMatches.length > 0) {
     for (let i = 0; i < sectionMatches.length; i++) {
       const match = sectionMatches[i];
-      const sectionTitle = match[1].replace(/\*\*/g, '').trim();
+      // Clean up section title removing markdown and timing in parentheses
+      let sectionTitle = match[1].replace(/\*\*/g, '').trim();
+      // Remove timing info in parentheses if present
+      sectionTitle = sectionTitle.replace(/\s*\(\d+\s*(?:minutes|mins|minute|min)\)/i, '');
+      
       const startIndex = match.index! + match[0].length;
       const endIndex = i < sectionMatches.length - 1 
         ? sectionMatches[i + 1].index 
@@ -80,7 +85,8 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
       if (!line) continue;
       
       // Enhanced pattern matching for section titles - looking for capitalized words followed by colon
-      if (line.match(/^[A-Z][\w\s]+:$/) || 
+      // Now also catches titles like "Main Activities (25 minutes):"
+      if (line.match(/^[A-Z][\w\s]+(?:\s*\(\d+\s*(?:minutes|mins|minute|min)\))?:$/) || 
           line.match(/^[A-Z][\w\s]+\s*$/) || 
           line.match(/^\d+\.\s+[A-Z]/) ||
           line.match(/^\*\*[^*]+\*\*:?\s*$/)) {
@@ -91,8 +97,11 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
           sections.push(currentSection);
         }
         
-        // Start a new section
-        const title = line.replace(/^(\d+\.\s+|\s*:|\s*|\*\*|\*\*)/, '').trim();
+        // Extract title and clean up
+        let title = line.replace(/^(\d+\.\s+|\s*:|\s*|\*\*|\*\*)/, '').trim();
+        // Remove timing info if present
+        title = title.replace(/\s*\(\d+\s*(?:minutes|mins|minute|min)\)/i, '');
+        
         startIndex = aiResponse.indexOf(line);
         currentSection = {
           title,
@@ -125,7 +134,7 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
       "Learning Objectives",
       "Materials and Resources",
       "Introduction/Hook",
-      "Main Activities",
+      "Main Activities", 
       "Activities",
       "Assessment Strategies",
       "Differentiation Strategies",
@@ -145,6 +154,62 @@ export function extractSections(aiResponse: string): ExtractedSection[] {
           markdownContent: content,
           startIndex: match.index || 0,
           endIndex: (match.index || 0) + match[0].length
+        });
+      }
+    }
+  }
+  
+  // Special handling for main activity section - they might be numbered sub-activities
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i];
+    if (section.title.toLowerCase().includes('main activities') || 
+        section.title.toLowerCase() === 'activities') {
+      // Extract activity information if available (looking for numbered activities)
+      const activityRegex = /(?:^|\n)(?:Activity\s+\d+:|(?:\d+\.)\s+(?:[A-Z][^:]*))(.*?)(?=(?:\n+Activity\s+\d+:|(?:\n+\d+\.)\s+[A-Z]|\n+(?:#{1,3}|[A-Z][\w\s]+:)|$))/gs;
+      const activitiesContent = section.markdownContent || section.content.join('\n');
+      const activityMatches = [...activitiesContent.matchAll(activityRegex)];
+
+      // If we found activities, add them to the section
+      if (activityMatches.length > 0) {
+        section.activities = activityMatches.map(match => {
+          // Extract title, duration, and steps
+          const fullText = match[0];
+          
+          // Extract title - look for patterns like "Activity 1: Understanding Arguments"
+          let title = '';
+          const titleMatch = fullText.match(/(?:Activity\s+\d+:|(?:\d+\.)\s+)([^(:]*)(?:\(|\:|$)/);
+          if (titleMatch && titleMatch[1]) {
+            title = titleMatch[1].trim();
+          } else {
+            // Fallback to first few words
+            title = fullText.split(' ').slice(0, 3).join(' ');
+          }
+          
+          // Extract duration if available - look for patterns like "(10 minutes)" or "(5 min)"
+          let duration = '';
+          const durationMatch = fullText.match(/\((\d+\s*(?:minutes|mins|minute|min))\)/i);
+          if (durationMatch && durationMatch[1]) {
+            duration = durationMatch[1].trim();
+          }
+          
+          // Extract steps - rest of the content after title/duration
+          const descriptionText = fullText.replace(/(?:Activity\s+\d+:|(?:\d+\.)\s+)([^:]*)(?::|-|–)\s*(?:\(\d+\s*(?:minutes|mins|minute|min)\)\s*)?/i, '').trim();
+          
+          // Split into steps if multiple sentences
+          let steps: string[] = [];
+          if (descriptionText.includes('.')) {
+            steps = descriptionText.split(/(?<=\.)\s+/)
+              .filter(step => step.trim().length > 0)
+              .map(step => step.trim());
+          } else {
+            steps = [descriptionText];
+          }
+          
+          return {
+            title,
+            duration,
+            steps
+          };
         });
       }
     }

@@ -27,6 +27,31 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     const parsedLesson = createLessonObject(sections);
     console.log(`Processed lesson data:`, parsedLesson);
 
+    // Check if we have activities but they weren't properly extracted
+    if (!parsedLesson.activities || parsedLesson.activities.trim() === '') {
+      // Look for Main Activities section specifically
+      const mainActivitiesSection = sections.find(section => 
+        section.title.includes('Activities') || 
+        section.type === 'main_activities' || 
+        section.type === 'activities');
+        
+      if (mainActivitiesSection) {
+        // Use the full markdown content of the activities section
+        parsedLesson.activities = mainActivitiesSection.markdownContent || 
+                                  mainActivitiesSection.content.join('\n');
+                                  
+        console.log('Using main activities section content:', parsedLesson.activities);
+      } else {
+        // If we still don't have activities, search through the entire AI response
+        const activitiesMatch = aiResponse.match(/(?:main activities|activities)(?:\s*\(\d+\s*minutes\))?:?([\s\S]*?)(?=(?:assessment|differentiation|close|closure):|\s*$)/i);
+        
+        if (activitiesMatch && activitiesMatch[1]) {
+          parsedLesson.activities = activitiesMatch[1].trim();
+          console.log('Extracted activities from AI response:', parsedLesson.activities);
+        }
+      }
+    }
+
     // First clean up any existing data for this response ID
     await cleanExistingLessonData(responseId);
     

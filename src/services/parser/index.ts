@@ -36,7 +36,8 @@ export function parseAIResponse(aiResponse: string): ParsedLessonContent {
       title: SECTION_DISPLAY_NAMES[section.title] || section.title,
       content: section.content,
       markdownContent: section.markdownContent || section.content.join('\n'),
-      rawContent: aiResponse.slice(section.startIndex, section.endIndex)
+      rawContent: aiResponse.slice(section.startIndex, section.endIndex),
+      activities: section.activities
     }));
     
     // Ensure all required sections exist
@@ -120,15 +121,31 @@ export function createLessonObject(sections: Section[]): Record<string, string> 
     }
   }
   
-  // Special handling for the "activities" section if it doesn't have content yet
-  if (!lessonData["activities"] || lessonData["activities"].trim() === '') {
-    // Try to find a section with a title containing "activities"
-    const activitiesSection = sections.find(s => 
-      s.title.toLowerCase().includes('activities') || 
-      s.type.toLowerCase().includes('activities'));
+  // Special handling for the "activities" section
+  // If we have specially extracted activities, format them
+  const activitiesSection = sections.find(s => 
+    s.type === "activities" || s.type === "main_activities");
+    
+  if (activitiesSection && activitiesSection.activities && activitiesSection.activities.length > 0) {
+    // Format activities in a markdown-friendly way
+    const formattedActivities = activitiesSection.activities.map((activity, index) => {
+      const title = activity.title.trim();
+      const duration = activity.duration ? ` (${activity.duration})` : '';
+      const steps = activity.steps.join('\n- ');
       
-    if (activitiesSection) {
-      lessonData["activities"] = activitiesSection.markdownContent || activitiesSection.content.join('\n');
+      return `### Activity ${index + 1}: ${title}${duration}\n- ${steps}`;
+    }).join('\n\n');
+    
+    lessonData["activities"] = formattedActivities;
+  } else if (!lessonData["activities"] || lessonData["activities"].trim() === '') {
+    // Try to find another section with activities in the title
+    const altActivitiesSection = sections.find(s => 
+      s.title.toLowerCase().includes('activities') && 
+      s.type !== "activities" && 
+      s.type !== "main_activities");
+      
+    if (altActivitiesSection) {
+      lessonData["activities"] = altActivitiesSection.markdownContent || altActivitiesSection.content.join('\n');
     }
   }
   

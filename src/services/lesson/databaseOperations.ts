@@ -66,12 +66,34 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
     
     // Ensure we're not storing empty strings
     const sanitizedLesson = Object.entries(parsedLesson).reduce((acc, [key, value]) => {
-      // If value is empty string or just whitespace, store a dash
+      // If value is empty string, undefined, or just whitespace, store a placeholder
       acc[key as keyof ParsedLesson] = (!value || value.trim() === '') 
         ? '-' 
         : value;
       return acc;
     }, {} as Record<keyof ParsedLesson, string>);
+    
+    // Extra validation for activities to ensure it's not empty
+    if (!sanitizedLesson.activities || sanitizedLesson.activities === '-') {
+      console.warn('No activities content found, trying to extract from other sections');
+      
+      // Try to find Main Activities in the AI response from the lesson plan
+      const { data: lessonPlan, error: lessonPlanError } = await supabase
+        .from('lesson_plans')
+        .select('ai_response')
+        .eq('id', responseId)
+        .single();
+        
+      if (!lessonPlanError && lessonPlan?.ai_response) {
+        // Extract Main Activities section from the AI response
+        const activitiesMatch = lessonPlan.ai_response.match(/(?:main activities|activities)(?:\s*\(\d+\s*minutes\))?:?([\s\S]*?)(?=(?:assessment|differentiation|close|closure):|\s*$)/i);
+        
+        if (activitiesMatch && activitiesMatch[1] && activitiesMatch[1].trim()) {
+          sanitizedLesson.activities = activitiesMatch[1].trim();
+          console.log('Extracted activities from AI response:', sanitizedLesson.activities);
+        }
+      }
+    }
     
     console.log('Inserting lesson with data:', sanitizedLesson);
     
@@ -85,7 +107,7 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
         assessment_strategies: sanitizedLesson.assessment_strategies,
         differentiation_strategies: sanitizedLesson.differentiation_strategies,
         close: sanitizedLesson.close,
-        activities: sanitizedLesson.activities || '-' // Ensure activities is never null
+        activities: sanitizedLesson.activities 
       })
       .select('id')
       .single();

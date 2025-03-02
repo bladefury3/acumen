@@ -62,7 +62,7 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
 
   // Enhanced content processing to handle different markdown formats
   const processContent = (content: string): string[] => {
-    if (!content || content.trim() === '') return [];
+    if (!content || content.trim() === '' || content === '-') return [];
 
     // Improved check for markdown content
     const hasMarkdownFormatting =
@@ -79,6 +79,13 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
     if (hasMarkdownFormatting) {
       // Check if it's a list of bullet points or paragraphs
       if (content.includes('- ') || content.includes('* ') || content.includes('• ') || content.includes('1.')) {
+        // Check if it looks like multiple activities with headings
+        if ((content.includes('### Activity') || content.includes('Activity 1:')) && 
+            (content.includes('Activity 2:') || content.includes('### Activity 2'))) {
+          // This is likely a formatted activities section, return as is
+          return [content];
+        }
+        
         // Extract individual items if it's a standard list
         const listItems = content.split(/\n(?=[-*•\d])/g)
           .filter(item => item.trim().length > 0)
@@ -163,6 +170,32 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
     return lines;
   };
 
+  // Process the activities section specifically for the special ActivityCard handling
+  const processActivitiesSection = (content: string): string => {
+    if (!content || content.trim() === '' || content === '-') return '';
+    
+    // If it already has markdown formatting with activity headings, return as is
+    if (content.includes('### Activity') || 
+        (content.includes('Activity 1:') && content.includes('Activity 2:'))) {
+      return content;
+    }
+    
+    // Try to extract and format activities
+    const activityRegex = /(?:Activity\s+\d+:|(?:\d+\.)\s+(?:[A-Z][^:]*):)([^]*?)(?=(?:Activity\s+\d+:|(?:\d+\.)\s+[A-Z].*:|\Z))/gi;
+    const matches = Array.from(content.matchAll(activityRegex));
+    
+    if (matches.length > 0) {
+      return matches.map((match, index) => {
+        const activityTitle = match[0].split(':')[0].trim();
+        const activityContent = match[1].trim();
+        return `### ${activityTitle}\n${activityContent}`;
+      }).join('\n\n');
+    }
+    
+    // If we couldn't extract activities, return as is
+    return content;
+  };
+
   // Define a consistent order for sections
   const sectionOrder = [
     'learning_objectives',
@@ -181,21 +214,39 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
         const displayName = SECTION_DISPLAY_NAMES[sectionType] ||
           sectionType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-        // Get and format content
-        const content = processContent(lessonData[sectionType as keyof LessonData] as string);
-
-        // Only render if we have content
-        if (!content || content.length === 0 || (content.length === 1 && content[0].trim() === '')) {
+        // Get the raw content
+        const rawContent = lessonData[sectionType as keyof LessonData] as string;
+        
+        // Only render if we have content and it's not just a placeholder
+        if (!rawContent || rawContent.trim() === '' || rawContent === '-') {
           return null;
         }
 
-        // Choose the correct component
-        const CardComponent = sectionType === 'activities' ? ActivityCard : SectionCard;
+        // Process content based on section type
+        if (sectionType === 'activities') {
+          const processedActivities = processActivitiesSection(rawContent);
+          if (!processedActivities) return null;
+          
+          return (
+            <Suspense key={sectionType} fallback={<div>Loading activities...</div>}>
+              <ActivityCard 
+                title={displayName} 
+                content={[processedActivities]} 
+              />
+            </Suspense>
+          );
+        }
+        
+        // Format content for other sections
+        const content = processContent(rawContent);
+        if (!content || content.length === 0) return null;
 
         return (
-          <Suspense key={sectionType} fallback={<div>Loading...</div>}>
-            <CardComponent title={displayName} content={content} />
-          </Suspense>
+          <SectionCard 
+            key={sectionType}
+            title={displayName} 
+            content={content} 
+          />
         );
       })}
     </div>
