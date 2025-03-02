@@ -61,7 +61,7 @@ serve(async (req) => {
       4. Main Activities
         ##<Activty Name> <Activity number>: 
         ### Duration
-        <Activity Step N>        
+        Step <Number>: <step-instruction>
       5. Assessment Strategies
       6. Differentiation Strategies
       7. Closure
