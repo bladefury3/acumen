@@ -8,7 +8,7 @@ export interface ParsedLesson {
   close: string;
   activities: {
     activity_name: string;
-    description: string;
-    instructions: string;
+    duration: string;
+    steps: string[];
   }[];
 }

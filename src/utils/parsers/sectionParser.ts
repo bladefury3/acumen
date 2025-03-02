@@ -1,4 +1,3 @@
-
 import { ParsedSection } from "@/types/lesson";
 
 /**
@@ -127,10 +126,26 @@ export const validateParsedSections = (parsedLesson: Record<string, string>): st
 /**
  * Find the activities section
  */
-export const findActivitiesSection = (sections: ParsedSection[]) => {
-  return sections.find(s => 
-    ['activities', 'main activities', 'learning activities'].some(term => 
-      s.title.toLowerCase().includes(term.toLowerCase())
-    )
+export const findActivitiesSection = (sections: ParsedSection[]): ParsedSection | undefined => {
+  // First, check for a section explicitly titled "Activities" or "Main Activities"
+  const activitiesSection = sections.find(section => 
+    section.title === 'Activities' || 
+    section.title.includes('Activities')
   );
+  
+  if (activitiesSection) {
+    return activitiesSection;
+  }
+  
+  // If there's no Activities section, look for sections that might contain activities
+  return sections.find(section => {
+    // Look for section titles that suggest activities
+    return (
+      section.title.includes('Main') || 
+      section.content.some(line => 
+        line.startsWith('-') && line.includes('**Activity') || 
+        line.includes('(') && line.includes('minutes') && line.includes('**')
+      )
+    );
+  });
 };

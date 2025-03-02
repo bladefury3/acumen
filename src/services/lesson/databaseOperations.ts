@@ -90,34 +90,19 @@ export const createNewLesson = async (responseId: string, parsedLesson: ParsedLe
 
 // Helper function to clean instruction text
 const cleanInstructionText = (text: string): string => {
-  // Remove phrases like "Instructions:" or "Instructions: " at the beginning
-  let cleaned = text.replace(/^(?:instructions|steps|directions|activity steps)(?:\s*:)?\s*/i, '');
-  
-  // Remove activity title and numbering like "Activity 1: Understanding Prompts"
-  cleaned = cleaned.replace(/^(?:activity\s+\d+:?\s*|[-*•]\s*|\d+\.\s*Activity\s+\d+:?\s*)/i, '');
-  
-  // Remove repeated activity title if present
-  const titleMatch = cleaned.match(/^([^(:.]+)(?:\s*\(|\s*:)/i);
-  if (titleMatch && titleMatch[1].trim().length > 0) {
-    const title = titleMatch[1].trim();
-    // Only remove if it's a title (more than one word typically)
-    if (title.includes(' ') && title.length > 10) {
-      cleaned = cleaned.replace(title, '').replace(/^\s*(?:\(|\s*:)/, '').trim();
-    }
+  if (!text || text.trim().length < 5) {
+    return "Complete this step of the activity.";
   }
-  
-  // Remove time in parentheses (e.g., "(10 minutes)")
-  cleaned = cleaned.replace(/\s*\(\d+\s*(?:minute|min|minutes|mins)?\)\s*\.?/i, '');
-  
-  // Remove bullet points and numbering at the beginning
-  cleaned = cleaned.replace(/^[-•*]\s*|\d+\.\s*/, '');
+
+  // Remove bullet points, numbers, and leading/trailing whitespace
+  let cleaned = text.replace(/^[-•*]\s+|\d+[).]\s+/, '').trim();
   
   // Ensure the text ends with a period if it doesn't already
   if (cleaned && !cleaned.endsWith('.') && !cleaned.endsWith('?') && !cleaned.endsWith('!')) {
     cleaned += '.';
   }
   
-  return cleaned.trim();
+  return cleaned;
 };
 
 export const createActivities = async (lessonId: string, activities: ParsedLesson['activities']) => {
@@ -138,8 +123,7 @@ export const createActivities = async (lessonId: string, activities: ParsedLesso
         .insert({
           lesson_id: lessonId,
           activity_name: activity.activity_name,
-          description: activity.description || '',
-          instructions: activity.instructions || ''
+          duration: activity.duration || '0 minutes'
         })
         .select('id')
         .single();
@@ -152,31 +136,22 @@ export const createActivities = async (lessonId: string, activities: ParsedLesso
       // Process and insert instructions
       let instructionsToInsert = [];
       
-      if (activity.instructions && activity.instructions.trim()) {
-        // Split instructions by line, clean each one, and add to insert array
-        instructionsToInsert = activity.instructions
-          .split('\n')
-          .filter(text => text.trim().length > 0)
+      if (activity.steps && activity.steps.length > 0) {
+        // Clean each step and add to insert array
+        instructionsToInsert = activity.steps
+          .filter(text => text && text.trim().length > 0)
           .map(instruction_text => ({
             instruction_text: cleanInstructionText(instruction_text),
             activities_detail_id: newActivity.id
           }));
       }
 
-      // If no instructions were parsed, create at least one from the description
+      // If no steps were parsed, create at least one from the activity name
       if (instructionsToInsert.length === 0) {
-        if (activity.description && activity.description.trim()) {
-          instructionsToInsert.push({
-            instruction_text: cleanInstructionText(activity.description),
-            activities_detail_id: newActivity.id
-          });
-        } else {
-          // Fallback if no description either
-          instructionsToInsert.push({
-            instruction_text: `Complete the ${activity.activity_name.toLowerCase()} activity.`,
-            activities_detail_id: newActivity.id
-          });
-        }
+        instructionsToInsert.push({
+          instruction_text: `Complete the ${activity.activity_name} activity.`,
+          activities_detail_id: newActivity.id
+        });
       }
 
       // Insert the instructions
@@ -198,5 +173,38 @@ export const createActivities = async (lessonId: string, activities: ParsedLesso
       console.error(`Failed to create activity ${activity.activity_name}:`, error);
       throw error;
     }
+  }
+};
+
+// Function to re-parse and update a specific lesson plan
+export const reparseAndUpdateLesson = async (lessonPlanId: string) => {
+  try {
+    // Fetch the lesson plan and AI response
+    const { data: lessonPlan, error: lessonPlanError } = await supabase
+      .from('lesson_plans')
+      .select('ai_response')
+      .eq('id', lessonPlanId)
+      .single();
+    
+    if (lessonPlanError || !lessonPlan) {
+      console.error('Error fetching lesson plan:', lessonPlanError);
+      throw new Error(`Lesson plan with ID ${lessonPlanId} not found.`);
+    }
+    
+    if (!lessonPlan.ai_response) {
+      throw new Error(`Lesson plan with ID ${lessonPlanId} has no AI response to parse.`);
+    }
+    
+    // Clean existing data
+    await cleanExistingLessonData(lessonPlanId);
+    
+    // Re-parse the AI response (will be implemented in lessonService)
+    const { parseAndStoreAIResponse } = await import('../lessonService');
+    await parseAndStoreAIResponse(lessonPlan.ai_response, lessonPlanId);
+    
+    return { success: true, message: `Lesson plan ${lessonPlanId} successfully re-parsed.` };
+  } catch (error) {
+    console.error('Error re-parsing lesson plan:', error);
+    throw error;
   }
 };

@@ -1,21 +1,18 @@
+
 import { Activity } from "@/types/lesson";
 import { cleanMarkdown } from "./sectionParser";
 
 /**
- * Extract duration from text (various formats)
+ * Extract duration from text in various formats
  */
 export const extractDuration = (text: string): string | null => {
-  // Pattern 1: Duration in parentheses like "(10 minutes)"
-  const pattern1 = text.match(/\((\d+)\s*(?:minute|min|minutes|mins)?\)/i);
-  if (pattern1) return `${pattern1[1]} minutes`;
+  // Pattern for duration in parentheses: (15 minutes)
+  const durationMatch = text.match(/\((\d+)\s*(?:minutes?|mins?)?\)/i);
+  if (durationMatch) return `${durationMatch[1]} minutes`;
   
-  // Pattern 2: Explicit duration indicators like "10 minutes:"
-  const pattern2 = text.match(/(\d+)\s*(?:minute|min|minutes|mins)(?:\s*:)/i);
-  if (pattern2) return `${pattern2[1]} minutes`;
-  
-  // Pattern 3: Standalone time reference (e.g., "Duration: 15 minutes")
-  const pattern3 = text.match(/duration:?\s*(\d+)\s*(?:minute|min|minutes|mins)/i);
-  if (pattern3) return `${pattern3[1]} minutes`;
+  // Fallback: if there's any number in the text, assume it's minutes
+  const numMatch = text.match(/(\d+)/);
+  if (numMatch) return `${numMatch[1]} minutes`;
   
   return null;
 };
@@ -24,194 +21,72 @@ export const extractDuration = (text: string): string | null => {
  * Extract activity title from text
  */
 export const extractActivityTitle = (text: string): string => {
-  // First, handle "* **Activity Name (duration):**" format, which is common in our AI responses
-  const bulletPointFormat = text.match(/\*\s*\*\*([^*]+)\*\*/i);
-  if (bulletPointFormat) {
-    // Remove any duration in parentheses
-    return cleanMarkdown(bulletPointFormat[1].split('(')[0].trim());
+  // Format 1: "- **Activity X: Title (duration)**"
+  const activityPattern = /\*\*Activity\s+\d+:\s+([^(]*)/i;
+  const match = text.match(activityPattern);
+  if (match) {
+    return cleanMarkdown(match[1].trim());
   }
   
-  // Remove duration in parentheses
-  let titleText = text.split('(')[0];
-  
-  // Handle "Activity X:" format
-  const activityPrefix = /^(?:activity\s+\d+\s*:|[-*•]\s*activity\s+\d+\s*:)/i;
-  if (activityPrefix.test(titleText)) {
-    titleText = titleText.replace(activityPrefix, '').trim();
-  } 
-  // Handle numbered list format (e.g., "1. Activity Name")
-  else if (/^\d+\.\s+/.test(titleText)) {
-    titleText = titleText.replace(/^\d+\.\s+/, '').trim();
+  // Format 2: "- **Title (duration)**"
+  const titlePattern = /\*\*([^(]*)/i;
+  const titleMatch = text.match(titlePattern);
+  if (titleMatch) {
+    return cleanMarkdown(titleMatch[1].trim());
   }
   
-  // Handle bold formatting
-  titleText = titleText.replace(/\*\*([^*]+)\*\*/g, '$1').trim();
-  
-  // If there's a standalone colon, extract the title before it
-  if (titleText.includes(':') && !/^activity\s+\d+\s*$/i.test(titleText.split(':')[0].trim())) {
-    titleText = titleText.split(':')[0].trim();
-  }
-  
-  return cleanMarkdown(titleText);
+  // Fallback: just clean the text and use what we have
+  return cleanMarkdown(text.split('(')[0].trim());
 };
 
 /**
- * Extract the description part from an activity line 
- * e.g., "* **Activity Name (10 minutes):** Description here" -> "Description here"
+ * Parse activities from the new format:
+ * - **Activity X: Title (duration)**
+ *   - Step 1
+ *   - Step 2
  */
-export const extractActivityDescription = (text: string): string => {
-  // Look for description after the colon
-  const parts = text.split(':');
-  if (parts.length > 1) {
-    // Join all parts after the first colon (in case there are multiple colons)
-    return cleanMarkdown(parts.slice(1).join(':').trim());
-  }
-  
-  // If no colon is found, try to extract description after parentheses
-  const parenParts = text.split(')');
-  if (parenParts.length > 1) {
-    return cleanMarkdown(parenParts.slice(1).join(')').trim());
-  }
-  
-  // If no structured format is found, just return the cleaned text
-  return cleanMarkdown(text);
-};
-
-/**
- * Parse a chunk of text into steps
- */
-export const parseSteps = (content: string): string[] => {
-  // If the content is empty, return an empty array
-  if (!content.trim()) {
-    return [];
-  }
-  
-  // If the content already contains bullet points or numbers, split by them
-  if (/[-•*]\s|^\d+\.\s/m.test(content)) {
-    return content
-      .split(/(?:\r?\n|\s*[+•*-]\s*|\d+\.\s*)/)
-      .map(step => step.trim())
-      .filter(step => step.length > 0)
-      .map(step => {
-        const cleanStep = cleanMarkdown(step);
-        return cleanStep.endsWith('.') ? cleanStep : `${cleanStep}.`;
-      });
-  }
-  
-  // Otherwise, treat the whole content as a single step
-  const cleanContent = cleanMarkdown(content);
-  return [cleanContent.endsWith('.') ? cleanContent : `${cleanContent}.`];
-};
-
-/**
- * Parse activities from bullet point format: * **Activity Name (duration):** Description
- * This format is commonly used in the AI responses
- */
-export const parseBulletPointActivities = (contentLines: string[]): Activity[] => {
+export const parseActivitiesNewFormat = (contentLines: string[]): Activity[] => {
   const activities: Activity[] = [];
+  let currentActivity: Activity | null = null;
   
-  for (const line of contentLines) {
-    if (!line.trim()) continue;
-    
-    // Check if line matches the bullet point activity pattern
-    // Pattern: * **Activity Name (10 minutes):** Description
-    const bulletActivityMatch = line.match(/\*\s*\*\*([^*]+)\*\*\s*(?:\(([^)]+)\))?\s*:\s*(.*)/i);
-    
-    if (bulletActivityMatch) {
-      const title = bulletActivityMatch[1].trim();
-      const duration = bulletActivityMatch[2] ? bulletActivityMatch[2].trim() : "";
-      const description = bulletActivityMatch[3] ? bulletActivityMatch[3].trim() : "";
-      
-      // Parse description into steps
-      const steps = description ? parseSteps(description) : [`Explain ${cleanMarkdown(title)}.`];
-      
-      activities.push({
-        title: cleanMarkdown(title),
-        duration: duration,
-        steps
-      });
-    }
-  }
-  
-  return activities;
-};
-
-/**
- * Parse activities from markdown content
- */
-export const parseActivities = (content: string[]): Activity[] => {
-  // First try to extract bullet point activities (most common format in AI responses)
-  const bulletPointActivities = parseBulletPointActivities(content);
-  if (bulletPointActivities.length > 0) {
-    return bulletPointActivities;
-  }
-  
-  // If bullet point extraction failed, try other formats
-  const activities: Activity[] = [];
-  let currentActivityLines: string[] = [];
-  
-  // Process content line by line
-  for (let i = 0; i < content.length; i++) {
-    const line = content[i].trim();
+  for (let i = 0; i < contentLines.length; i++) {
+    const line = contentLines[i].trim();
     if (!line) continue;
     
-    // Activity marker patterns
-    const isActivityStart = 
-      line.includes('**Activity') || 
-      /^Activity\s+\d+:/i.test(line) ||
-      /^[-*•]\s*Activity\s+\d+:/i.test(line) ||
-      /^\*\*[^*]+\*\*\s*\(\d+\s*min/i.test(line) || // Bold title with duration
-      /^\d+\.\s+\*\*[^*]+\*\*/i.test(line);         // Numbered with bold title
+    // Check if this is an activity heading
+    // Pattern: "- **Activity X: Title (duration)**" or similar
+    const isActivityHeading = line.startsWith('-') && 
+                             line.includes('**') && 
+                             (line.includes('Activity') || /\*\*[^*]+\*\*\s*\(\d+/.test(line));
     
-    if (isActivityStart) {
-      // Process previous activity if any
-      if (currentActivityLines.length > 0) {
-        const title = extractActivityTitle(currentActivityLines[0]);
-        const duration = extractDuration(currentActivityLines[0]) || "";
-        
-        const activityContent = currentActivityLines.slice(1).join('\n');
-        const steps = activityContent ? parseSteps(activityContent) : [];
-        
-        if (steps.length === 0) {
-          const description = extractActivityDescription(currentActivityLines[0]);
-          if (description) {
-            steps.push(description);
-          } else {
-            steps.push(`Explain ${title}.`);
-          }
-        }
-        
-        activities.push({ title, duration, steps });
-        currentActivityLines = [];
+    if (isActivityHeading) {
+      // If we were processing an activity, add it to our list
+      if (currentActivity) {
+        activities.push(currentActivity);
       }
       
-      // Start new activity
-      currentActivityLines.push(line);
+      // Start a new activity
+      const title = extractActivityTitle(line);
+      const duration = extractDuration(line) || "0 minutes";
+      
+      currentActivity = {
+        title: title,
+        duration: duration,
+        steps: []
+      };
     } 
-    // Add to current activity if we're processing one
-    else if (currentActivityLines.length > 0) {
-      currentActivityLines.push(line);
+    // If this is an indented bullet point and we're already processing an activity, it's a step
+    else if (currentActivity && (line.startsWith('  -') || line.startsWith('    -'))) {
+      const step = cleanMarkdown(line.replace(/^\s*-\s+/, '').trim());
+      if (step) {
+        currentActivity.steps.push(step);
+      }
     }
   }
   
-  // Process the last activity if any
-  if (currentActivityLines.length > 0) {
-    const title = extractActivityTitle(currentActivityLines[0]);
-    const duration = extractDuration(currentActivityLines[0]) || "";
-    
-    const activityContent = currentActivityLines.slice(1).join('\n');
-    const steps = activityContent ? parseSteps(activityContent) : [];
-    
-    if (steps.length === 0) {
-      const description = extractActivityDescription(currentActivityLines[0]);
-      if (description) {
-        steps.push(description);
-      } else {
-        steps.push(`Explain ${title}.`);
-      }
-    }
-    
-    activities.push({ title, duration, steps });
+  // Don't forget to add the last activity
+  if (currentActivity) {
+    activities.push(currentActivity);
   }
   
   return activities;
@@ -219,37 +94,19 @@ export const parseActivities = (content: string[]): Activity[] => {
 
 /**
  * Main function to extract activities from content
- * Simplified to focus on the most common formats used in the AI responses
  */
 export const extractActivitiesWithFallbacks = (contentLines: string[]): Activity[] => {
   try {
-    console.log('Extracting activities from content lines:', contentLines);
+    console.log('Extracting activities using new format parser');
     
-    // Strategy 1: Try to parse bullet point activities (most common format)
-    const bulletActivities = parseBulletPointActivities(contentLines);
-    if (bulletActivities.length > 0) {
-      console.log('Successfully parsed bullet point activities:', bulletActivities);
-      return bulletActivities;
-    }
-    
-    // Strategy 2: Use the general activity parser
-    const activities = parseActivities(contentLines);
+    // Try the new format parser (most common in AI responses)
+    const activities = parseActivitiesNewFormat(contentLines);
     if (activities.length > 0) {
-      console.log('Successfully parsed activities using general parser:', activities);
+      console.log('Successfully parsed activities with new format:', activities);
       return activities;
     }
     
-    // Strategy 3: Look for any lines with duration patterns
-    const durationLines = contentLines.filter(line => /\(\d+\s*(?:min|minute|minutes)\)/i.test(line));
-    if (durationLines.length > 0) {
-      const parsedDurationActivities = parseActivities(durationLines);
-      if (parsedDurationActivities.length > 0) {
-        console.log('Parsed activities from duration lines:', parsedDurationActivities);
-        return parsedDurationActivities;
-      }
-    }
-    
-    console.warn('No activities found using any parsing strategy');
+    console.warn('No activities found using the parser');
     return [];
   } catch (error) {
     console.error('Error extracting activities:', error);
