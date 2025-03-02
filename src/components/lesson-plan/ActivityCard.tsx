@@ -32,7 +32,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, content }) => {
   }
   
   return (
-    <Card className="h-full transition-all duration-300 hover:shadow-lg animate-fade-in">
+    <Card className="h-full transition-all duration-300 hover:shadow-lg animate-fade-in border-[#003C5A]/10">
       <CardHeader className="flex flex-row items-center justify-between pb-2 group">
         <div className="flex items-center gap-2">
           <div className="transition-transform duration-200 group-hover:scale-110">
