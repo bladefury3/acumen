@@ -45,28 +45,28 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
         .filter(line => line.length > 0);
       
       // Handle Activities section specially
-      if (sectionTitle === 'Activities') {
-        console.log('Processing Activities section...');
-        try {
-          const activities = extractActivitiesWithFallbacks(contentLines);
+      // if (sectionTitle === 'Activities') {
+      //   console.log('Processing Activities section...');
+      //   try {
+      //     const activities = extractActivitiesWithFallbacks(contentLines);
           
-          if (activities.length > 0) {
-            console.log(`Found ${activities.length} activities`);
-            sections.push({
-              title: sectionTitle,
-              content: contentLines,
-              activities,
-              generated: false
-            });
-            foundSections.add(sectionTitle);
-            continue;
-          } else {
-            console.warn('No activities found using the extractor');
-          }
-        } catch (error) {
-          console.error('Error extracting activities:', error);
-        }
-      }
+      //     if (activities.length > 0) {
+      //       console.log(`Found ${activities.length} activities`);
+      //       sections.push({
+      //         title: sectionTitle,
+      //         content: contentLines,
+      //         activities,
+      //         generated: false
+      //       });
+      //       foundSections.add(sectionTitle);
+      //       continue;
+      //     } else {
+      //       console.warn('No activities found using the extractor');
+      //     }
+      //   } catch (error) {
+      //     console.error('Error extracting activities:', error);
+      //   }
+      // }
       
       // Default section processing for non-activities or if activity extraction failed
       sections.push({
@@ -92,21 +92,21 @@ export const parseAIResponse = (aiResponse: string): ParsedSection[] => {
           )
         );
         
-        if (potentialActivitiesSection) {
-          console.log('Found potential activities section:', potentialActivitiesSection.title);
-          const activities = extractActivitiesWithFallbacks(potentialActivitiesSection.content);
+        // if (potentialActivitiesSection) {
+        //   console.log('Found potential activities section:', potentialActivitiesSection.title);
+        //   const activities = extractActivitiesWithFallbacks(potentialActivitiesSection.content);
           
-          if (activities.length > 0) {
-            sections.push({
-              title: 'Activities',
-              content: potentialActivitiesSection.content,
-              activities,
-              generated: true
-            });
-            foundSections.add('Activities');
-            missingSections.splice(missingSections.indexOf('Activities'), 1);
-          }
-        }
+        //   if (activities.length > 0) {
+        //     sections.push({
+        //       title: 'Activities',
+        //       content: potentialActivitiesSection.content,
+        //       activities,
+        //       generated: true
+        //     });
+        //     foundSections.add('Activities');
+        //     missingSections.splice(missingSections.indexOf('Activities'), 1);
+        //   }
+        // }
       }
       
       // If there are still missing sections, try to generate them from the content
@@ -142,16 +142,16 @@ export const manualTestParsing = (aiResponse: string) => {
       console.log(`\nSection: ${section.title}`);
       console.log('Content items:', section.content.length);
       
-      if (section.activities) {
-        console.log('Activities:', section.activities.length);
-        section.activities.forEach((activity, i) => {
-          console.log(`  Activity ${i+1}: ${activity.title} (${activity.duration})`);
-          console.log(`    Steps: ${activity.steps.length}`);
-          activity.steps.forEach((step, j) => {
-            console.log(`      ${j+1}. ${step}`);
-          });
-        });
-      }
+      // if (section.activities) {
+      //   console.log('Activities:', section.activities.length);
+      //   section.activities.forEach((activity, i) => {
+      //     console.log(`  Activity ${i+1}: ${activity.title} (${activity.duration})`);
+      //     console.log(`    Steps: ${activity.steps.length}`);
+      //     activity.steps.forEach((step, j) => {
+      //       console.log(`      ${j+1}. ${step}`);
+      //     });
+      //   });
+      // }
     });
     
     return result;
