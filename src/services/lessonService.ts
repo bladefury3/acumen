@@ -4,6 +4,7 @@ import { parseAIResponse } from "@/utils/parsers/lessonParser";
 import { toast } from "sonner";
 import { 
   getSectionContent, 
+  findSectionByPatterns,
   validateParsedSections
 } from "@/utils/parsers/sectionParser";
 import { 
@@ -18,6 +19,45 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
     const sections = parseAIResponse(aiResponse);
     console.log('Parsed sections:', sections);
 
+    // Extract raw activities section from the AI response
+    let rawActivitiesContent = '';
+    
+    // Look for patterns like "### 4. Main Activities" or "#### Main Activities" in the AI response
+    const activitiesHeaderPatterns = [
+      /#{1,4}\s*\d*\.*\s*Main\s*Activities/i,
+      /#{1,4}\s*\d*\.*\s*Activities/i
+    ];
+    
+    // Try to extract the activities section as raw content
+    for (const pattern of activitiesHeaderPatterns) {
+      const match = aiResponse.match(pattern);
+      if (match) {
+        const startIdx = match.index;
+        if (startIdx !== undefined) {
+          // Find the next section header after activities
+          const restOfContent = aiResponse.substring(startIdx);
+          const nextSectionMatch = restOfContent.match(/#{1,4}\s*\d*\.*\s*[A-Za-z]/);
+          
+          if (nextSectionMatch && nextSectionMatch.index) {
+            // Extract the content between the activities header and the next section
+            rawActivitiesContent = restOfContent.substring(0, nextSectionMatch.index).trim();
+          } else {
+            // If no next section found, take the rest of the content
+            rawActivitiesContent = restOfContent.trim();
+          }
+          break;
+        }
+      }
+    }
+    
+    // If we still couldn't find the activities section, try a simpler approach
+    if (!rawActivitiesContent) {
+      const activitySection = findSectionByPatterns(sections, ['activities', 'main activities']);
+      if (activitySection) {
+        rawActivitiesContent = activitySection.content.join('\n');
+      }
+    }
+
     // Create a typed object for lesson data
     const parsedLesson: Record<string, string> = {
       learning_objectives: getSectionContent(sections, ['learning objectives', 'learning goals', 'objectives']),
@@ -26,7 +66,8 @@ export const parseAndStoreAIResponse = async (aiResponse: string, responseId: st
       assessment_strategies: getSectionContent(sections, ['assessment', 'evaluation', 'measuring']),
       differentiation_strategies: getSectionContent(sections, ['differentiation', 'accommodations', 'modifications']),
       close: getSectionContent(sections, ['close', 'closure', 'wrap up', 'conclusion']),
-      activities: getSectionContent(sections, ['activities', 'tasks', 'engagement', 'main activities']),
+      // Store the raw activities content instead of parsed content
+      activities: rawActivitiesContent || getSectionContent(sections, ['activities', 'tasks', 'engagement', 'main activities']),
     };
 
     // Validate that we have all required sections

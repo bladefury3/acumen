@@ -100,7 +100,6 @@ const LessonSections: React.FC<LessonSectionsProps> = ({ lessonId }) => {
       />
       
       <ActivityCard 
-        title="Activities"
         content={lessonData.activities || 'No activities available.'}
       />
       
