@@ -47,6 +47,9 @@ const LessonPlanContent = ({
           <DownloadLessonPDF
             lessonTitle={`${lessonPlan.grade} ${lessonPlan.subject} Lesson Plan`}
             sections={sections}
+            lessonId={lessonPlan.id}
+            subject={lessonPlan.subject}
+            objectives={lessonPlan.objectives}
           />
           <GenerateResourcesButton 
             lessonPlanId={lessonPlan.id}

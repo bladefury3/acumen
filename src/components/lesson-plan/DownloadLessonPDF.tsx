@@ -1,13 +1,20 @@
+
 import { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
 import { ParsedSection } from '@/types/lesson';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
 interface DownloadLessonPDFProps {
   lessonTitle: string;
   sections: ParsedSection[];
+  lessonId?: string;
+  subject?: string;
+  objectives?: string;
 }
+
 const styles = StyleSheet.create({
   page: {
     padding: 30,
@@ -34,6 +41,7 @@ const styles = StyleSheet.create({
     marginBottom: 5
   }
 });
+
 const LessonPDF = ({
   lessonTitle,
   sections
@@ -50,11 +58,28 @@ const LessonPDF = ({
         </View>)}
     </Page>
   </Document>;
+
 const DownloadLessonPDF = ({
   lessonTitle,
-  sections
+  sections,
+  lessonId,
+  subject = "",
+  objectives = ""
 }: DownloadLessonPDFProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user.email) {
+        setUserEmail(session.user.email);
+      }
+    };
+    
+    fetchUserEmail();
+  }, []);
+
   useEffect(() => {
     return () => {
       if (isGenerating) {
@@ -62,6 +87,7 @@ const DownloadLessonPDF = ({
       }
     };
   }, [isGenerating]);
+
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     if (isGenerating) {
@@ -75,18 +101,45 @@ const DownloadLessonPDF = ({
       }
     };
   }, [isGenerating]);
-  const handleDownloadStart = () => {
+
+  const handleDownloadStart = async () => {
     setIsGenerating(true);
     toast.success("Starting PDF download...");
   };
-  const handleDownloadComplete = () => {
+
+  const handleDownloadComplete = async () => {
     setIsGenerating(false);
     toast.success("PDF downloaded successfully!");
+    
+    // Send email notification if we have user email and lessonId
+    if (userEmail && lessonId) {
+      try {
+        const response = await supabase.functions.invoke('send-lesson-email', {
+          body: {
+            userEmail,
+            lessonTitle,
+            lessonObjectives: objectives,
+            lessonId,
+            subject
+          }
+        });
+        
+        if (response.error) {
+          console.error('Error sending email:', response.error);
+        } else {
+          toast.success("Download link also sent to your email!");
+        }
+      } catch (error) {
+        console.error('Error invoking send-lesson-email function:', error);
+      }
+    }
   };
+
   const handleError = () => {
     setIsGenerating(false);
     toast.error("Failed to generate PDF");
   };
+
   return <PDFDownloadLink document={<LessonPDF lessonTitle={lessonTitle} sections={sections} />} fileName={`${lessonTitle.toLowerCase().replace(/\s+/g, '-')}-lesson-plan.pdf`} className="inline-block" onClick={handleDownloadStart}>
       {({
       loading,
@@ -100,11 +153,12 @@ const DownloadLessonPDF = ({
         handleError();
         return null;
       }
-      return <Button variant="outline" disabled={loading || isGenerating} className="flex items-center gap-2 bg-secondary-dark text-slate-50">
+      return <Button variant="outline" disabled={loading || isGenerating} className="flex items-center gap-2 bg-[#003C5A] text-[#C3CFF5]">
             {loading || isGenerating ? <div className="h-4 w-4 border-2 border-[#C3CFF5] border-t-transparent rounded-full animate-spin" /> : <Download className="h-4 w-4" />}
             {loading || isGenerating ? "Generating..." : "Download Lesson Plan"}
           </Button>;
     }}
     </PDFDownloadLink>;
 };
+
 export default DownloadLessonPDF;
