@@ -182,10 +182,23 @@ const DownloadLessonPDF = ({
             const lessonData = data[0];
             
             if (lessonData && lessonData[dbField as keyof typeof lessonData]) {
+              const rawContent = lessonData[dbField as keyof typeof lessonData] as string;
+              
+              // Skip sections with just a dash ("-") as they're empty placeholders
+              if (rawContent === "-") {
+                // For Introduction & Hook and Close sections, add empty placeholders instead of skipping
+                if (sectionTitle === "Introduction & Hook" || sectionTitle === "Close") {
+                  formattedSections.push({
+                    title: sectionTitle,
+                    content: ["No content available"]
+                  });
+                }
+                return;
+              }
+              
               try {
                 // Parse the content from JSON if it's stored that way, or split by newlines
                 let content: string[] = [];
-                const rawContent = lessonData[dbField as keyof typeof lessonData] as string;
                 
                 if (typeof rawContent === 'string') {
                   try {
@@ -197,12 +210,30 @@ const DownloadLessonPDF = ({
                   content = rawContent;
                 }
                 
+                // Ensure we have at least one item in the content array
+                if (content.length === 0) {
+                  content = ["No content available"];
+                }
+                
                 formattedSections.push({
                   title: sectionTitle,
                   content
                 });
               } catch (error) {
                 console.error(`Error parsing content for ${sectionTitle}:`, error);
+                // Add placeholder content for error cases
+                formattedSections.push({
+                  title: sectionTitle,
+                  content: ["Error loading content"]
+                });
+              }
+            } else {
+              // For Introduction & Hook and Close sections, add them even if empty
+              if (sectionTitle === "Introduction & Hook" || sectionTitle === "Close") {
+                formattedSections.push({
+                  title: sectionTitle,
+                  content: ["No content available"]
+                });
               }
             }
           });
@@ -210,7 +241,24 @@ const DownloadLessonPDF = ({
           setAllSections(formattedSections);
         } else {
           // If no data from database, use the sections provided
-          setAllSections(sections);
+          // Add empty Introduction & Hook and Close sections if needed
+          const completeSections = [...sections];
+          
+          if (!completeSections.some(s => s.title === "Introduction & Hook")) {
+            completeSections.push({
+              title: "Introduction & Hook",
+              content: ["No content available"]
+            });
+          }
+          
+          if (!completeSections.some(s => s.title === "Close")) {
+            completeSections.push({
+              title: "Close",
+              content: ["No content available"]
+            });
+          }
+          
+          setAllSections(completeSections);
         }
       } catch (error) {
         console.error('Error fetching lesson sections:', error);
