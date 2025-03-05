@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -135,6 +134,8 @@ const DownloadLessonPDF = ({
           
         if (error) throw error;
         
+        let formattedSections = [...sections];
+        
         if (data && data.length > 0) {
           if (data[0].learning_objectives) {
             let learningObjectivesContent = "";
@@ -151,8 +152,7 @@ const DownloadLessonPDF = ({
             
             setLessonObjectives(learningObjectivesContent);
             
-            const sectionsCopy = [...sections];
-            const learningObjIndex = sectionsCopy.findIndex(
+            const learningObjIndex = formattedSections.findIndex(
               section => section.title === "Learning Objectives"
             );
             
@@ -169,8 +169,8 @@ const DownloadLessonPDF = ({
                   objContent = [String(objContent)];
                 }
                 
-                sectionsCopy[learningObjIndex] = {
-                  ...sectionsCopy[learningObjIndex],
+                formattedSections[learningObjIndex] = {
+                  ...formattedSections[learningObjIndex],
                   content: objContent
                 };
               } catch (error) {
@@ -189,7 +189,7 @@ const DownloadLessonPDF = ({
                   objContent = [String(objContent)];
                 }
                 
-                sectionsCopy.unshift({
+                formattedSections.unshift({
                   title: "Learning Objectives",
                   content: objContent
                 });
@@ -197,8 +197,6 @@ const DownloadLessonPDF = ({
                 console.error('Error parsing learning objectives:', error);
               }
             }
-            
-            setAllSections(sectionsCopy);
           }
           
           const sectionOrder = [
@@ -220,14 +218,6 @@ const DownloadLessonPDF = ({
             differentiation_strategies: "Differentiation Strategies",
             close: "Close"
           };
-          
-          const formattedSections: ParsedSection[] = [];
-          
-          if (sectionsCopy && sectionsCopy.length > 0) {
-            formattedSections.push(...sectionsCopy);
-          } else {
-            formattedSections.push(...sections);
-          }
           
           sectionOrder.forEach(sectionTitle => {
             if (formattedSections.some(s => s.title === sectionTitle)) return;
