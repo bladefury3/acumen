@@ -35,8 +35,12 @@ serve(async (req) => {
       throw new Error('Missing required fields');
     }
 
-    // Create the download URL (same as used in the frontend)
+    // Create the download URL - use application origin rather than Edge Function URL
     const fileName = `${lessonTitle.toLowerCase().replace(/\s+/g, '-')}-lesson-plan.pdf`;
+    
+    // Fix: Create an absolute URL directly to the application dashboard instead of using Edge Function URL
+    const appBaseUrl = req.headers.get('origin') || 'https://teachassist.app';
+    const lessonUrl = `${appBaseUrl}/dashboard/lessons/${lessonId}`;
     
     // Send the email
     const { data, error } = await resend.emails.send({
@@ -53,7 +57,7 @@ serve(async (req) => {
           </div>
           <p>Click the button below to download your lesson plan again:</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${new URL(req.url).origin}/dashboard/lessons/${lessonId}" 
+            <a href="${lessonUrl}" 
                style="background-color: #003C5A; color: #C3CFF5; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold; display: inline-block;">
               Download Lesson Plan
             </a>
