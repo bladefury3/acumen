@@ -35,12 +35,16 @@ serve(async (req) => {
       throw new Error('Missing required fields');
     }
 
-    // Create the download URL - use application origin rather than Edge Function URL
-    const fileName = `${lessonTitle.toLowerCase().replace(/\s+/g, '-')}-lesson-plan.pdf`;
+    // Get the origin from the request headers or use a default value
+    const origin = req.headers.get('origin');
     
-    // Fix: Create an absolute URL directly to the application dashboard instead of using Edge Function URL
-    const appBaseUrl = req.headers.get('origin') || 'https://teachassist.app';
+    // Use teachassist.app domain as the fallback
+    const appBaseUrl = origin || 'https://teachassist.app';
+    
+    // Create a valid lesson URL
     const lessonUrl = `${appBaseUrl}/dashboard/lessons/${lessonId}`;
+    
+    console.log(`Email link will direct to: ${lessonUrl}`);
     
     // Send the email
     const { data, error } = await resend.emails.send({
