@@ -35,13 +35,10 @@ serve(async (req) => {
       throw new Error('Missing required fields');
     }
 
-    // Get the origin from the request headers or use a default value
-    const origin = req.headers.get('origin');
+    // Use the fixed fallback URL
+    const appBaseUrl = 'https://acumen.lovable.app';
     
-    // Use acumen.lovable.app as the fallback
-    const appBaseUrl = origin || 'https://acumen.lovable.app';
-    
-    // Create a valid lesson URL
+    // Create a valid lesson URL for the dashboard path
     const lessonUrl = `${appBaseUrl}/lesson-plan/${lessonId}`;
     
     console.log(`Email link will direct to: ${lessonUrl}`);

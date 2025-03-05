@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -65,7 +64,6 @@ const LessonPDF = ({
   sections,
   subject
 }: DownloadLessonPDFProps) => {
-  // Format the current date for the PDF
   const formattedDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -125,7 +123,6 @@ const DownloadLessonPDF = ({
   }, []);
 
   useEffect(() => {
-    // Fetch all lesson sections from the database, including learning objectives
     const fetchAllSections = async () => {
       if (!lessonId) return;
       
@@ -138,27 +135,71 @@ const DownloadLessonPDF = ({
         if (error) throw error;
         
         if (data && data.length > 0) {
-          // Get learning objectives from the lessons table
           if (data[0].learning_objectives) {
             let learningObjectivesContent = "";
             try {
-              // Parse the content from JSON if it's stored that way
               const parsedContent = JSON.parse(data[0].learning_objectives);
               if (Array.isArray(parsedContent)) {
                 learningObjectivesContent = parsedContent.join(", ");
               } else {
-                learningObjectivesContent = data[0].learning_objectives;
+                learningObjectivesContent = String(data[0].learning_objectives);
               }
             } catch {
-              // If not JSON, use it as is
-              learningObjectivesContent = data[0].learning_objectives;
+              learningObjectivesContent = String(data[0].learning_objectives);
             }
             
-            // Set the lesson objectives from the lessons table
             setLessonObjectives(learningObjectivesContent);
+            
+            const updatedSections = [...sections];
+            const learningObjIndex = updatedSections.findIndex(
+              section => section.title === "Learning Objectives"
+            );
+            
+            if (learningObjIndex !== -1) {
+              try {
+                let objContent: string[] = [];
+                try {
+                  objContent = JSON.parse(String(data[0].learning_objectives));
+                } catch {
+                  objContent = String(data[0].learning_objectives).split('\n').filter(Boolean);
+                }
+                
+                if (!Array.isArray(objContent)) {
+                  objContent = [String(objContent)];
+                }
+                
+                updatedSections[learningObjIndex] = {
+                  ...updatedSections[learningObjIndex],
+                  content: objContent
+                };
+              } catch (error) {
+                console.error('Error parsing learning objectives:', error);
+              }
+            } else {
+              try {
+                let objContent: string[] = [];
+                try {
+                  objContent = JSON.parse(String(data[0].learning_objectives));
+                } catch {
+                  objContent = String(data[0].learning_objectives).split('\n').filter(Boolean);
+                }
+                
+                if (!Array.isArray(objContent)) {
+                  objContent = [String(objContent)];
+                }
+                
+                updatedSections.unshift({
+                  title: "Learning Objectives",
+                  content: objContent
+                });
+              } catch (error) {
+                console.error('Error parsing learning objectives:', error);
+              }
+            }
+            
+            setAllSections(updatedSections);
           }
           
-          // Organize the sections in a logical order
           const sectionOrder = [
             "Learning Objectives",
             "Materials & Resources",
@@ -169,7 +210,6 @@ const DownloadLessonPDF = ({
             "Close"
           ];
           
-          // Map database fields to section titles
           const dbFieldToSectionTitle: Record<string, string> = {
             learning_objectives: "Learning Objectives",
             materials_resources: "Materials & Resources",
@@ -182,32 +222,25 @@ const DownloadLessonPDF = ({
           
           const formattedSections: ParsedSection[] = [];
           
-          // First add the sections we already have
-          if (sections && sections.length > 0) {
-            formattedSections.push(...sections);
+          if (updatedSections && updatedSections.length > 0) {
+            formattedSections.push(...updatedSections);
           }
           
-          // Then add sections from the database that aren't already included
           sectionOrder.forEach(sectionTitle => {
-            // Skip if we already have this section
             if (formattedSections.some(s => s.title === sectionTitle)) return;
             
-            // Find the database field that corresponds to this section title
             const dbField = Object.keys(dbFieldToSectionTitle).find(
               key => dbFieldToSectionTitle[key] === sectionTitle
             );
             
             if (!dbField) return;
             
-            // Find the section data in the database
             const lessonData = data[0];
             
             if (lessonData && lessonData[dbField as keyof typeof lessonData]) {
               const rawContent = lessonData[dbField as keyof typeof lessonData] as string;
               
-              // Skip sections with just a dash ("-") as they're empty placeholders
               if (rawContent === "-") {
-                // For Introduction & Hook and Close sections, add empty placeholders instead of skipping
                 if (sectionTitle === "Introduction & Hook" || sectionTitle === "Close") {
                   formattedSections.push({
                     title: sectionTitle,
@@ -218,7 +251,6 @@ const DownloadLessonPDF = ({
               }
               
               try {
-                // Parse the content from JSON if it's stored that way, or split by newlines
                 let content: string[] = [];
                 
                 if (typeof rawContent === 'string') {
@@ -231,7 +263,6 @@ const DownloadLessonPDF = ({
                   content = rawContent;
                 }
                 
-                // Ensure we have at least one item in the content array
                 if (content.length === 0) {
                   content = ["No content available"];
                 }
@@ -242,14 +273,12 @@ const DownloadLessonPDF = ({
                 });
               } catch (error) {
                 console.error(`Error parsing content for ${sectionTitle}:`, error);
-                // Add placeholder content for error cases
                 formattedSections.push({
                   title: sectionTitle,
                   content: ["Error loading content"]
                 });
               }
             } else {
-              // For Introduction & Hook and Close sections, add them even if empty
               if (sectionTitle === "Introduction & Hook" || sectionTitle === "Close") {
                 formattedSections.push({
                   title: sectionTitle,
@@ -261,8 +290,6 @@ const DownloadLessonPDF = ({
           
           setAllSections(formattedSections);
         } else {
-          // If no data from database, use the sections provided
-          // Add empty Introduction & Hook and Close sections if needed
           const completeSections = [...sections];
           
           if (!completeSections.some(s => s.title === "Introduction & Hook")) {
@@ -283,7 +310,6 @@ const DownloadLessonPDF = ({
         }
       } catch (error) {
         console.error('Error fetching lesson sections:', error);
-        // Fallback to using the sections provided
         setAllSections(sections);
       }
     };
@@ -322,14 +348,13 @@ const DownloadLessonPDF = ({
     setIsGenerating(false);
     toast.success("PDF downloaded successfully!");
     
-    // Send email notification if we have user email and lessonId
     if (userEmail && lessonId) {
       try {
         const response = await supabase.functions.invoke('send-lesson-email', {
           body: {
             userEmail,
             lessonTitle,
-            lessonObjectives, // Use the objectives from lessons table
+            lessonObjectives,
             lessonId,
             subject
           }
@@ -351,7 +376,6 @@ const DownloadLessonPDF = ({
     toast.error("Failed to generate PDF");
   };
 
-  // Don't render until we have sections
   if (allSections.length === 0 && sections.length === 0) {
     return <Button variant="outline" disabled className="flex items-center gap-2 bg-[#003C5A] text-[#C3CFF5]">
       <div className="h-4 w-4 border-2 border-[#C3CFF5] border-t-transparent rounded-full animate-spin" />
@@ -359,7 +383,6 @@ const DownloadLessonPDF = ({
     </Button>;
   }
 
-  // Use allSections if available, otherwise fallback to the original sections
   const sectionsToUse = allSections.length > 0 ? allSections : sections;
 
   return (
