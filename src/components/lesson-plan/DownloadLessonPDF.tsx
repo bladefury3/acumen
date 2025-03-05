@@ -117,21 +117,6 @@ const DownloadLessonPDF = ({
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user.email) {
         setUserEmail(session.user.email);
-        
-        if (lessonId) {
-          const { data, error } = await supabase
-            .from('lesson_emails_sent')
-            .select('id')
-            .eq('user_email', session.user.email)
-            .eq('lesson_id', lessonId)
-            .maybeSingle();
-            
-          if (error) {
-            console.error('Error checking if email was sent:', error);
-          } else if (data) {
-            setEmailSent(true);
-          }
-        }
       }
     };
     
@@ -389,10 +374,12 @@ const DownloadLessonPDF = ({
   };
 
   if (allSections.length === 0 && sections.length === 0) {
-    return <Button variant="outline" disabled className="flex items-center gap-2 bg-[#003C5A] text-[#C3CFF5]">
-      <div className="h-4 w-4 border-2 border-[#C3CFF5] border-t-transparent rounded-full animate-spin" />
-      Preparing Download...
-    </Button>;
+    return (
+      <Button variant="outline" disabled className="flex items-center gap-2 bg-[#003C5A] text-[#C3CFF5]">
+        <div className="h-4 w-4 border-2 border-[#C3CFF5] border-t-transparent rounded-full animate-spin" />
+        Preparing Download...
+      </Button>
+    );
   }
 
   const sectionsToUse = allSections.length > 0 ? allSections : sections;
