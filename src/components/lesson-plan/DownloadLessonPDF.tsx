@@ -111,6 +111,7 @@ const DownloadLessonPDF = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [allSections, setAllSections] = useState<ParsedSection[]>([]);
+  const [lessonObjectives, setLessonObjectives] = useState<string>(objectives);
 
   useEffect(() => {
     const fetchUserEmail = async () => {
@@ -124,7 +125,7 @@ const DownloadLessonPDF = ({
   }, []);
 
   useEffect(() => {
-    // Fetch all lesson sections from the database
+    // Fetch all lesson sections from the database, including learning objectives
     const fetchAllSections = async () => {
       if (!lessonId) return;
       
@@ -137,6 +138,26 @@ const DownloadLessonPDF = ({
         if (error) throw error;
         
         if (data && data.length > 0) {
+          // Get learning objectives from the lessons table
+          if (data[0].learning_objectives) {
+            let learningObjectivesContent = "";
+            try {
+              // Parse the content from JSON if it's stored that way
+              const parsedContent = JSON.parse(data[0].learning_objectives);
+              if (Array.isArray(parsedContent)) {
+                learningObjectivesContent = parsedContent.join(", ");
+              } else {
+                learningObjectivesContent = data[0].learning_objectives;
+              }
+            } catch {
+              // If not JSON, use it as is
+              learningObjectivesContent = data[0].learning_objectives;
+            }
+            
+            // Set the lesson objectives from the lessons table
+            setLessonObjectives(learningObjectivesContent);
+          }
+          
           // Organize the sections in a logical order
           const sectionOrder = [
             "Learning Objectives",
@@ -308,7 +329,7 @@ const DownloadLessonPDF = ({
           body: {
             userEmail,
             lessonTitle,
-            lessonObjectives: objectives,
+            lessonObjectives, // Use the objectives from lessons table
             lessonId,
             subject
           }

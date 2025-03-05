@@ -38,8 +38,8 @@ serve(async (req) => {
     // Get the origin from the request headers or use a default value
     const origin = req.headers.get('origin');
     
-    // Use teachassist.app domain as the fallback
-    const appBaseUrl = origin || 'https://teachassist.app';
+    // Use acumen.lovable.app as the fallback
+    const appBaseUrl = origin || 'https://acumen.lovable.app';
     
     // Create a valid lesson URL
     const lessonUrl = `${appBaseUrl}/dashboard/lessons/${lessonId}`;
