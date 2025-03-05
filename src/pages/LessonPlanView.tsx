@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FileText, Settings } from "lucide-react";
@@ -40,17 +41,101 @@ const LessonPlanView = () => {
       
       const { data: lessonData, error: lessonError } = await supabase
         .from('lessons')
-        .select('id')
+        .select('*')
         .eq('response_id', id);
         
       if (lessonError) {
         console.error("Error checking for lesson:", lessonError);
       } else if (lessonData && lessonData.length > 0) {
         setLessonExists(true);
+        
+        // Process lesson data to create parsed sections
+        const sectionTitles = [
+          "Learning Objectives",
+          "Materials & Resources",
+          "Introduction & Hook",
+          "Activities",
+          "Assessment Strategies",
+          "Differentiation Strategies",
+          "Close"
+        ];
+        
+        const processedSections: ParsedSection[] = [];
+        
+        // First add the basic sections we know about
+        if (lessonPlanData.objectives) {
+          processedSections.push({
+            title: "Learning Objectives",
+            content: lessonPlanData.objectives.split('\n').filter(line => line.trim())
+          });
+        }
+        
+        if (lessonPlanData.learning_tools && lessonPlanData.learning_tools.length > 0) {
+          processedSections.push({
+            title: "Materials & Resources",
+            content: lessonPlanData.learning_tools.map(tool => tool.trim()).filter(Boolean)
+          });
+        }
+        
+        // Add sections from the lesson data
+        sectionTitles.forEach(title => {
+          // Skip if we already have this section
+          if (processedSections.some(s => s.title === title)) return;
+          
+          // Find this section in the lessonData
+          const sectionData = lessonData.find(item => 
+            item.section_title === title || 
+            item.section_title.includes(title)
+          );
+          
+          if (sectionData) {
+            try {
+              // Parse the content from JSON if it's stored that way
+              let content: string[] = [];
+              if (typeof sectionData.content === 'string') {
+                try {
+                  content = JSON.parse(sectionData.content);
+                } catch {
+                  content = sectionData.content.split('\n').filter(Boolean);
+                }
+              } else if (Array.isArray(sectionData.content)) {
+                content = sectionData.content;
+              }
+              
+              processedSections.push({
+                title,
+                content
+              });
+            } catch (error) {
+              console.error(`Error parsing content for ${title}:`, error);
+            }
+          }
+        });
+        
+        setParsedSections(processedSections);
       } else if (lessonPlanData.ai_response) {
         try {
           await parseAndStoreAIResponse(lessonPlanData.ai_response, lessonPlanData.id);
           setLessonExists(true);
+          
+          // Add basic sections
+          const basicSections: ParsedSection[] = [];
+          
+          if (lessonPlanData.objectives) {
+            basicSections.push({
+              title: "Learning Objectives",
+              content: lessonPlanData.objectives.split('\n').filter(line => line.trim())
+            });
+          }
+          
+          if (lessonPlanData.learning_tools && lessonPlanData.learning_tools.length > 0) {
+            basicSections.push({
+              title: "Materials & Resources",
+              content: lessonPlanData.learning_tools.map(tool => tool.trim()).filter(Boolean)
+            });
+          }
+          
+          setParsedSections(basicSections);
         } catch (parseError) {
           console.error("Error parsing AI response:", parseError);
           toast.error("Failed to parse lesson plan");
@@ -67,20 +152,6 @@ const LessonPlanView = () => {
         setResourcesId(resources[0].id);
       }
       
-      if (lessonPlanData) {
-        const basicSections: ParsedSection[] = [
-          {
-            title: "Learning Objectives",
-            content: lessonPlanData.objectives ? lessonPlanData.objectives.split('\n').filter(line => line.trim()) : []
-          },
-          {
-            title: "Materials & Resources",
-            content: lessonPlanData.learning_tools ? 
-              lessonPlanData.learning_tools.map(tool => tool.trim()).filter(Boolean) : []
-          }
-        ];
-        setParsedSections(basicSections);
-      }
     } catch (error) {
       console.error('Error fetching lesson plan:', error);
       toast.error("Failed to load lesson plan");
