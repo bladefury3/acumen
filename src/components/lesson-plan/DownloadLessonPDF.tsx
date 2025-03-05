@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
@@ -59,6 +60,7 @@ const styles = StyleSheet.create({
   }
 });
 
+// Separate the PDF document into its own component for clarity
 const LessonPDF = ({
   lessonTitle,
   sections,
@@ -111,6 +113,7 @@ const DownloadLessonPDF = ({
   const [allSections, setAllSections] = useState<ParsedSection[]>([]);
   const [lessonObjectives, setLessonObjectives] = useState<string>(objectives);
   const [emailSent, setEmailSent] = useState<boolean>(false);
+  const [downloadStarted, setDownloadStarted] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUserEmail = async () => {
@@ -123,6 +126,7 @@ const DownloadLessonPDF = ({
     fetchUserEmail();
   }, [lessonId]);
 
+  // Fetch and format all the sections for the PDF
   useEffect(() => {
     const fetchAllSections = async () => {
       if (!lessonId) return;
@@ -311,6 +315,7 @@ const DownloadLessonPDF = ({
     fetchAllSections();
   }, [lessonId, sections]);
 
+  // Cleanup function for the download process
   useEffect(() => {
     return () => {
       if (isGenerating) {
@@ -319,6 +324,7 @@ const DownloadLessonPDF = ({
     };
   }, [isGenerating]);
 
+  // Timeout to reset generating state if download takes too long
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     if (isGenerating) {
@@ -333,43 +339,59 @@ const DownloadLessonPDF = ({
     };
   }, [isGenerating]);
 
-  const handleDownloadStart = async () => {
+  // Prevent duplicate email sending by wrapping logic in useCallback
+  const sendEmail = useCallback(async () => {
+    if (!userEmail || !lessonId || emailSent || !downloadStarted) return;
+    
+    try {
+      const response = await supabase.functions.invoke('send-lesson-email', {
+        body: {
+          userEmail,
+          lessonTitle,
+          lessonObjectives,
+          lessonId,
+          subject
+        }
+      });
+      
+      if (response.error) {
+        console.error('Error sending email:', response.error);
+      } else {
+        if (response.data && !response.data.skipped) {
+          toast.success("Download link also sent to your email!");
+          setEmailSent(true);
+        } else if (response.data && response.data.skipped) {
+          console.log("Email already sent previously, skipping");
+          setEmailSent(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error invoking send-lesson-email function:', error);
+    }
+  }, [userEmail, lessonId, lessonTitle, lessonObjectives, subject, emailSent, downloadStarted]);
+
+  // Trigger email sending when download is complete
+  useEffect(() => {
+    if (downloadStarted && !isGenerating && !emailSent) {
+      sendEmail();
+    }
+  }, [downloadStarted, isGenerating, emailSent, sendEmail]);
+
+  const handleDownloadStart = () => {
     setIsGenerating(true);
+    setDownloadStarted(false);
     toast.success("Starting PDF download...");
   };
 
-  const handleDownloadComplete = async () => {
+  const handleDownloadComplete = () => {
     setIsGenerating(false);
+    setDownloadStarted(true);
     toast.success("PDF downloaded successfully!");
-    
-    if (userEmail && lessonId && !emailSent) {
-      try {
-        const response = await supabase.functions.invoke('send-lesson-email', {
-          body: {
-            userEmail,
-            lessonTitle,
-            lessonObjectives,
-            lessonId,
-            subject
-          }
-        });
-        
-        if (response.error) {
-          console.error('Error sending email:', response.error);
-        } else {
-          if (response.data && !response.data.skipped) {
-            toast.success("Download link also sent to your email!");
-            setEmailSent(true);
-          }
-        }
-      } catch (error) {
-        console.error('Error invoking send-lesson-email function:', error);
-      }
-    }
   };
 
   const handleError = () => {
     setIsGenerating(false);
+    setDownloadStarted(false);
     toast.error("Failed to generate PDF");
   };
 
