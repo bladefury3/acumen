@@ -203,8 +203,7 @@ const LessonPlanView = () => {
   };
 
   const sidebarItems = [
-    { label: "My Lessons", href: "/dashboard", icon: FileText },
-    { label: "Settings", href: "/dashboard/settings", icon: Settings },
+    { label: "My Lessons", href: "/dashboard", icon: FileText }    
   ];
 
   if (isLoading) {

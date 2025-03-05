@@ -92,10 +92,6 @@ const Dashboard = () => {
     label: "My Lessons",
     href: "/dashboard",
     icon: BookOpen
-  }, {
-    label: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings
   }];
   if (isLoading) {
     return <DashboardLayout sidebarItems={sidebarItems}>

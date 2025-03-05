@@ -114,12 +114,7 @@ const LessonPlan = () => {
       label: "My Lessons",
       href: "/dashboard",
       icon: FileText
-    },
-    {
-      label: "Settings",
-      href: "/dashboard/settings",
-      icon: Settings
-    }
+    }  
   ];
 
   return (

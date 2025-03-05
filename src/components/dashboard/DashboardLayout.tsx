@@ -45,22 +45,7 @@ const DashboardLayout = ({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter>
-        <SidebarGroup>
-          <SidebarMenuButton className="w-full justify-between gap-3 h-12">
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 rounded-md" />
-              <div className="flex flex-col items-start">
-                <span className="text-sm font-medium">John Doe</span>
-                <span className="text-xs text-muted-foreground">john@example.com</span>
-              </div>
-            </div>
-            <ChevronsUpDown className="h-5 w-5 rounded-md" />
-          </SidebarMenuButton>
-        </SidebarGroup>
-      </SidebarFooter>
+      </SidebarContent>    
     </Sidebar>
 
     <main className="flex-1 min-w-100vh bg-slate-50">
