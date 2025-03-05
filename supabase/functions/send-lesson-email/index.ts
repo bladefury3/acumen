@@ -48,7 +48,7 @@ serve(async (req) => {
     
     // Send the email
     const { data, error } = await resend.emails.send({
-      from: 'Acument <downloads@acument.com>',
+      from: 'Sid from Acumen <acumen@sidharath.com>',
       to: [userEmail],
       subject: `Download: ${subject}: ${lessonObjectives.substring(0, 50)}${lessonObjectives.length > 50 ? '...' : ''}`,
       html: `
