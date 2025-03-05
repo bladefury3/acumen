@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -150,8 +151,8 @@ const DownloadLessonPDF = ({
             
             setLessonObjectives(learningObjectivesContent);
             
-            const updatedSections = [...sections];
-            const learningObjIndex = updatedSections.findIndex(
+            const sectionsCopy = [...sections];
+            const learningObjIndex = sectionsCopy.findIndex(
               section => section.title === "Learning Objectives"
             );
             
@@ -168,8 +169,8 @@ const DownloadLessonPDF = ({
                   objContent = [String(objContent)];
                 }
                 
-                updatedSections[learningObjIndex] = {
-                  ...updatedSections[learningObjIndex],
+                sectionsCopy[learningObjIndex] = {
+                  ...sectionsCopy[learningObjIndex],
                   content: objContent
                 };
               } catch (error) {
@@ -188,7 +189,7 @@ const DownloadLessonPDF = ({
                   objContent = [String(objContent)];
                 }
                 
-                updatedSections.unshift({
+                sectionsCopy.unshift({
                   title: "Learning Objectives",
                   content: objContent
                 });
@@ -197,7 +198,7 @@ const DownloadLessonPDF = ({
               }
             }
             
-            setAllSections(updatedSections);
+            setAllSections(sectionsCopy);
           }
           
           const sectionOrder = [
@@ -222,8 +223,10 @@ const DownloadLessonPDF = ({
           
           const formattedSections: ParsedSection[] = [];
           
-          if (updatedSections && updatedSections.length > 0) {
-            formattedSections.push(...updatedSections);
+          if (sectionsCopy && sectionsCopy.length > 0) {
+            formattedSections.push(...sectionsCopy);
+          } else {
+            formattedSections.push(...sections);
           }
           
           sectionOrder.forEach(sectionTitle => {

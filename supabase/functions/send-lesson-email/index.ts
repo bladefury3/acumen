@@ -38,7 +38,7 @@ serve(async (req) => {
     // Use the fixed fallback URL
     const appBaseUrl = 'https://acumen.lovable.app';
     
-    // Create a valid lesson URL for the dashboard path
+    // Create a valid lesson URL for the lesson-plan path
     const lessonUrl = `${appBaseUrl}/lesson-plan/${lessonId}`;
     
     console.log(`Email link will direct to: ${lessonUrl}`);
