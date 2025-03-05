@@ -110,17 +110,33 @@ const DownloadLessonPDF = ({
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [allSections, setAllSections] = useState<ParsedSection[]>([]);
   const [lessonObjectives, setLessonObjectives] = useState<string>(objectives);
+  const [emailSent, setEmailSent] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUserEmail = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user.email) {
         setUserEmail(session.user.email);
+        
+        if (lessonId) {
+          const { data, error } = await supabase
+            .from('lesson_emails_sent')
+            .select('id')
+            .eq('user_email', session.user.email)
+            .eq('lesson_id', lessonId)
+            .maybeSingle();
+            
+          if (error) {
+            console.error('Error checking if email was sent:', error);
+          } else if (data) {
+            setEmailSent(true);
+          }
+        }
       }
     };
     
     fetchUserEmail();
-  }, []);
+  }, [lessonId]);
 
   useEffect(() => {
     const fetchAllSections = async () => {
@@ -341,7 +357,7 @@ const DownloadLessonPDF = ({
     setIsGenerating(false);
     toast.success("PDF downloaded successfully!");
     
-    if (userEmail && lessonId) {
+    if (userEmail && lessonId && !emailSent) {
       try {
         const response = await supabase.functions.invoke('send-lesson-email', {
           body: {
@@ -356,7 +372,10 @@ const DownloadLessonPDF = ({
         if (response.error) {
           console.error('Error sending email:', response.error);
         } else {
-          toast.success("Download link also sent to your email!");
+          if (response.data && !response.data.skipped) {
+            toast.success("Download link also sent to your email!");
+            setEmailSent(true);
+          }
         }
       } catch (error) {
         console.error('Error invoking send-lesson-email function:', error);

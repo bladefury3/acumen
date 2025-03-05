@@ -35,6 +35,36 @@ serve(async (req) => {
       throw new Error('Missing required fields');
     }
 
+    // Check if we've already sent an email for this lesson to this user
+    const { error: checkError, count } = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/rest/v1/lesson_emails_sent?user_email=eq.${encodeURIComponent(userEmail)}&lesson_id=eq.${lessonId}&select=count=exact`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': Deno.env.get('SUPABASE_ANON_KEY') || '',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        },
+      }
+    ).then(r => r.json());
+
+    if (checkError) {
+      console.error('Error checking email status:', checkError);
+      throw new Error('Failed to check email status');
+    }
+
+    // If count > 0, this user has already received an email for this lesson
+    if (count && count > 0) {
+      console.log(`Email for lesson ${lessonId} already sent to ${userEmail}, skipping`);
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Email already sent previously',
+        skipped: true
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
     // Use the fixed fallback URL
     const appBaseUrl = 'https://acumen.lovable.app';
     
@@ -76,6 +106,32 @@ serve(async (req) => {
     }
 
     console.log('Email sent successfully:', data);
+
+    // Record that we've sent this email
+    const { error: insertError } = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/rest/v1/lesson_emails_sent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': Deno.env.get('SUPABASE_ANON_KEY') || '',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          user_email: userEmail,
+          lesson_id: lessonId
+        }),
+      }
+    ).then(r => {
+      if (!r.ok) return r.json().then(err => ({ error: err }));
+      return { error: null };
+    });
+
+    if (insertError) {
+      console.error('Error recording email send:', insertError);
+      // Don't fail the request if only the recording fails
+    }
 
     return new Response(JSON.stringify({ success: true, message: 'Email sent successfully' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
