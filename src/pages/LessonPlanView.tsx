@@ -50,7 +50,7 @@ const LessonPlanView = () => {
         setLessonExists(true);
         
         // Process lesson data to create parsed sections
-        const sectionTitles = [
+        const sectionOrder = [
           "Learning Objectives",
           "Materials & Resources",
           "Introduction & Hook",
@@ -59,6 +59,17 @@ const LessonPlanView = () => {
           "Differentiation Strategies",
           "Close"
         ];
+        
+        // Map database fields to section titles
+        const dbFieldToSectionTitle: Record<string, string> = {
+          learning_objectives: "Learning Objectives",
+          materials_resources: "Materials & Resources",
+          introduction_hook: "Introduction & Hook",
+          activities: "Activities",
+          assessment_strategies: "Assessment Strategies",
+          differentiation_strategies: "Differentiation Strategies",
+          close: "Close"
+        };
         
         const processedSections: ParsedSection[] = [];
         
@@ -78,28 +89,34 @@ const LessonPlanView = () => {
         }
         
         // Add sections from the lesson data
-        sectionTitles.forEach(title => {
+        sectionOrder.forEach(title => {
           // Skip if we already have this section
           if (processedSections.some(s => s.title === title)) return;
           
-          // Find this section in the lessonData
-          const sectionData = lessonData.find(item => 
-            item.section_title === title || 
-            item.section_title.includes(title)
+          // Find the database field that corresponds to this section title
+          const dbField = Object.keys(dbFieldToSectionTitle).find(
+            key => dbFieldToSectionTitle[key] === title
           );
           
-          if (sectionData) {
+          if (!dbField) return;
+          
+          // Find this section in the lessonData
+          const lessonItem = lessonData[0];
+          
+          if (lessonItem && lessonItem[dbField as keyof typeof lessonItem]) {
             try {
               // Parse the content from JSON if it's stored that way
               let content: string[] = [];
-              if (typeof sectionData.content === 'string') {
+              const rawContent = lessonItem[dbField as keyof typeof lessonItem] as string;
+              
+              if (typeof rawContent === 'string') {
                 try {
-                  content = JSON.parse(sectionData.content);
+                  content = JSON.parse(rawContent);
                 } catch {
-                  content = sectionData.content.split('\n').filter(Boolean);
+                  content = rawContent.split('\n').filter(Boolean);
                 }
-              } else if (Array.isArray(sectionData.content)) {
-                content = sectionData.content;
+              } else if (Array.isArray(rawContent)) {
+                content = rawContent;
               }
               
               processedSections.push({

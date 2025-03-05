@@ -148,6 +148,17 @@ const DownloadLessonPDF = ({
             "Close"
           ];
           
+          // Map database fields to section titles
+          const dbFieldToSectionTitle: Record<string, string> = {
+            learning_objectives: "Learning Objectives",
+            materials_resources: "Materials & Resources",
+            introduction_hook: "Introduction & Hook",
+            activities: "Activities",
+            assessment_strategies: "Assessment Strategies",
+            differentiation_strategies: "Differentiation Strategies",
+            close: "Close"
+          };
+          
           const formattedSections: ParsedSection[] = [];
           
           // First add the sections we already have
@@ -160,24 +171,30 @@ const DownloadLessonPDF = ({
             // Skip if we already have this section
             if (formattedSections.some(s => s.title === sectionTitle)) return;
             
-            // Find the section in the database
-            const sectionData = data.find(item => 
-              item.section_title === sectionTitle || 
-              item.section_title.includes(sectionTitle)
+            // Find the database field that corresponds to this section title
+            const dbField = Object.keys(dbFieldToSectionTitle).find(
+              key => dbFieldToSectionTitle[key] === sectionTitle
             );
             
-            if (sectionData) {
+            if (!dbField) return;
+            
+            // Find the section data in the database
+            const lessonData = data[0];
+            
+            if (lessonData && lessonData[dbField as keyof typeof lessonData]) {
               try {
-                // Parse the content from JSON if it's stored that way
+                // Parse the content from JSON if it's stored that way, or split by newlines
                 let content: string[] = [];
-                if (typeof sectionData.content === 'string') {
+                const rawContent = lessonData[dbField as keyof typeof lessonData] as string;
+                
+                if (typeof rawContent === 'string') {
                   try {
-                    content = JSON.parse(sectionData.content);
+                    content = JSON.parse(rawContent);
                   } catch {
-                    content = sectionData.content.split('\n').filter(Boolean);
+                    content = rawContent.split('\n').filter(Boolean);
                   }
-                } else if (Array.isArray(sectionData.content)) {
-                  content = sectionData.content;
+                } else if (Array.isArray(rawContent)) {
+                  content = rawContent;
                 }
                 
                 formattedSections.push({
