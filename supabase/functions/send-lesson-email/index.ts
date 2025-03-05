@@ -42,13 +42,13 @@ serve(async (req) => {
     const appBaseUrl = origin || 'https://acumen.lovable.app';
     
     // Create a valid lesson URL
-    const lessonUrl = `${appBaseUrl}/dashboard/lessons/${lessonId}`;
+    const lessonUrl = `${appBaseUrl}/lesson-plan/${lessonId}`;
     
     console.log(`Email link will direct to: ${lessonUrl}`);
     
     // Send the email
     const { data, error } = await resend.emails.send({
-      from: 'TeachAssist <onboarding@resend.dev>',
+      from: 'Acument <downloads@acument.com>',
       to: [userEmail],
       subject: `Download: ${subject}: ${lessonObjectives.substring(0, 50)}${lessonObjectives.length > 50 ? '...' : ''}`,
       html: `
